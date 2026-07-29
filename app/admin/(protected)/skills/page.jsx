@@ -8,6 +8,7 @@ export default function SkillsAdminPage() {
   const [groups, setGroups] = useState([]);
   const [error, setError] = useState("");
   const [newGroupLabel, setNewGroupLabel] = useState("");
+  const [savedId, setSavedId] = useState("");
 
   async function load() {
     const modes = await adminFetch("/api/admin/modes");
@@ -53,6 +54,8 @@ export default function SkillsAdminPage() {
         method: "PATCH",
         body: JSON.stringify({ name: skill.name, level: skill.level }),
       });
+      setSavedId(skill.id);
+      setTimeout(() => setSavedId(""), 1800);
     } catch (e) { setError(e.message); }
   }
 
@@ -97,6 +100,7 @@ export default function SkillsAdminPage() {
                   onChange={(e) => updateSkillLocal(group.id, skill.id, "name", e.target.value)}
                   onBlur={() => saveSkill(group.id, { ...skill, name: skill.name })}
                 />
+                <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={() => saveSkill(group.id, skill)}>Save changes</button>
                 <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => deleteSkill(group.id, skill.id)}>Delete</button>
               </div>
               <div className="admin-skill-level-row">
@@ -111,6 +115,7 @@ export default function SkillsAdminPage() {
                   onTouchEnd={() => saveSkill(group.id, skill)}
                 />
                 <span className="admin-skill-level-value">{skill.level}%</span>
+                {savedId === skill.id && <span className="admin-success" style={{ padding: "4px 10px" }}>Saved</span>}
               </div>
             </div>
           ))}

@@ -25,8 +25,17 @@ export default function AppShell({ data }) {
 
   const modeById = Object.fromEntries(data.modes.map((m) => [m.id, m]));
 
+  // Theme accent colors are admin-managed (Theme tokens page) and stored in
+  // the DB. Rendered as a CSS override per [data-mode] so the whole existing
+  // token system (--color-accent / --color-accent-hover, used throughout
+  // style.css) picks up live values with zero CSS file changes.
+  const themeCss = data.modes
+    .map((m) => (m.accent ? `[data-mode="${m.id}"]{--color-accent:${m.accent};--color-accent-hover:color-mix(in oklab, ${m.accent} 75%, white);}` : ""))
+    .join("\n");
+
   return (
     <div id="stage" data-mode="" ref={stageRef}>
+      {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       <div className="noise-veil" aria-hidden="true" />
 
       <nav className="nav" id="nav" ref={navRef} aria-label="Site">

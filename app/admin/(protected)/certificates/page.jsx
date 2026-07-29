@@ -7,6 +7,7 @@ export default function CertificatesAdminPage() {
   const [active, setActive] = useState("editor");
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const [savedId, setSavedId] = useState("");
 
   async function load() {
     const modes = await adminFetch("/api/admin/modes");
@@ -27,6 +28,8 @@ export default function CertificatesAdminPage() {
         method: "PATCH",
         body: JSON.stringify({ title: item.title, issuer: item.issuer, year: item.year, url: item.url, imageUrl: item.imageUrl, visible: item.visible }),
       });
+      setSavedId(item.id);
+      setTimeout(() => setSavedId(""), 1800);
     } catch (e) { setError(e.message); }
   }
 
@@ -87,7 +90,9 @@ export default function CertificatesAdminPage() {
               <input type="checkbox" checked={item.visible} onChange={(e) => { updateLocal(item.id, "visible", e.target.checked); save({ ...item, visible: e.target.checked }); }} />
               Visible
             </label>
-            <button className="admin-btn admin-btn--danger admin-btn--sm" style={{ marginLeft: "auto" }} onClick={() => remove(item.id)}>Delete</button>
+            {savedId === item.id && <span className="admin-success" style={{ padding: "4px 10px" }}>Saved</span>}
+            <button className="admin-btn admin-btn--primary admin-btn--sm" style={{ marginLeft: "auto" }} onClick={() => save(item)}>Save changes</button>
+            <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => remove(item.id)}>Delete</button>
           </div>
         </div>
       ))}

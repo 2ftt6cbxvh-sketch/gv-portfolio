@@ -44,10 +44,8 @@ export default function DeveloperMode({ data }) {
                   </div>
                 </div>
                 {p.url ? (
-                  <a className="project-row__arrow" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>→</a>
-                ) : (
-                  <span className="project-row__arrow">→</span>
-                )}
+                  <a className="project-row__arrow project-row__cta" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>View Project →</a>
+                ) : null}
               </div>
             ))}
           </div>

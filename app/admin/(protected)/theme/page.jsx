@@ -22,7 +22,16 @@ export default function ThemeAdminPage() {
     setError(""); setStatus("Saving...");
     try {
       await adminFetch(`/api/admin/theme/${encodeURIComponent(key)}`, { method: "PATCH", body: JSON.stringify({ value }) });
-      setStatus("Saved. Refresh the public site to see the new accent.");
+      setStatus("Saved. Reload the public site to see the new accent.");
+      setTimeout(() => setStatus(""), 2500);
+    } catch (e) { setError(e.message); setStatus(""); }
+  }
+
+  async function saveAll() {
+    setError(""); setStatus("Saving...");
+    try {
+      await Promise.all(tokens.map((t) => adminFetch(`/api/admin/theme/${encodeURIComponent(t.key)}`, { method: "PATCH", body: JSON.stringify({ value: t.value }) })));
+      setStatus("Saved. Reload the public site to see the new accents.");
       setTimeout(() => setStatus(""), 2500);
     } catch (e) { setError(e.message); setStatus(""); }
   }
@@ -32,8 +41,9 @@ export default function ThemeAdminPage() {
       <div className="admin-topbar">
         <div>
           <h1 className="admin-h1">Theme tokens</h1>
-          <p className="admin-sub">Adjust the accent color per mode. Changes apply the next time a page is loaded.</p>
+          <p className="admin-sub">Adjust the accent color per mode. Changes apply on the public site's next page load.</p>
         </div>
+        <button className="admin-btn admin-btn--primary" onClick={saveAll}>Save changes</button>
       </div>
       {error && <div className="admin-error">{error}</div>}
       {status && <div className="admin-success">{status}</div>}
@@ -53,8 +63,8 @@ export default function ThemeAdminPage() {
           </div>
         ))}
         <p className="admin-hint">
-          Note: these tokens are stored for future use across the site. Currently each mode also stores its own
-          accent under Modes & Hero copy — keep both in sync if you change a mode's color.
+          This is the live accent color used across the public site for each mode (borders, links, hover states, and
+          highlights). Colors save per-field automatically as you edit, and the button above re-saves all fields at once.
         </p>
       </div>
     </div>
