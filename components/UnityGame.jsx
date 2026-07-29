@@ -13,9 +13,9 @@ export default function UnityGame({ buildName = "GameOfLife3D", title = "Conway'
     const buildUrl = `/unity/${buildName}/Build`;
     const loaderUrl = `${buildUrl}/${buildName}.loader.js`;
     const config = {
-      dataUrl: `${buildUrl}/${buildName}.data`,
-      frameworkUrl: `${buildUrl}/${buildName}.framework.js`,
-      codeUrl: `${buildUrl}/${buildName}.wasm`,
+      dataUrl: `${buildUrl}/${buildName}.data.br`,
+      frameworkUrl: `${buildUrl}/${buildName}.framework.js.br`,
+      codeUrl: `${buildUrl}/${buildName}.wasm.br`,
       streamingAssetsUrl: "StreamingAssets",
       companyName: "Ganesh Varma",
       productName: title,
