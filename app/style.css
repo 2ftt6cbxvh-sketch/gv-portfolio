@@ -284,6 +284,80 @@
 }
 @keyframes reveal-fade { to { opacity: 1; } }
 
+/* ============ EDITOR MODE — CINEMATIC LAYER ============ */
+/* Scoped entirely to .mode-view--editor / [data-theme="editor"] — no shared
+   selectors touched, so Developer/Analyst/selector are unaffected. */
+
+.mode-view--editor { position: relative; overflow: hidden; }
+
+.reel-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.film-reel { position: absolute; left: 0; width: 100%; white-space: nowrap; will-change: transform; }
+.film-reel__track { display: inline-flex; align-items: center; gap: 0; will-change: transform; }
+.film-reel__frame {
+  font-family: var(--font-mono);
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-accent) 22%, transparent);
+  padding-inline: var(--space-8);
+  display: inline-flex;
+  align-items: center;
+}
+.film-reel__sep { width: 5px; height: 5px; border-radius: 50%; background: color-mix(in oklab, var(--color-accent) 30%, transparent); margin-right: var(--space-8); }
+
+.film-reel--back { top: 8%; opacity: 0.35; }
+.film-reel--back .film-reel__frame { font-size: clamp(2.5rem, 6vw, 5.5rem); }
+.film-reel--mid { top: 46%; opacity: 0.5; }
+.film-reel--front { top: 82%; opacity: 0.4; }
+
+.mode-view--editor .hero-mode,
+.mode-view--editor .section,
+.mode-view--editor .footer-mode { position: relative; z-index: 2; }
+
+/* Stronger, more dramatic hero for Editor specifically */
+.hero-mode--editor { min-height: 100dvh; }
+.hero-mode__title--editor {
+  font-size: clamp(2.75rem, 2rem + 5vw, 6.75rem);
+  max-width: 20ch;
+}
+.accent--script {
+  font-style: italic;
+  color: var(--color-accent);
+  text-shadow: 0 0 28px color-mix(in oklab, var(--color-accent) 45%, transparent);
+}
+
+/* Film-slate style pull quote for the event-production story */
+.editor-story__frame {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  padding: var(--space-10) var(--space-10);
+  background: color-mix(in oklab, var(--color-surface) 92%, var(--color-accent) 8%);
+}
+.editor-story__slate {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  display: block;
+  margin-bottom: var(--space-4);
+}
+.editor-story__heading {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-6);
+}
+.editor-story__body { font-size: var(--text-lg); color: var(--color-text-muted); line-height: 1.7; max-width: 62ch; }
+
 /* ============ RESPONSIVE ============ */
 @media (max-width: 860px) {
   .portals { grid-template-columns: 1fr; }
@@ -293,6 +367,20 @@
   .project-row { grid-template-columns: 2rem 1fr; }
   .project-row__arrow { display: none; }
   .hero-mode__meta { gap: var(--space-6); }
+
+  /* Editor mode: simplify the reel field on small screens — fewer visible
+     layers, slower/shorter drift (handled in useFilmReelScroll), reduced
+     frame density so it stays a cinematic backdrop and never crowds text. */
+  .film-reel--back { display: none; }
+  .film-reel--mid { top: 20%; opacity: 0.3; }
+  .film-reel--front { top: 88%; opacity: 0.28; }
+  .film-reel__frame { font-size: 1.1rem; letter-spacing: 0.18em; padding-inline: var(--space-5); }
+  .hero-mode--editor { min-height: 92dvh; }
+  .editor-story__frame { padding: var(--space-6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .film-reel__track { transform: none !important; }
 }
 
 @media (hover: none) {

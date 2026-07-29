@@ -81,6 +81,72 @@ export const developerContent = {
   ],
 };
 
-// Deferred to Phase 3 — same shape as developerContent once populated.
-export const editorContent = null;
+
+// Full reference-mode content for Editor (Phase 2 upgrade).
+export const editorContent = {
+  role: "Editor & Creative Director",
+  heroTitlePrefix: "Ganesh Varma directs ",
+  heroTitleAccent: "moments",
+  heroTitleSuffix: " worth remembering.",
+  lede: "Four years shaping live events end to end -- from raw footage and stage design to the last edit that ships. I work in the space between chaos and timing: the cut that lands, the cue that hits, the frame that holds.",
+  meta: [
+    { label: "Experience", value: "4 years, live production" },
+    { label: "Scale", value: "8 national BTech fests" },
+    { label: "Tools", value: "DaVinci Resolve · Premiere" },
+  ],
+  reelStrips: [
+    "STAGE", "DECOR", "TEAMS", "BUDGET", "EDIT", "CUES", "GUESTS", "DANCE",
+  ],
+  productions: [
+    {
+      index: "01",
+      title: "National BTech Fest -- Stage & Decor Direction",
+      stack: ["Stage design", "Decor", "Chief guest coordination"],
+    },
+    {
+      index: "02",
+      title: "Cross-Department Event Command",
+      stack: ["Team leadership", "Budget ownership", "Cross-dept sync"],
+    },
+    {
+      index: "03",
+      title: "Post-Production & Highlight Edits",
+      stack: ["DaVinci Resolve", "Video editing", "Story pacing"],
+    },
+  ],
+  skills: [
+    {
+      label: "Production",
+      bars: [
+        { name: "Event & stage direction", level: 92 },
+        { name: "Budget management", level: 85 },
+      ],
+    },
+    {
+      label: "Coordination",
+      bars: [
+        { name: "Team & vendor leadership", level: 90 },
+        { name: "Cross-department sync", level: 88 },
+      ],
+    },
+    {
+      label: "Post & Story",
+      bars: [
+        { name: "Video editing", level: 82 },
+        { name: "Narrative pacing", level: 80 },
+      ],
+    },
+  ],
+  story: {
+    heading: "Eight fests. One thread.",
+    body: "Across 8 national-level BTech fests, I ran the parts most people never see: the budget spreadsheet at 2am, the decor crew waiting on a call, the chief guest running late, the dance rehearsal that needed one more pass. I led the teams, held the money, coordinated every department in the room, and still sat down afterward to cut the film that made it all look effortless. That's the job -- creative direction and hard logistics, at the same time, under a clock that doesn't stop.",
+  },
+  social: [
+    { label: "GitHub", href: "#" },
+    { label: "LinkedIn", href: "#" },
+    { label: "Resume", href: "#" },
+  ],
+};
+
+// Deferred to Phase 3.
 export const analystContent = null;

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import GVLogo from "./GVLogo";
 import ModeSelector from "./ModeSelector";
 import DeveloperMode from "./DeveloperMode";
+import EditorMode from "./EditorMode";
 import PlaceholderMode from "./PlaceholderMode";
 import { useSiteMotion } from "./useSiteMotion";
 
@@ -53,7 +54,7 @@ export default function AppShell() {
       <ModeSelector selectorRef={selectorRef} />
 
       <DeveloperMode />
-      <PlaceholderMode id="mode-editor" theme="editor" />
+      <EditorMode />
       <PlaceholderMode id="mode-analyst" theme="analyst" />
     </div>
   );
