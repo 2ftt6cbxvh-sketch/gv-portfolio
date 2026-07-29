@@ -9,7 +9,7 @@ export default function ModeSelector({ selectorRef, person, modes }) {
 
       <div className="portals" role="list">
         {modes.map((mode) => (
-          <article className="portal" data-target={mode.id} role="listitem" tabIndex={0} style={{ opacity: 0 }} key={mode.id}>
+          <article className="portal" data-target={mode.id} role="listitem" tabIndex={0} style={{ opacity: 0, "--portal-accent": mode.accent }} key={mode.id}>
             <div className="portal__tint" />
             <span className="portal__index">{mode.index}</span>
             <div>
@@ -18,7 +18,7 @@ export default function ModeSelector({ selectorRef, person, modes }) {
               <div className="portal__cue" aria-hidden="true">
                 {mode.id === "analyst" && (
                   <svg viewBox="0 0 200 40" fill="none" aria-hidden="true">
-                    <path d="M2 32 L40 20 L75 26 L110 8 L145 14 L198 4" stroke="#33c7b0" strokeWidth="2" />
+                    <path d="M2 32 L40 20 L75 26 L110 8 L145 14 L198 4" stroke={mode.accent || "#33c7b0"} strokeWidth="2" />
                   </svg>
                 )}
               </div>
