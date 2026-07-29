@@ -39,7 +39,7 @@ export default function DeveloperMode({ data }) {
           GPU-instanced 3D cellular automaton built in Unity, compiled to WebGL and running live in this page.
         </p>
         {loadGame ? (
-          <UnityGame buildName="GameOfLife3D" title="Conway's Game of Life — 3D" />
+          <UnityGame buildName="GameOfLife3D1" title="Conway's Game of Life — 3D" />
         ) : (
           <button className="admin-btn admin-btn--primary" onClick={() => setLoadGame(true)}>
             ▶ Load simulation
