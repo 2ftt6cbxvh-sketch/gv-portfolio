@@ -118,7 +118,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       if (heroTitle) revealTitle(heroTitle);
       staggerIn(root.querySelectorAll(".hero-mode__lede, .hero-mode__meta"), { stagger: 0.1 });
       animateSkillBars(root.querySelectorAll(".skill-bar"));
-      gsap.utils.toArray(root.querySelectorAll(".section-head, .project-row")).forEach((el) => {
+      gsap.utils.toArray(root.querySelectorAll(".section-head, .project-row, .stat-card, .cert-card, .paper-row")).forEach((el) => {
         gsap.set(el, { opacity: 0, y: 14 });
         ScrollTrigger.create({
           trigger: el, start: "top 88%", once: true,

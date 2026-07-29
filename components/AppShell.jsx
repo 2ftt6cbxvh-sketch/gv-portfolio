@@ -5,10 +5,10 @@ import GVLogo from "./GVLogo";
 import ModeSelector from "./ModeSelector";
 import DeveloperMode from "./DeveloperMode";
 import EditorMode from "./EditorMode";
-import PlaceholderMode from "./PlaceholderMode";
+import AnalystMode from "./AnalystMode";
 import { useSiteMotion } from "./useSiteMotion";
 
-export default function AppShell() {
+export default function AppShell({ data }) {
   const stageRef = useRef(null);
   const introRef = useRef(null);
   const selectorRef = useRef(null);
@@ -22,6 +22,8 @@ export default function AppShell() {
     stageRef, introRef, selectorRef, navRef, navModeLabelRef, navBackRef,
     introLogoEngineRef, navLogoEngineRef,
   });
+
+  const modeById = Object.fromEntries(data.modes.map((m) => [m.id, m]));
 
   return (
     <div id="stage" data-mode="" ref={stageRef}>
@@ -51,11 +53,11 @@ export default function AppShell() {
         <GVLogo id="intro-logo" size={140} engineRef={introLogoEngineRef} opts={{ ambient: false }} aria-label="GV logo animating in" />
       </div>
 
-      <ModeSelector selectorRef={selectorRef} />
+      <ModeSelector selectorRef={selectorRef} person={data.person} modes={data.modes} />
 
-      <DeveloperMode />
-      <EditorMode />
-      <PlaceholderMode id="mode-analyst" theme="analyst" />
+      {modeById.editor && <EditorMode data={modeById.editor} />}
+      {modeById.analyst && <AnalystMode data={modeById.analyst} />}
+      {modeById.developer && <DeveloperMode data={modeById.developer} />}
     </div>
   );
 }

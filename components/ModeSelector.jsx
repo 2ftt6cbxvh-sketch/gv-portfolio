@@ -1,6 +1,4 @@
-import { modes, person } from "@/content/site";
-
-export default function ModeSelector({ selectorRef }) {
+export default function ModeSelector({ selectorRef, person, modes }) {
   return (
     <main className="selector" id="selector" ref={selectorRef}>
       <div className="selector__intro reveal" style={{ opacity: 0 }}>

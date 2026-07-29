@@ -262,6 +262,47 @@
 .skill-bar__track { position: relative; width: 90px; height: 2px; background: var(--color-border); }
 .skill-bar__fill { position: absolute; inset: 0; width: 0; background: var(--color-accent); transform-origin: left; }
 
+/* ============ ANALYST MODE: charts, stats, certs, papers ============ */
+.analyst-chart-wrap { margin-top: var(--space-12); max-width: 320px; opacity: 0.9; }
+.analyst-chart { width: 100%; height: auto; display: block; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); }
+.stat-card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-6) var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-surface) 92%, var(--color-accent) 3%);
+  transition: border-color var(--transition-interactive), background var(--transition-interactive);
+}
+.stat-card:hover { border-color: color-mix(in oklab, var(--color-accent) 40%, var(--color-border)); }
+.stat-card__value { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 600; color: var(--color-accent); font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.01em; }
+.stat-card__label { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.cert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-6); }
+.cert-card {
+  padding: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  display: flex; flex-direction: column; gap: var(--space-2);
+  transition: border-color var(--transition-interactive);
+}
+.cert-card:hover { border-color: color-mix(in oklab, var(--color-accent) 40%, var(--color-border)); }
+.cert-card__title { font-family: var(--font-display); font-size: var(--text-base); font-weight: 500; }
+.cert-card__meta { display: flex; gap: var(--space-3); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-faint); }
+.cert-card__link { margin-top: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent); }
+
+.papers-list { display: flex; flex-direction: column; }
+.paper-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--space-6);
+  padding-block: var(--space-6); border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-interactive);
+}
+.paper-row:hover { background: color-mix(in oklab, var(--color-accent) 5%, transparent); }
+.paper-row__title { font-family: var(--font-display); font-size: var(--text-base); font-weight: 500; }
+.paper-row__meta { display: flex; gap: var(--space-3); margin-top: var(--space-1); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-faint); }
+
+@media (max-width: 720px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .cert-grid { grid-template-columns: 1fr; }
+}
+
 .contact-block { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); }
 .contact-block__title { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 600; letter-spacing: -0.02em; }
 .contact-block__email { font-family: var(--font-mono); font-size: var(--text-lg); color: var(--color-accent); }

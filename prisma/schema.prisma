@@ -1,0 +1,172 @@
+// Prisma schema — GV Portfolio Phase 3
+// Single-admin CMS backing the 3-mode portfolio (Editor / Analyst / Developer).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Auth ----------
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------- Global / person-level content ----------
+
+model SiteSettings {
+  id             String  @id @default(cuid())
+  name           String  @default("Ganesh Varma")
+  initials       String  @default("GV")
+  email          String  @default("gp61080@gmail.com")
+  location       String  @default("Andhra Pradesh, IN")
+  resumeUrl      String  @default("#")
+  githubUrl      String  @default("#")
+  linkedinUrl    String  @default("#")
+  twitterUrl     String? 
+  updatedAt      DateTime @updatedAt
+}
+
+// One row per mode (editor / analyst / developer). Holds hero copy + theme.
+model ModeContent {
+  id                 String  @id @default(cuid())
+  modeId             String  @unique // "editor" | "analyst" | "developer"
+  index              String  @default("01")
+  name               String
+  desc               String
+  accentColor        String  @default("#a56ce8")
+  role               String  @default("")
+  heroTitlePrefix    String  @default("")
+  heroTitleAccent    String  @default("")
+  heroTitleSuffix    String  @default("")
+  lede               String  @default("")
+  contactHeading     String  @default("Let's build something.")
+  visible            Boolean @default(true)
+  order              Int     @default(0)
+  updatedAt          DateTime @updatedAt
+
+  metaItems    MetaItem[]
+  skillGroups  SkillGroup[]
+  projects     Project[]
+  certificates Certificate[]
+  papers       Paper[]
+  achievements Achievement[]
+}
+
+// Small "label: value" chips under each hero (e.g. "Based in / Andhra Pradesh")
+model MetaItem {
+  id        String      @id @default(cuid())
+  modeId    String
+  mode      ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  label     String
+  value     String
+  order     Int         @default(0)
+}
+
+// ---------- Skills ----------
+
+model SkillGroup {
+  id      String      @id @default(cuid())
+  modeId  String
+  mode    ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  label   String
+  order   Int         @default(0)
+  skills  Skill[]
+}
+
+model Skill {
+  id       String     @id @default(cuid())
+  groupId  String
+  group    SkillGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name     String
+  level    Int        @default(70) // 0-100, admin-editable expertise %
+  order    Int        @default(0)
+}
+
+// ---------- Projects / Productions ----------
+
+model Project {
+  id         String      @id @default(cuid())
+  modeId     String
+  mode       ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  title      String
+  description String?    @default("")
+  stack      String[]    @default([])
+  url        String?
+  imageUrl   String?
+  featured   Boolean     @default(false)
+  visible    Boolean     @default(true)
+  order      Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+// ---------- Certificates ----------
+
+model Certificate {
+  id         String      @id @default(cuid())
+  modeId     String
+  mode       ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  title      String
+  issuer     String?
+  year       String?
+  url         String?
+  imageUrl   String?
+  visible    Boolean     @default(true)
+  order      Int         @default(0)
+}
+
+// ---------- Research papers / publications ----------
+
+model Paper {
+  id         String      @id @default(cuid())
+  modeId     String
+  mode       ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  title      String
+  venue      String?
+  year       String?
+  url        String?
+  visible    Boolean     @default(true)
+  order      Int         @default(0)
+}
+
+// ---------- Achievements ----------
+
+model Achievement {
+  id         String      @id @default(cuid())
+  modeId     String
+  mode       ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  title      String
+  description String?    @default("")
+  year       String?
+  visible    Boolean     @default(true)
+  order      Int         @default(0)
+}
+
+// ---------- Section visibility / ordering (global, per-section on a mode page) ----------
+
+model SectionConfig {
+  id       String  @id @default(cuid())
+  modeId   String  // "editor" | "analyst" | "developer" | "global"
+  section  String  // e.g. "hero" | "projects" | "skills" | "certificates" | "papers" | "achievements" | "contact"
+  visible  Boolean @default(true)
+  order    Int     @default(0)
+
+  @@unique([modeId, section])
+}
+
+// ---------- Theme tokens (future-flexible; admin can tweak accent colors etc.) ----------
+
+model ThemeToken {
+  id     String @id @default(cuid())
+  key    String @unique // e.g. "editor.accent", "analyst.accent", "developer.accent"
+  value  String
+}

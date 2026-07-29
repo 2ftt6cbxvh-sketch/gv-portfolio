@@ -1,5 +1,6 @@
 import "./base.css";
 import "./style.css";
+import SessionProviderWrapper from "@/components/admin/SessionProviderWrapper";
 
 export const metadata = {
   title: "GV — Ganesh Varma",
@@ -15,7 +16,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <a href="#stage" className="skip-link">Skip to content</a>
-        {children}
+        <SessionProviderWrapper>{children}</SessionProviderWrapper>
       </body>
     </html>
   );
