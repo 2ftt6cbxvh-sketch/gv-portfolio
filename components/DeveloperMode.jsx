@@ -1,8 +1,12 @@
+import { useState } from "react";
+import UnityGame from "./UnityGame";
+
 export default function DeveloperMode({ data }) {
   const d = data;
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
+  const [loadGame, setLoadGame] = useState(false);
 
   return (
     <div className="mode-view" id="mode-developer" data-theme="developer">
@@ -27,6 +31,22 @@ export default function DeveloperMode({ data }) {
         </div>
       </section>
 
+      <section className="section wrap" aria-labelledby="dev-sim-title">
+        <div className="section-head">
+          <h3 className="section-head__title" id="dev-sim-title">Featured Simulation — Conway's Game of Life (3D, Unity)</h3>
+        </div>
+        <p className="hero-mode__lede" style={{ marginBottom: "var(--space-6)" }}>
+          GPU-instanced 3D cellular automaton built in Unity, compiled to WebGL and running live in this page.
+        </p>
+        {loadGame ? (
+          <UnityGame buildName="GameOfLife3D" title="Conway's Game of Life — 3D" />
+        ) : (
+          <button className="admin-btn admin-btn--primary" onClick={() => setLoadGame(true)}>
+            ▶ Load simulation
+          </button>
+        )}
+      </section>
+
       {showProjects && d.projects.length > 0 && (
         <section className="section wrap" aria-labelledby="dev-projects-title">
           <div className="section-head">
@@ -39,6 +59,7 @@ export default function DeveloperMode({ data }) {
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
+                  {p.description ? <p className="project-row__desc">{p.description}</p> : null}
                   <div className="project-row__stack">
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
                   </div>
