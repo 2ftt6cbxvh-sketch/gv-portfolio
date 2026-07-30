@@ -34,8 +34,10 @@ export default function EditorCinematicToggle() {
       {/* Anamorphic Letterbox Bars Overlay */}
       <div className={`cinematic-bars ${active ? "is-active" : ""}`} aria-hidden="true">
         <div className="cinematic-bar cinematic-bar--top">
-          <span className="cinematic-rec-dot" />
-          <span className="cinematic-rec-text">REC [2.39:1 ANAMORPHIC]</span>
+          <div className="cinematic-rec-status">
+            <span className="cinematic-rec-dot" />
+            <span className="cinematic-rec-text">REC [2.39:1 ANAMORPHIC]</span>
+          </div>
           <span className="cinematic-timecode">00:04:12:18</span>
         </div>
         <div className="cinematic-bar cinematic-bar--bottom">

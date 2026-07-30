@@ -1342,28 +1342,31 @@
   align-items: center;
   gap: 6px;
   margin-left: auto;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: transparent;
+  background: color-mix(in oklab, var(--color-surface) 60%, transparent);
+  backdrop-filter: blur(8px);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   cursor: pointer;
+  z-index: 60;
   transition: all 250ms ease;
 }
 .cinematic-toggle-btn:hover,
 .cinematic-toggle-btn.is-active {
   border-color: var(--color-accent);
   color: var(--color-accent);
-  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 15%, transparent);
+  box-shadow: 0 0 14px color-mix(in oklab, var(--color-accent) 30%, transparent);
 }
 
 .cinematic-bars {
   pointer-events: none;
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 40;
   opacity: 0;
   transition: opacity 500ms var(--ease-out);
 }
@@ -1375,7 +1378,6 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 80px;
   background: #000;
   display: flex;
   align-items: center;
@@ -1384,15 +1386,26 @@
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.55);
 }
 .cinematic-bar--top {
   top: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 60px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 .cinematic-bar--bottom {
   bottom: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  height: 52px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cinematic-rec-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .cinematic-rec-dot {
@@ -1404,11 +1417,21 @@
   animation: blink 1s steps(1) infinite;
 }
 
+/* Hide center mode label in top nav when cinematic mode is active to prevent overlap */
+body.is-cinematic-mode #nav-mode-label {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 body.is-cinematic-mode {
-  --color-bg: #040307;
+  --color-bg: #030206;
 }
 body.is-cinematic-mode .mode-view--editor {
-  padding-block: 90px;
+  padding-top: 80px;
+  padding-bottom: 74px;
+}
+body.is-cinematic-mode .mode-view--editor .hero-mode--editor {
+  min-height: calc(92dvh - 120px);
 }
 
 
