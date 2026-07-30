@@ -208,7 +208,7 @@ export default function EditorMode({ data, features }) {
         </section>
       )}
 
-      {features?.flags?.journey_map?.enabled !== false && features?.milestones?.length > 0 && (
+      {features?.milestones?.length > 0 && (
         <section className="section wrap">
           <JourneyMap milestones={features.milestones} accent={d.accent} />
         </section>

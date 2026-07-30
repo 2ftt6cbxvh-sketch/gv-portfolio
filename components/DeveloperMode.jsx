@@ -191,7 +191,8 @@ export default function DeveloperMode({ data, features }) {
         </section>
       )}
 
-      {features?.flags?.journey_map?.enabled !== false && features?.milestones?.length > 0 && (
+      {/* Journey map: show when milestones exist — per-milestone Show/Hide in admin is the control */}
+      {features?.milestones?.length > 0 && (
         <section className="section wrap">
           <JourneyMap milestones={features.milestones} accent={d.accent} />
         </section>
