@@ -7,10 +7,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Ties four .film-reel tracks inside `rootSelector` to scroll progress.
- * Scrub-based (no rAF math), paused entirely when off-screen.
- * Each reel moves at a different speed, direction, and Y-offset for cinematic
- * parallax depth. Respects reduced-motion and simplifies on touch/small screens.
+ * Ties four .film-reel tracks inside `rootSelector` to scroll progress & velocity.
+ * Moves film reels in parallax and accelerates track speed & rotation dynamics
+ * when user scrolls rapidly.
  */
 export function useFilmReelScroll(rootSelector) {
   useEffect(() => {
@@ -42,7 +41,6 @@ export function useFilmReelScroll(rootSelector) {
         rotFrom: "-0.3deg", rotTo: "0.3deg",
         scrub: 1.1,
       },
-      // Extra deep-back layer (very slow, opposite direction)
       !isCompact && {
         el: root.querySelector("#reel-deep .film-reel__track"),
         from: "-2%", to: "8%",
@@ -66,12 +64,30 @@ export function useFilmReelScroll(rootSelector) {
             start: "top bottom",
             end: "bottom top",
             scrub: t.scrub,
+            onUpdate: (self) => {
+              // Dynamic velocity acceleration on scroll speed
+              const vel = Math.min(Math.abs(self.getVelocity() / 300), 4);
+              if (vel > 0.5) {
+                gsap.to(t.el, {
+                  scaleY: 1 + vel * 0.02,
+                  skewX: vel * (t.scrub > 1 ? 0.3 : -0.3),
+                  duration: 0.2,
+                  overwrite: "auto",
+                });
+              } else {
+                gsap.to(t.el, {
+                  scaleY: 1,
+                  skewX: 0,
+                  duration: 0.4,
+                  overwrite: "auto",
+                });
+              }
+            },
           },
         }
       )
     );
 
-    // Subtle opacity pulse on the mid reel tied to scroll velocity
     const midTrack = root.querySelector("#reel-mid");
     let opacityTween;
     if (midTrack) {

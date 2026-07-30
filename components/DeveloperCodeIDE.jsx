@@ -24,11 +24,13 @@ export default function DeveloperCodeIDE() {
     { type: "info", text: "Connected to ganeshvarma.in [Session: v5.0.5]\nType 'help' to see available terminal commands." }
   ]);
 
-  const outputEndRef = useRef(null);
+  const terminalBodyRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
-    outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
+    }
   }, [logs]);
 
   const handleCommand = (cmdStr) => {
@@ -145,6 +147,7 @@ export default function DeveloperCodeIDE() {
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleCommand(input);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -202,7 +205,7 @@ export default function DeveloperCodeIDE() {
           </span>
         </div>
         <div style={{ fontSize: "0.72rem", color: "rgba(57,255,136,0.6)" }}>
-          CLI v5.0.5
+          CLI v5.0.6
         </div>
       </div>
 
@@ -247,6 +250,7 @@ export default function DeveloperCodeIDE() {
 
       {/* Terminal Output Area */}
       <div
+        ref={terminalBodyRef}
         style={{
           padding: 16,
           maxHeight: 360,

@@ -95,11 +95,16 @@ export default function EditorMode({ data, features }) {
                 className="project-row"
                 key={p.index}
                 onClick={() => setSelectedProject(p)}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", position: "relative" }}
               >
                 <span className="project-row__index">{p.index}</span>
-                <div>
-                  <h4 className="project-row__title">{p.title}</h4>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                    <h4 className="project-row__title" style={{ margin: 0 }}>{p.title}</h4>
+                    <span className="slate-focus-badge" style={{ fontSize: "0.68rem", fontFamily: "var(--font-mono)", color: "var(--color-accent)", border: "1px solid var(--color-accent)", padding: "1px 6px", borderRadius: 4, opacity: 0.85 }}>
+                      [ 🎬 FOCUS :: 24FPS ]
+                    </span>
+                  </div>
                   {p.description ? <p className="project-row__desc">{p.description}</p> : null}
                   <div className="project-row__stack">
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}

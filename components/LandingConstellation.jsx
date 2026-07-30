@@ -2,9 +2,9 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Interactive Particle Constellation Canvas for Landing Page.
- * Renders particles floating in space that dynamically draw neon connecting
- * lines when mouse cursor approaches or between neighboring nodes.
+ * Interactive Particle Constellation Canvas with Cursor Spark Trail.
+ * Renders floating particles with dynamic line connections AND glowing spark
+ * trail particles that emit from the user's cursor.
  */
 export default function LandingConstellation({ accentColor = "#00f0ff" }) {
   const canvasRef = useRef(null);
@@ -28,11 +28,25 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
 
     // Mouse coordinates relative to canvas
     const mouse = { x: -1000, y: -1000, radius: 180 };
+    const sparks = [];
 
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
+
+      // Spawn 2 spark particles per mouse move
+      for (let i = 0; i < 2; i++) {
+        sparks.push({
+          x: mouse.x,
+          y: mouse.y,
+          vx: (Math.random() - 0.5) * 1.8,
+          vy: (Math.random() - 0.5) * 1.8 - 0.4,
+          life: 1.0,
+          decay: Math.random() * 0.03 + 0.025,
+          size: Math.random() * 2.5 + 1,
+        });
+      }
     };
 
     const handleMouseLeave = () => {
@@ -57,7 +71,29 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Update and draw particles
+      // Render and update spark trail particles
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life -= s.decay;
+
+        if (s.life <= 0) {
+          sparks.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+        ctx.fillStyle = accentColor;
+        ctx.globalAlpha = s.life * 0.85;
+        ctx.shadowColor = accentColor;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Update and draw constellation particles
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -138,7 +174,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         inset: 0,
         pointerEvents: "none",
         zIndex: 0,
-        opacity: 0.7,
+        opacity: 0.8,
       }}
     />
   );

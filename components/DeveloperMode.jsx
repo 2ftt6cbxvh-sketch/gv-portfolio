@@ -7,6 +7,7 @@ import ProjectModal from "./ProjectModal";
 import JourneyMap from "./JourneyMap";
 import DeveloperCodeIDE from "./DeveloperCodeIDE";
 import CertModal from "./CertModal";
+import TextScramble from "./TextScramble";
 
 export default function DeveloperMode({ data, features }) {
   const d = data;
@@ -85,7 +86,9 @@ export default function DeveloperMode({ data, features }) {
               >
                 <span className="project-row__index">{p.index}</span>
                 <div>
-                  <h4 className="project-row__title">{p.title}</h4>
+                  <h4 className="project-row__title">
+                    <TextScramble text={p.title} />
+                  </h4>
                   {p.description ? <p className="project-row__desc">{p.description}</p> : null}
                   <div className="project-row__stack">
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
