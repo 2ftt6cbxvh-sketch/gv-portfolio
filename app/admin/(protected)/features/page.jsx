@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 
 const REQUIRED_FLAGS = [
+  { key: "signature_intro", name: "Full-Screen Signature Scribble Intro", defaultEnabled: true },
   { key: "constellation_bg", name: "Landing Particle Constellation Canvas", defaultEnabled: true },
   { key: "kinetic_headline", name: "Landing Cyber Scramble Sub-Headline", defaultEnabled: true },
   { key: "status_pill", name: "Landing Status Indicator Pill", defaultEnabled: true },
@@ -15,6 +16,12 @@ export default function FeaturesAdminPage() {
   const [savingKey, setSavingKey] = useState(null);
 
   // Feature specific configs
+  const [signatureConfig, setSignatureConfig] = useState({
+    text: "Ganesh Varma",
+    accentColor: "#00f0ff",
+    glowColor: "#00ffff",
+  });
+
   const [statusPillConfig, setStatusPillConfig] = useState({
     status: "Available for Opportunities",
     location: "Liverpool, UK & India",
@@ -53,6 +60,18 @@ export default function FeaturesAdminPage() {
           setFlags(mergedFlags);
 
           // Populate sub-configs from metadata
+          const sigFlag = flagMap.get("signature_intro");
+          if (sigFlag && sigFlag.metadata) {
+            try {
+              const parsed = typeof sigFlag.metadata === "string" ? JSON.parse(sigFlag.metadata) : sigFlag.metadata;
+              setSignatureConfig({
+                text: parsed.text || "Ganesh Varma",
+                accentColor: parsed.accentColor || "#00f0ff",
+                glowColor: parsed.glowColor || "#00ffff",
+              });
+            } catch (e) {}
+          }
+
           const statusFlag = flagMap.get("status_pill");
           if (statusFlag && statusFlag.metadata) {
             try {
@@ -98,26 +117,53 @@ export default function FeaturesAdminPage() {
   const handleToggle = async (key, currentEnabled) => {
     setSavingKey(key);
     try {
-      const existingFlag = flags.find((f) => f.key === key);
+      const newEnabled = !currentEnabled;
+      const targetFlag = flags.find((f) => f.key === key);
+
       const res = await fetch("/api/admin/features", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           key,
-          enabled: !currentEnabled,
-          metadata: existingFlag?.metadata || "",
+          enabled: newEnabled,
+          metadata: targetFlag?.metadata || "",
         }),
       });
+
       if (res.ok) {
-        setFlags(flags.map((f) => (f.key === key ? { ...f, enabled: !currentEnabled } : f)));
+        setFlags((prev) =>
+          prev.map((f) => (f.key === key ? { ...f, enabled: newEnabled } : f))
+        );
       }
     } catch (e) {
-      alert("Failed to update feature toggle.");
+      alert("Failed to update feature flag.");
     }
     setSavingKey(null);
   };
 
-  const handleSaveStatusPill = async () => {
+  const handleSaveSignatureMetadata = async () => {
+    setSavingKey("signature_intro");
+    try {
+      const currentFlag = flags.find((f) => f.key === "signature_intro");
+      const res = await fetch("/api/admin/features", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "signature_intro",
+          enabled: currentFlag?.enabled !== false,
+          metadata: JSON.stringify(signatureConfig),
+        }),
+      });
+      if (res.ok) {
+        alert("Signature Intro settings updated successfully! Changes are live on frontend.");
+      }
+    } catch (e) {
+      alert("Failed to save signature intro settings.");
+    }
+    setSavingKey(null);
+  };
+
+  const handleSaveStatusPillMetadata = async () => {
     setSavingKey("status_pill");
     try {
       const currentFlag = flags.find((f) => f.key === "status_pill");
@@ -131,7 +177,7 @@ export default function FeaturesAdminPage() {
         }),
       });
       if (res.ok) {
-        alert("Landing status pill updated successfully! Changes are live on frontend.");
+        alert("Status pill settings updated successfully! Changes are live on frontend.");
       }
     } catch (e) {
       alert("Failed to save status pill settings.");
@@ -139,14 +185,11 @@ export default function FeaturesAdminPage() {
     setSavingKey(null);
   };
 
-  const handleSaveKineticHeadline = async () => {
+  const handleSaveKineticMetadata = async () => {
     setSavingKey("kinetic_headline");
     try {
+      const rolesArray = kineticConfig.rolesStr.split(",").map((s) => s.trim()).filter(Boolean);
       const currentFlag = flags.find((f) => f.key === "kinetic_headline");
-      const rolesArray = kineticConfig.rolesStr
-        .split(",")
-        .map((r) => r.trim())
-        .filter((r) => r.length > 0);
 
       const res = await fetch("/api/admin/features", {
         method: "PATCH",
@@ -222,136 +265,211 @@ export default function FeaturesAdminPage() {
             </div>
 
             <button
-              onClick={() => handleToggle(flag.key, flag.enabled)}
+              type="button"
+              className={`admin-btn ${flag.enabled !== false ? "admin-btn--primary" : ""}`}
+              onClick={() => handleToggle(flag.key, flag.enabled !== false)}
               disabled={savingKey === flag.key}
-              className={`admin-btn ${flag.enabled ? "admin-btn--primary" : ""}`}
-              style={{ minWidth: 140 }}
             >
-              {savingKey === flag.key ? "Saving..." : flag.enabled ? "ACTIVE (ON)" : "DISABLED (OFF)"}
+              {savingKey === flag.key
+                ? "Saving..."
+                : flag.enabled !== false
+                ? "ENABLED (Click to Disable)"
+                : "DISABLED (Click to Enable)"}
             </button>
           </div>
         ))}
       </div>
 
-      {/* Customize Status Indicator Pill */}
+      {/* 0. Signature Intro Config */}
       <div className="admin-card" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 8 }}>🟢 Customize Status Indicator Pill</h3>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>✍️ Signature Scribble Intro Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
-          Edit the status message and location shown on the landing page header.
+          Edit the signature intro text, stroke accent, and particle glow colors.
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "grid", gap: 14 }}>
           <div>
-            <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Status Text</label>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Signature Name / Text
+            </label>
+            <input
+              type="text"
+              className="admin-input"
+              value={signatureConfig.text}
+              onChange={(e) => setSignatureConfig({ ...signatureConfig, text: e.target.value })}
+              placeholder="e.g. Ganesh Varma"
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Stroke Accent Color
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={signatureConfig.accentColor}
+                onChange={(e) => setSignatureConfig({ ...signatureConfig, accentColor: e.target.value })}
+                placeholder="#00f0ff"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Particle Glow Color
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={signatureConfig.glowColor}
+                onChange={(e) => setSignatureConfig({ ...signatureConfig, glowColor: e.target.value })}
+                placeholder="#00ffff"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveSignatureMetadata}
+            disabled={savingKey === "signature_intro"}
+          >
+            {savingKey === "signature_intro" ? "Saving..." : "Save Signature Settings"}
+          </button>
+        </div>
+      </div>
+
+      {/* 1. Status Pill Config */}
+      <div className="admin-card" style={{ marginBottom: 24 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>🟢 Status Pill Customization</h3>
+        <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
+          Edit the live status message and location shown on the landing page pill.
+        </p>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Status Text
+            </label>
             <input
               type="text"
               className="admin-input"
               value={statusPillConfig.status}
               onChange={(e) => setStatusPillConfig({ ...statusPillConfig, status: e.target.value })}
-              placeholder="Available for Opportunities"
-              style={{ width: "100%", padding: 8 }}
+              placeholder="e.g. Available for Opportunities"
             />
           </div>
+
           <div>
-            <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Location Text</label>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Location Text
+            </label>
             <input
               type="text"
               className="admin-input"
               value={statusPillConfig.location}
               onChange={(e) => setStatusPillConfig({ ...statusPillConfig, location: e.target.value })}
-              placeholder="Liverpool, UK & India"
-              style={{ width: "100%", padding: 8 }}
+              placeholder="e.g. Liverpool, UK &amp; India"
             />
           </div>
-        </div>
 
-        <button
-          onClick={handleSaveStatusPill}
-          disabled={savingKey === "status_pill"}
-          className="admin-btn admin-btn--primary"
-        >
-          {savingKey === "status_pill" ? "Saving..." : "Save Status Pill Settings"}
-        </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveStatusPillMetadata}
+            disabled={savingKey === "status_pill"}
+          >
+            {savingKey === "status_pill" ? "Saving..." : "Save Status Pill Settings"}
+          </button>
+        </div>
       </div>
 
-      {/* Customize Kinetic Headline Roles */}
+      {/* 2. Kinetic Roles Config */}
       <div className="admin-card" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 8 }}>⚡ Customize Kinetic Scramble Headline Roles</h3>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>⚡ Kinetic Headline Roles Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
-          Provide a comma-separated list of roles that cycle on the landing page sub-headline.
+          Comma-separated list of roles that scramble sequentially under your name.
         </p>
 
-        <div className="admin-form-group" style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Roles / Titles (comma separated)</label>
-          <textarea
-            className="admin-input"
-            rows={3}
-            value={kineticConfig.rolesStr}
-            onChange={(e) => setKineticConfig({ rolesStr: e.target.value })}
-            placeholder="🎬 Video Director & Film Editor, 📊 Data Science & AI Architect, 💻 Full-Stack Software Engineer"
-            style={{ width: "100%", padding: 8 }}
-          />
-        </div>
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Roles (Comma Separated)
+            </label>
+            <textarea
+              className="admin-input"
+              rows={3}
+              value={kineticConfig.rolesStr}
+              onChange={(e) => setKineticConfig({ rolesStr: e.target.value })}
+            />
+          </div>
 
-        <button
-          onClick={handleSaveKineticHeadline}
-          disabled={savingKey === "kinetic_headline"}
-          className="admin-btn admin-btn--primary"
-        >
-          {savingKey === "kinetic_headline" ? "Saving..." : "Save Kinetic Roles"}
-        </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveKineticMetadata}
+            disabled={savingKey === "kinetic_headline"}
+          >
+            {savingKey === "kinetic_headline" ? "Saving..." : "Save Kinetic Roles"}
+          </button>
+        </div>
       </div>
 
-      {/* Customize Video Showreel */}
+      {/* 3. Video Showreel Config */}
       <div className="admin-card">
-        <h3 style={{ marginTop: 0, marginBottom: 8 }}>🎬 Editor Video Showreel Settings</h3>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>🎬 Editor Mode Video Showreel Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
-          Control the video embed URL, title, and description displayed in Editor Mode.
+          Edit the embed YouTube URL, title, and description for the video player.
         </p>
 
-        <div className="admin-form-group" style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Video Embed URL (YouTube/Vimeo)</label>
-          <input
-            type="text"
-            className="admin-input"
-            value={videoConfig.url}
-            onChange={(e) => setVideoConfig({ ...videoConfig, url: e.target.value })}
-            placeholder="https://www.youtube.com/watch?v=..."
-            style={{ width: "100%", padding: 8 }}
-          />
-        </div>
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              YouTube Embed / Video URL
+            </label>
+            <input
+              type="text"
+              className="admin-input"
+              value={videoConfig.url}
+              onChange={(e) => setVideoConfig({ ...videoConfig, url: e.target.value })}
+              placeholder="e.g. https://www.youtube.com/embed/YOUR_VIDEO_ID"
+            />
+          </div>
 
-        <div className="admin-form-group" style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Showreel Title</label>
-          <input
-            type="text"
-            className="admin-input"
-            value={videoConfig.title}
-            onChange={(e) => setVideoConfig({ ...videoConfig, title: e.target.value })}
-            placeholder="GV Creative Direction Reel"
-            style={{ width: "100%", padding: 8 }}
-          />
-        </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Showreel Title
+            </label>
+            <input
+              type="text"
+              className="admin-input"
+              value={videoConfig.title}
+              onChange={(e) => setVideoConfig({ ...videoConfig, title: e.target.value })}
+            />
+          </div>
 
-        <div className="admin-form-group" style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Showreel Description</label>
-          <textarea
-            className="admin-input"
-            value={videoConfig.desc}
-            onChange={(e) => setVideoConfig({ ...videoConfig, desc: e.target.value })}
-            rows={3}
-            placeholder="Selected cuts from live stage productions and fest directions."
-            style={{ width: "100%", padding: 8 }}
-          />
-        </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Showreel Description
+            </label>
+            <textarea
+              className="admin-input"
+              rows={2}
+              value={videoConfig.desc}
+              onChange={(e) => setVideoConfig({ ...videoConfig, desc: e.target.value })}
+            />
+          </div>
 
-        <button
-          onClick={handleSaveVideoMetadata}
-          disabled={savingKey === "video_reel"}
-          className="admin-btn admin-btn--primary"
-        >
-          {savingKey === "video_reel" ? "Saving..." : "Save Showreel Settings"}
-        </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveVideoMetadata}
+            disabled={savingKey === "video_reel"}
+          >
+            {savingKey === "video_reel" ? "Saving..." : "Save Showreel Settings"}
+          </button>
+        </div>
       </div>
     </div>
   );

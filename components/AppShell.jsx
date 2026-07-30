@@ -6,6 +6,7 @@ import DeveloperMode from "./DeveloperMode";
 import EditorMode from "./EditorMode";
 import AnalystMode from "./AnalystMode";
 import CursorGlow from "./CursorGlow";
+import SignatureIntro from "./SignatureIntro";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -18,6 +19,7 @@ export default function AppShell({ data }) {
   const introLogoEngineRef = useRef(null);
   const navLogoEngineRef = useRef(null);
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
+  const [showSignatureIntro, setShowSignatureIntro] = useState(true);
 
   useEffect(() => {
     // Add timestamp to prevent browser or CDN from caching stale feature flags
@@ -50,6 +52,20 @@ export default function AppShell({ data }) {
     .map((m) => (m.accent ? `[data-mode="${m.id}"]{--color-accent:${m.accent};--color-accent-hover:color-mix(in oklab, ${m.accent} 75%, white);--logo-color:${m.accent};--spark-color:color-mix(in oklab, ${m.accent} 85%, white);}` : ""))
     .join("\n");
 
+  const sigFlag = features.flags?.signature_intro;
+  let sigText = "Ganesh Varma";
+  let sigAccent = landingLogoColor;
+  let sigGlow = landingSparkColor;
+
+  if (sigFlag?.metadata) {
+    try {
+      const parsed = typeof sigFlag.metadata === "string" ? JSON.parse(sigFlag.metadata) : sigFlag.metadata;
+      if (parsed.text) sigText = parsed.text;
+      if (parsed.accentColor) sigAccent = parsed.accentColor;
+      if (parsed.glowColor) sigGlow = parsed.glowColor;
+    } catch (e) {}
+  }
+
   return (
     <div id="stage" data-mode="" ref={stageRef}>
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
@@ -72,13 +88,21 @@ export default function AppShell({ data }) {
         </button>
       </nav>
 
-      <div
-        id="intro"
-        ref={introRef}
-        style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "#06050a" }}
-      >
-        <GVLogo id="intro-logo" size={140} engineRef={introLogoEngineRef} opts={{ ambient: false }} aria-label="GV logo animating in" />
-      </div>
+      {/* Signature Scribble Intro Overlay */}
+      {showSignatureIntro && sigFlag?.enabled !== false ? (
+        <SignatureIntro
+          text={sigText}
+          accentColor={sigAccent}
+          glowColor={sigGlow}
+          onComplete={() => setShowSignatureIntro(false)}
+        />
+      ) : (
+        <div
+          id="intro"
+          ref={introRef}
+          style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "#06050a", pointerEvents: "none", opacity: 0 }}
+        />
+      )}
 
       <ModeSelector selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
 
