@@ -353,26 +353,42 @@ export default function FeaturesAdminPage() {
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
                 Stroke Accent Color
               </label>
-              <input
-                type="text"
-                className="admin-input"
-                value={signatureConfig.accentColor}
-                onChange={(e) => setSignatureConfig({ ...signatureConfig, accentColor: e.target.value })}
-                placeholder="#00f0ff"
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="color"
+                  value={signatureConfig.accentColor.startsWith("#") && signatureConfig.accentColor.length === 7 ? signatureConfig.accentColor : "#00f0ff"}
+                  onChange={(e) => setSignatureConfig({ ...signatureConfig, accentColor: e.target.value })}
+                  style={{ width: 40, height: 38, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 2 }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={signatureConfig.accentColor}
+                  onChange={(e) => setSignatureConfig({ ...signatureConfig, accentColor: e.target.value })}
+                  placeholder="#00f0ff"
+                />
+              </div>
             </div>
 
             <div>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
                 Particle Glow Color
               </label>
-              <input
-                type="text"
-                className="admin-input"
-                value={signatureConfig.glowColor}
-                onChange={(e) => setSignatureConfig({ ...signatureConfig, glowColor: e.target.value })}
-                placeholder="#00ffff"
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="color"
+                  value={signatureConfig.glowColor.startsWith("#") && signatureConfig.glowColor.length === 7 ? signatureConfig.glowColor : "#00ffff"}
+                  onChange={(e) => setSignatureConfig({ ...signatureConfig, glowColor: e.target.value })}
+                  style={{ width: 40, height: 38, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 2 }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={signatureConfig.glowColor}
+                  onChange={(e) => setSignatureConfig({ ...signatureConfig, glowColor: e.target.value })}
+                  placeholder="#00ffff"
+                />
+              </div>
             </div>
           </div>
 
@@ -489,25 +505,38 @@ export default function FeaturesAdminPage() {
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
                 Ticker Accent Color
               </label>
-              <input
-                type="text"
-                className="admin-input"
-                value={analystTickerConfig.accentColor}
-                onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, accentColor: e.target.value })}
-                placeholder="#33c7b0"
-              />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="color"
+                  value={analystTickerConfig.accentColor.startsWith("#") && analystTickerConfig.accentColor.length === 7 ? analystTickerConfig.accentColor : "#33c7b0"}
+                  onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, accentColor: e.target.value })}
+                  style={{ width: 40, height: 38, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 2 }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={analystTickerConfig.accentColor}
+                  onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, accentColor: e.target.value })}
+                  placeholder="#33c7b0"
+                />
+              </div>
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                Scroll Speed (Seconds per cycle)
-              </label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <label style={{ fontSize: 13, fontWeight: 600 }}>Scroll Speed</label>
+                <span style={{ fontSize: 12, color: "#33c7b0", fontFamily: "var(--font-mono)", fontWeight: 600 }}>
+                  ⚡ {analystTickerConfig.speedSec}s / cycle
+                </span>
+              </div>
               <input
-                type="text"
-                className="admin-input"
-                value={analystTickerConfig.speedSec}
+                type="range"
+                min="5"
+                max="60"
+                step="1"
+                value={parseInt(analystTickerConfig.speedSec, 10) || 24}
                 onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, speedSec: e.target.value })}
-                placeholder="24"
+                style={{ width: "100%", height: 38, cursor: "pointer", accentColor: "#33c7b0" }}
               />
             </div>
           </div>
