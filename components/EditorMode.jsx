@@ -18,12 +18,14 @@ export default function EditorMode({ data }) {
 
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
+  const showCertificates = d.sections.certificates?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
   const reelStrips = REEL_STRIPS;
 
   return (
     <div className="mode-view mode-view--editor" id="mode-editor" data-theme="editor">
       <div className="reel-field" aria-hidden="true">
+        <FilmReel id="reel-deep" labels={reelStrips} className="film-reel--deep" />
         <FilmReel id="reel-back" labels={reelStrips} className="film-reel--back" />
         <FilmReel id="reel-mid" labels={reelStrips} className="film-reel--mid" />
         <FilmReel id="reel-front" labels={reelStrips} className="film-reel--front" />
@@ -70,6 +72,7 @@ export default function EditorMode({ data }) {
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
+                  {p.description ? <p className="project-row__desc">{p.description}</p> : null}
                   <div className="project-row__stack">
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
                   </div>
@@ -99,6 +102,29 @@ export default function EditorMode({ data }) {
                     <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
                   </div>
                 ))}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showCertificates && d.certificates.length > 0 && (
+        <section className="section wrap" aria-labelledby="editor-certs-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="editor-certs-title">Credentials</h3>
+            <span className="section-head__num">/ {String(d.certificates.length).padStart(2, "0")}</span>
+          </div>
+          <div className="cert-grid">
+            {d.certificates.map((c) => (
+              <div className="cert-card" key={c.title}>
+                <h4 className="cert-card__title">{c.title}</h4>
+                <div className="cert-card__meta">
+                  {c.issuer && <span>{c.issuer}</span>}
+                  {c.year && <span>{c.year}</span>}
+                </div>
+                {c.url && (
+                  <a className="cert-card__link" href={c.url} target="_blank" rel="noopener noreferrer">View credential →</a>
+                )}
               </div>
             ))}
           </div>

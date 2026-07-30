@@ -97,6 +97,7 @@ export default function AnalystMode({ data }) {
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
+                  {p.description ? <p className="project-row__desc">{p.description}</p> : null}
                   <div className="project-row__stack">
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
                   </div>
