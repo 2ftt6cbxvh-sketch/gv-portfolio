@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 /**
- * SignatureIntro Component (v5.1.4):
- * Eliminates initial paint flash by setting initial opacity: 0 directly on JSX elements.
- * Guarantees zero initial text flash before signature stroke draw begins.
+ * SignatureIntro Component (v5.1.6):
+ * Authentic cursive handwriting signature intro.
+ * Keyed by text prop to guarantee zero default-text flash when custom text is saved in Admin.
  */
 export default function SignatureIntro({
   text = "Ganesh Varma",
@@ -52,7 +52,7 @@ export default function SignatureIntro({
       strokeLength = textEl.getComputedTextLength() * 3 || 1000;
     } catch (e) {}
 
-    // Initially setup strokeDashoffset while element is still hidden
+    // Initially setup strokeDashoffset while element is invisible
     gsap.set(textEl, {
       strokeDasharray: strokeLength,
       strokeDashoffset: strokeLength,
@@ -217,7 +217,7 @@ export default function SignatureIntro({
         }}
       />
 
-      {/* Cursive Signature SVG — 100% Readable "Ganesh Varma" */}
+      {/* Cursive Signature SVG — 100% Readable */}
       <div style={{ position: "relative", width: "90%", maxWidth: 680, height: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <svg
           viewBox="0 0 700 180"
@@ -239,7 +239,7 @@ export default function SignatureIntro({
             strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ opacity: 0 }} /* INITIALLY INVISIBLE ON PAINT TO PREVENT FLASH */
+            style={{ opacity: 0 }}
           >
             {text}
           </text>

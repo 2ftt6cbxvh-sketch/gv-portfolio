@@ -95,6 +95,7 @@ export default function AppShell({ data }) {
       {/* Signature Scribble Intro Overlay */}
       {showSignatureIntro && sigFlag?.enabled !== false ? (
         <SignatureIntro
+          key={sigText}
           text={sigText}
           accentColor={sigAccent}
           glowColor={sigGlow}
