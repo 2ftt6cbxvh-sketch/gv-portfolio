@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 /**
- * SignatureIntro Component (v5.1.3):
- * Single-execution guaranteed signature intro.
- * Uses hasStartedRef & onCompleteRef to ensure GSAP timeline ONLY runs ONCE
- * on initial mount and NEVER restarts when parent components re-render.
+ * SignatureIntro Component (v5.1.4):
+ * Eliminates initial paint flash by setting initial opacity: 0 directly on JSX elements.
+ * Guarantees zero initial text flash before signature stroke draw begins.
  */
 export default function SignatureIntro({
   text = "Ganesh Varma",
@@ -21,7 +20,6 @@ export default function SignatureIntro({
   const hasStartedRef = useRef(false);
   const onCompleteRef = useRef(onComplete);
 
-  // Always keep onCompleteRef up to date without triggering useEffect re-runs
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
@@ -29,7 +27,6 @@ export default function SignatureIntro({
   const [isSkipped, setIsSkipped] = useState(false);
 
   useEffect(() => {
-    // Guard against React strict mode or parent re-renders running animation twice
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
 
@@ -55,11 +52,12 @@ export default function SignatureIntro({
       strokeLength = textEl.getComputedTextLength() * 3 || 1000;
     } catch (e) {}
 
+    // Initially setup strokeDashoffset while element is still hidden
     gsap.set(textEl, {
       strokeDasharray: strokeLength,
       strokeDashoffset: strokeLength,
-      opacity: 1,
       fillOpacity: 0,
+      opacity: 1, // Make visible ONLY after strokeDashoffset is prepared!
     });
 
     const particles = [];
@@ -175,7 +173,7 @@ export default function SignatureIntro({
       cancelAnimationFrame(animFrameId);
       tl.kill();
     };
-  }, []); // Empty dependency array ensures single execution on mount!
+  }, []);
 
   return (
     <div
@@ -241,6 +239,7 @@ export default function SignatureIntro({
             strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"
+            style={{ opacity: 0 }} /* INITIALLY INVISIBLE ON PAINT TO PREVENT FLASH */
           >
             {text}
           </text>
