@@ -203,6 +203,7 @@ export default function EditorMode({ data }) {
 
       <footer className="footer-mode wrap">
         <span>GV / Editor</span>
+        <span className="version-badge">v4.7.1</span>
         <span>© 2026</span>
       </footer>
     </div>

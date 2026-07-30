@@ -196,6 +196,7 @@ export default function DeveloperMode({ data }) {
 
       <footer className="footer-mode wrap">
         <span>GV / Software Developer</span>
+        <span className="version-badge">v4.7.1</span>
         <span>© 2026</span>
       </footer>
     </div>

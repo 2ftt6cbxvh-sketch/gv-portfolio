@@ -253,6 +253,7 @@ export default function AnalystMode({ data }) {
 
       <footer className="footer-mode wrap">
         <span>GV / Data Analyst</span>
+        <span className="version-badge">v4.7.1</span>
         <span>© 2026</span>
       </footer>
     </div>

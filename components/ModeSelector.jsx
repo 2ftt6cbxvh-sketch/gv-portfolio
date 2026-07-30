@@ -168,6 +168,12 @@ export default function ModeSelector({ selectorRef, person, modes }) {
           </article>
         ))}
       </div>
+
+      <footer className="selector__footer">
+        <span className="selector__footer-brand">{person.name} / {person.initials}</span>
+        <span className="version-badge">v4.7.1</span>
+        <span className="selector__footer-copy">© 2026</span>
+      </footer>
     </main>
   );
 }
