@@ -78,7 +78,11 @@ export default function AnalystMode({ data, features }) {
       </section>
 
       {/* Cyber Data Ticker Ribbon */}
-      <AnalystDataTicker />
+      <AnalystDataTicker
+        metadata={features?.flags?.analyst_ticker?.metadata}
+        enabled={features?.flags?.analyst_ticker?.enabled !== false}
+        accent={d.accent || "#33c7b0"}
+      />
 
       <section className="section wrap" aria-labelledby="analyst-stats-title">
         <div className="section-head">

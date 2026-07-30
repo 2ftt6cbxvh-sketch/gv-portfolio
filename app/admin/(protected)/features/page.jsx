@@ -7,6 +7,7 @@ const REQUIRED_FLAGS = [
   { key: "kinetic_headline", name: "Landing Cyber Scramble Sub-Headline", defaultEnabled: true },
   { key: "status_pill", name: "Landing Status Indicator Pill", defaultEnabled: true },
   { key: "hotkey_hints", name: "Landing Keyboard Shortcut Hints ([1], [2], [3])", defaultEnabled: true },
+  { key: "analyst_ticker", name: "Analyst Mode Data Ticker Ribbon", defaultEnabled: true },
   { key: "video_reel", name: "Editor Video Showreel Player", defaultEnabled: true },
 ];
 
@@ -31,8 +32,14 @@ export default function FeaturesAdminPage() {
     rolesStr: "🎬 Video Director & Film Editor, 📊 Data Science & AI Architect, 💻 Full-Stack Software Engineer, 🚀 Computational Intelligence Researcher",
   });
 
+  const [analystTickerConfig, setAnalystTickerConfig] = useState({
+    itemsStr: "⚡ LIVE DATA STREAM, 📊 15+ DATASETS PROCESSED, 🧠 99.4% AI MODEL ACCURACY, 🔬 MRI BRAIN TUMOR CLASSIFICATION, 🎓 LIVERPOOL MSc RESEARCH, 📈 PYTHON / PYTORCH / SQL / POWER BI",
+    accentColor: "#33c7b0",
+    speedSec: "24",
+  });
+
   const [videoConfig, setVideoConfig] = useState({
-    url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    url: "https://www.youtube.com/embed/dQw4w9WgWgXQ",
     title: "GV Creative Direction Reel",
     desc: "Selected cuts from 8 national BTech fests and stage productions.",
   });
@@ -95,6 +102,18 @@ export default function FeaturesAdminPage() {
             } catch (e) {
               setKineticConfig({ rolesStr: kineticFlag.metadata });
             }
+          }
+
+          const analystFlag = flagMap.get("analyst_ticker");
+          if (analystFlag && analystFlag.metadata) {
+            try {
+              const parsed = typeof analystFlag.metadata === "string" ? JSON.parse(analystFlag.metadata) : analystFlag.metadata;
+              setAnalystTickerConfig({
+                itemsStr: Array.isArray(parsed.items) ? parsed.items.join(", ") : parsed.itemsStr || analystTickerConfig.itemsStr,
+                accentColor: parsed.accentColor || "#33c7b0",
+                speedSec: String(parsed.speedSec || "24"),
+              });
+            } catch (e) {}
           }
 
           const videoFlag = flagMap.get("video_reel");
@@ -205,6 +224,34 @@ export default function FeaturesAdminPage() {
       }
     } catch (e) {
       alert("Failed to save kinetic headline settings.");
+    }
+    setSavingKey(null);
+  };
+
+  const handleSaveAnalystTickerMetadata = async () => {
+    setSavingKey("analyst_ticker");
+    try {
+      const itemsArray = analystTickerConfig.itemsStr.split(",").map((s) => s.trim()).filter(Boolean);
+      const currentFlag = flags.find((f) => f.key === "analyst_ticker");
+
+      const res = await fetch("/api/admin/features", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "analyst_ticker",
+          enabled: currentFlag?.enabled !== false,
+          metadata: JSON.stringify({
+            items: itemsArray,
+            accentColor: analystTickerConfig.accentColor,
+            speedSec: analystTickerConfig.speedSec,
+          }),
+        }),
+      });
+      if (res.ok) {
+        alert("Analyst Data Ticker settings updated successfully! Changes are live on frontend.");
+      }
+    } catch (e) {
+      alert("Failed to save Analyst Data Ticker settings.");
     }
     setSavingKey(null);
   };
@@ -416,7 +463,67 @@ export default function FeaturesAdminPage() {
         </div>
       </div>
 
-      {/* 3. Video Showreel Config */}
+      {/* 3. Analyst Data Ticker Config */}
+      <div className="admin-card" style={{ marginBottom: 24 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>📊 Analyst Mode Data Ticker Customization</h3>
+        <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
+          Edit the scrolling ticker items, accent color, and scroll animation duration.
+        </p>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Ticker Items (Comma Separated)
+            </label>
+            <textarea
+              className="admin-input"
+              rows={3}
+              value={analystTickerConfig.itemsStr}
+              onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, itemsStr: e.target.value })}
+              placeholder="e.g. ⚡ LIVE DATA STREAM, 📊 15+ DATASETS PROCESSED, 🧠 99.4% ML ACCURACY"
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Ticker Accent Color
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={analystTickerConfig.accentColor}
+                onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, accentColor: e.target.value })}
+                placeholder="#33c7b0"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Scroll Speed (Seconds per cycle)
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={analystTickerConfig.speedSec}
+                onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, speedSec: e.target.value })}
+                placeholder="24"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveAnalystTickerMetadata}
+            disabled={savingKey === "analyst_ticker"}
+          >
+            {savingKey === "analyst_ticker" ? "Saving..." : "Save Analyst Ticker Settings"}
+          </button>
+        </div>
+      </div>
+
+      {/* 4. Video Showreel Config */}
       <div className="admin-card">
         <h3 style={{ marginTop: 0, marginBottom: 6 }}>🎬 Editor Mode Video Showreel Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
