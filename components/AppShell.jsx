@@ -26,12 +26,18 @@ export default function AppShell({ data }) {
 
   const modeById = Object.fromEntries(data.modes.map((m) => [m.id, m]));
 
-  // Theme accent colors are admin-managed (Theme tokens page) and stored in
-  // the DB. Rendered as a CSS override per [data-mode] so the whole existing
-  // token system (--color-accent / --color-accent-hover, used throughout
-  // style.css) picks up live values with zero CSS file changes.
-  const themeCss = data.modes
-    .map((m) => (m.accent ? `[data-mode="${m.id}"]{--color-accent:${m.accent};--color-accent-hover:color-mix(in oklab, ${m.accent} 75%, white);}` : ""))
+  const landingLogoColor  = data.themeTokens?.["landing.logoColor"]  || "#00f0ff";
+  const landingSparkColor = data.themeTokens?.["landing.sparkColor"] || "#00ffff";
+
+  const themeCss = `
+    :root, [data-mode=""] {
+      --landing-logo-color: ${landingLogoColor};
+      --landing-spark-color: ${landingSparkColor};
+      --logo-color: var(--landing-logo-color);
+      --spark-color: var(--landing-spark-color);
+    }
+  ` + data.modes
+    .map((m) => (m.accent ? `[data-mode="${m.id}"]{--color-accent:${m.accent};--color-accent-hover:color-mix(in oklab, ${m.accent} 75%, white);--logo-color:${m.accent};--spark-color:color-mix(in oklab, ${m.accent} 85%, white);}` : ""))
     .join("\n");
 
   return (

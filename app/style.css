@@ -139,28 +139,83 @@
 }
 .nav__back:hover { color: var(--color-accent); }
 
-/* ============ LOGO ============ */
+/* ============ LOGO SYSTEM ============ */
 .gv-logo-wrap {
   position: relative;
-  width: var(--logo-size, 64px);
-  height: var(--logo-size, 64px);
+  width: var(--logo-size, 44px);
+  height: var(--logo-size, 44px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: filter 250ms var(--ease-out);
 }
 .gv-logo-wrap svg { width: 100%; height: 100%; overflow: visible; }
-.gv-logo__core { fill: none; stroke: var(--color-text); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
-.gv-logo__energy {
-  fill: none; stroke: var(--color-accent); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round;
-  opacity: 0; filter: blur(0.4px);
-  mix-blend-mode: screen;
+
+.gv-logo__frame {
+  fill: none;
+  stroke: var(--logo-color, var(--color-accent, #00f0ff));
+  stroke-width: 2.2;
+  opacity: 0.65;
+  transition: stroke 300ms var(--ease-out), opacity 300ms var(--ease-out);
 }
-.gv-logo-wrap.is-idle .gv-logo__core { filter: drop-shadow(0 0 4px color-mix(in oklab, var(--color-accent) 30%, transparent)); }
+.gv-logo__frame-inner {
+  fill: none;
+  stroke: var(--logo-color, var(--color-accent, #00f0ff));
+  stroke-width: 1.2;
+  stroke-dasharray: 6 4;
+  opacity: 0.35;
+  transition: stroke 300ms var(--ease-out);
+}
+.gv-logo__node {
+  fill: var(--logo-color, var(--color-accent, #00f0ff));
+  opacity: 0.85;
+  transition: fill 300ms var(--ease-out);
+}
+.gv-logo__monogram-g,
+.gv-logo__monogram-v {
+  fill: none;
+  stroke: var(--logo-color, var(--color-accent, #00f0ff));
+  stroke-width: 4.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 5px var(--logo-color, var(--color-accent, #00f0ff)));
+  transition: stroke 300ms var(--ease-out), filter 300ms var(--ease-out);
+}
+.gv-logo__accent-slash {
+  stroke: var(--spark-color, #00ffff);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  transition: stroke 300ms var(--ease-out);
+}
+.gv-logo__spark {
+  fill: none;
+  stroke: var(--spark-color, #00ffff);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  pointer-events: none;
+  transition: stroke 300ms var(--ease-out);
+}
+
+.gv-logo-wrap:hover,
+.gv-logo-wrap.is-hovered {
+  filter: drop-shadow(0 0 16px var(--spark-color, #00ffff));
+}
+.gv-logo-wrap:hover .gv-logo__monogram-g,
+.gv-logo-wrap:hover .gv-logo__monogram-v,
+.gv-logo-wrap.is-hovered .gv-logo__monogram-g,
+.gv-logo-wrap.is-hovered .gv-logo__monogram-v {
+  filter: drop-shadow(0 0 14px var(--spark-color, #00ffff)) drop-shadow(0 0 28px var(--logo-color, var(--color-accent, #00f0ff)));
+}
+.gv-logo-wrap:hover .gv-logo__frame,
+.gv-logo-wrap.is-hovered .gv-logo__frame {
+  opacity: 0.95;
+}
 
 #intro-logo { width: 140px; height: 140px; }
-#intro-logo .gv-logo__core { stroke-dasharray: 340; stroke-dashoffset: 340; }
 
 /* ============ MODE-SELECT ============ */
 .selector {
