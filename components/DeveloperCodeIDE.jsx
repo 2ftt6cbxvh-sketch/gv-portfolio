@@ -21,7 +21,7 @@ export default function DeveloperCodeIDE() {
   const [cmdHistory, setCmdHistory] = useState([]);
   const [logs, setLogs] = useState([
     { type: "system", text: SYSTEM_HEADER },
-    { type: "info", text: "Connected to ganeshvarma.in [Session: v5.0.5]\nType 'help' to see available terminal commands." }
+    { type: "info", text: "Connected to ganeshvarma.in [Session: v5.0.9]\nType 'help' to see available terminal commands." }
   ]);
 
   const terminalBodyRef = useRef(null);
@@ -205,7 +205,7 @@ export default function DeveloperCodeIDE() {
           </span>
         </div>
         <div style={{ fontSize: "0.72rem", color: "rgba(57,255,136,0.6)" }}>
-          CLI v5.0.6
+          CLI v5.0.9
         </div>
       </div>
 
@@ -296,7 +296,6 @@ export default function DeveloperCodeIDE() {
             }}
           />
         </div>
-        <div ref={outputEndRef} />
       </div>
     </div>
   );
