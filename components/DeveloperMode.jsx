@@ -6,6 +6,7 @@ export default function DeveloperMode({ data }) {
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
   const showCertificates = d.sections.certificates?.visible !== false;
+  const showAchievements = d.sections.achievements?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
   const [loadGame, setLoadGame] = useState(false);
 
@@ -113,6 +114,26 @@ export default function DeveloperMode({ data }) {
                 {c.url && (
                   <a className="cert-card__link" href={c.url} target="_blank" rel="noopener noreferrer">View credential →</a>
                 )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showAchievements && d.achievements.length > 0 && (
+        <section className="section wrap" aria-labelledby="dev-achievements-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="dev-achievements-title">Achievements</h3>
+            <span className="section-head__num">/ {String(d.achievements.length).padStart(2, "0")}</span>
+          </div>
+          <div className="achievements-list">
+            {d.achievements.map((a) => (
+              <div className="achievement-row" key={a.title}>
+                <div className="achievement-row__body">
+                  <h4 className="achievement-row__title">{a.title}</h4>
+                  {a.description && <p className="achievement-row__desc">{a.description}</p>}
+                </div>
+                {a.year && <span className="achievement-row__year">{a.year}</span>}
               </div>
             ))}
           </div>
