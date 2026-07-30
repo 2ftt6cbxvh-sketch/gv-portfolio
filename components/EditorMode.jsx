@@ -14,6 +14,9 @@ import EditorAudioWave from "./EditorAudioWave";
 import EditorFilmGrainToggle from "./EditorFilmGrainToggle";
 import CertModal from "./CertModal";
 
+// Not admin-editable this phase (per "do not overengineer" — cinematic
+// flavor text, not core content). Keyed by mode id so this file stays
+// generic if reused; only "editor" ships a story beat today.
 const REEL_STRIPS = ["STAGE", "DECOR", "TEAMS", "BUDGET", "EDIT", "CUES", "GUESTS", "DANCE"];
 const STORY = {
   heading: "Eight fests. One thread.",
@@ -24,7 +27,6 @@ export default function EditorMode({ data, features }) {
   const d = data;
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedCert, setSelectedCert] = useState(null);
-
   useFilmReelScroll("#mode-editor");
   useEditorAnimations("#mode-editor");
 
@@ -47,13 +49,12 @@ export default function EditorMode({ data, features }) {
       </div>
 
       <section className="hero-mode hero-mode--editor wrap">
-        <div className="hero-mode__role" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div className="hero-mode__role" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span className="label-mono">{d.role}</span>
           <EditorAudioWave accent={d.accent || "#a56ce8"} />
           <EditorFilmGrainToggle />
           <EditorCinematicToggle />
         </div>
-
         <h2 className="hero-mode__title hero-mode__title--editor">
           {d.heroTitlePrefix}
           <span className="accent accent--script">{d.heroTitleAccent}</span>
@@ -78,16 +79,15 @@ export default function EditorMode({ data, features }) {
         </div>
       </section>
 
-      {/* Video Showreel Player */}
       {features?.flags?.video_reel?.enabled !== false && (
         <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} />
       )}
 
-      {showProjects && d.projects && d.projects.length > 0 && (
-        <section className="section wrap" aria-labelledby="editor-projects-title">
+      {showProjects && d.projects.length > 0 && (
+        <section className="section wrap" aria-labelledby="editor-productions-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="editor-projects-title">Selected Projects</h3>
-            <span className="section-head__num">/ 01</span>
+            <h3 className="section-head__title" id="editor-productions-title">Selected Productions</h3>
+            <span className="section-head__num">/ 03</span>
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
@@ -95,27 +95,22 @@ export default function EditorMode({ data, features }) {
                 className="project-row"
                 key={p.index}
                 onClick={() => setSelectedProject(p)}
-                style={{ willChange: "transform", cursor: "pointer" }}
+                style={{ cursor: "pointer" }}
               >
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
-                  <p className="project-row__sub">{p.sub}</p>
-                </div>
-                <div className="project-row__tags">
-                  {p.tags.map((t) => (
-                    <span className="tag" key={t}>{t}</span>
-                  ))}
+                  {p.description ? <p className="project-row__desc">{p.description}</p> : null}
+                  <div className="project-row__stack">
+                    {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
+                  </div>
                 </div>
                 <button
-                  type="button"
-                  className="project-row__preview-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedProject(p);
-                  }}
+                  className="project-row__arrow project-row__cta"
+                  onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
+                  aria-label={`Preview ${p.title}`}
                 >
-                  Preview ↗
+                  Preview Details →
                 </button>
               </div>
             ))}
@@ -123,88 +118,93 @@ export default function EditorMode({ data, features }) {
         </section>
       )}
 
-      {showSkills && d.skills && d.skills.length > 0 && (
+      {showSkills && d.skills.length > 0 && (
         <section className="section wrap" aria-labelledby="editor-skills-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="editor-skills-title">Technical Skills</h3>
-            <span className="section-head__num">/ 02</span>
-          </div>
-          <div className="skills-grid">
-            {d.skills.map((grp) => (
-              <div className="skill-group" key={grp.title}>
-                <h4 className="skill-group__title">{grp.title}</h4>
-                <div className="skill-bars">
-                  {grp.bars.map((b) => (
-                    <div className="skill-bar" key={b.label} data-level={b.level}>
-                      <div className="skill-bar__info">
-                        <span className="skill-bar__label">{b.label}</span>
-                        <span className="skill-bar__pct">{b.level}%</span>
-                      </div>
-                      <div className="skill-bar__track">
-                        <div className="skill-bar__fill" style={{ width: `${b.level}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {showCertificates && d.certificates && d.certificates.length > 0 && (
-        <section className="section wrap" aria-labelledby="editor-certs-title">
-          <div className="section-head">
-            <h3 className="section-head__title" id="editor-certs-title">Certifications</h3>
+            <h3 className="section-head__title" id="editor-skills-title">Craft</h3>
             <span className="section-head__num">/ 03</span>
           </div>
-          <div className="certs-grid">
-            {d.certificates.map((c) => (
-              <div className="cert-card" key={c.id || c.name} onClick={() => setSelectedCert(c)} style={{ cursor: "pointer" }}>
-                <div className="cert-card__org">{c.org}</div>
-                <h4 className="cert-card__name">{c.name}</h4>
-                <div className="cert-card__year">{c.year}</div>
+          <div className="skills-grid">
+            {d.skills.map((block) => (
+              <div className="skill-block" key={block.label}>
+                <div className="skill-block__label">{block.label}</div>
+                {block.bars.map((bar) => (
+                  <div className="skill-bar" data-level={bar.level} key={bar.name}>
+                    <span className="skill-bar__name">{bar.name}</span>
+                    <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {showAchievements && d.achievements && d.achievements.length > 0 && (
-        <section className="section wrap" aria-labelledby="editor-achieve-title">
+      {showCertificates && d.certificates.length > 0 && (
+        <section className="section wrap" aria-labelledby="editor-certs-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="editor-achieve-title">Key Achievements</h3>
-            <span className="section-head__num">/ 04</span>
+            <h3 className="section-head__title" id="editor-certs-title">Credentials</h3>
+            <span className="section-head__num">/ {String(d.certificates.length).padStart(2, "0")}</span>
           </div>
-          <div className="certs-grid">
-            {d.achievements.map((a) => (
-              <div className="cert-card" key={a.id || a.title} onClick={() => setSelectedCert(a)} style={{ cursor: "pointer" }}>
-                <div className="cert-card__org">{a.year}</div>
-                <h4 className="cert-card__name">{a.title}</h4>
-                {a.desc && <p style={{ fontSize: "0.82rem", color: "var(--color-fg-muted)", margin: "6px 0 0 0" }}>{a.desc}</p>}
+          <div className="cert-grid">
+            {d.certificates.map((c) => (
+              <div className="cert-card" key={c.title} onClick={() => setSelectedCert(c)} style={{ cursor: "pointer" }}>
+                <h4 className="cert-card__title">{c.title}</h4>
+                <div className="cert-card__meta">
+                  {c.issuer && <span>{c.issuer}</span>}
+                  {c.year && <span>{c.year}</span>}
+                </div>
+                {c.url && (
+                  <a className="cert-card__link" href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>View credential →</a>
+                )}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {showEducation && d.education && d.education.length > 0 && (
+      {showAchievements && d.achievements.length > 0 && (
+        <section className="section wrap" aria-labelledby="editor-achievements-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="editor-achievements-title">Highlights</h3>
+            <span className="section-head__num">/ {String(d.achievements.length).padStart(2, "0")}</span>
+          </div>
+          <div className="achievements-list">
+            {d.achievements.map((a) => (
+              <div className="achievement-row" key={a.title} onClick={() => setSelectedCert(a)} style={{ cursor: "pointer" }}>
+                <div className="achievement-row__body">
+                  <h4 className="achievement-row__title">{a.title}</h4>
+                  {a.description && <p className="achievement-row__desc">{a.description}</p>}
+                </div>
+                {a.year && <span className="achievement-row__year">{a.year}</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showEducation && d.education?.length > 0 && (
         <section className="section wrap" aria-labelledby="editor-edu-title">
           <div className="section-head">
             <h3 className="section-head__title" id="editor-edu-title">Education</h3>
-            <span className="section-head__num">/ 05</span>
+            <span className="section-head__num">/ {String(d.education.length).padStart(2, "0")}</span>
           </div>
           <div className="edu-list">
-            {d.education.map((e) => (
-              <div className="edu-row" key={e.degree}>
+            {d.education.map((e, i) => (
+              <div className="edu-row" key={i}>
                 <div className="edu-row__years">
-                  <span>{e.years}</span>
-                  <span className="edu-row__inst">{e.institution}</span>
+                  <span>{e.startYear || "—"}</span>
+                  <span className="edu-row__divider">→</span>
+                  <span>{e.endYear || "—"}</span>
                 </div>
-                <div className="edu-row__main">
-                  <h4 className="edu-row__degree">{e.degree}</h4>
-                  {e.location && <span className="edu-row__loc">{e.location}</span>}
-                  {e.field && <p className="edu-row__field">{e.field}</p>}
+                <div className="edu-row__body">
+                  <h4 className="edu-row__institution">{e.institution}</h4>
+                  {(e.degree || e.field) && (
+                    <p className="edu-row__degree">
+                      {e.degree}{e.degree && e.field ? " · " : ""}{e.field}
+                    </p>
+                  )}
+                  {e.description && <p className="edu-row__desc">{e.description}</p>}
                 </div>
                 {e.grade && <span className="edu-row__grade">{e.grade}</span>}
               </div>
@@ -239,7 +239,11 @@ export default function EditorMode({ data, features }) {
         <span>© 2026</span>
       </footer>
 
-      <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        accentColor={d.accent}
+      />
       <CertModal cert={selectedCert} onClose={() => setSelectedCert(null)} />
     </div>
   );

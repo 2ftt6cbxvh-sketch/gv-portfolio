@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { SITE_VERSION } from "@/lib/version";
 import UnityGame from "./UnityGame";
@@ -14,27 +12,27 @@ export default function DeveloperMode({ data, features }) {
   const d = data;
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedCert, setSelectedCert] = useState(null);
-
   useDeveloperAnimations("#mode-developer");
-
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
-  const showPapers = d.sections.papers?.visible !== false;
   const showCertificates = d.sections.certificates?.visible !== false;
   const showAchievements = d.sections.achievements?.visible !== false;
   const showEducation = d.sections.education?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
+  const [loadGame, setLoadGame] = useState(false);
 
   return (
-    <div className="mode-view mode-view--developer" id="mode-developer" data-theme="developer">
+    <div className="mode-view" id="mode-developer" data-theme="developer">
       <DeveloperParallax />
-
-      <section className="hero-mode hero-mode--developer wrap">
+      <section className="hero-mode wrap">
         <div className="hero-mode__role">
           <span className="label-mono">{d.role}</span>
           <span className="hero-mode__cursor" aria-hidden="true" />
         </div>
-        <h2 className="hero-mode__title hero-mode__title--developer">
+        <h2
+          className="hero-mode__title"
+          data-text={`${d.heroTitlePrefix}${d.heroTitleAccent}${d.heroTitleSuffix}`}
+        >
           {d.heroTitlePrefix}
           <span className="accent">{d.heroTitleAccent}</span>
           {d.heroTitleSuffix}
@@ -55,11 +53,27 @@ export default function DeveloperMode({ data, features }) {
         <DeveloperCodeIDE />
       </section>
 
-      {showProjects && d.projects && d.projects.length > 0 && (
+      <section className="section wrap" aria-labelledby="dev-sim-title">
+        <div className="section-head">
+          <h3 className="section-head__title" id="dev-sim-title">Featured Simulation — Conway's Game of Life (3D, Unity)</h3>
+        </div>
+        <p className="hero-mode__lede" style={{ marginBottom: "var(--space-6)" }}>
+          GPU-instanced 3D cellular automaton built in Unity, compiled to WebGL and running live in this page.
+        </p>
+        {loadGame ? (
+          <UnityGame buildName="GameOfLife3D1" title="Conway's Game of Life — 3D" />
+        ) : (
+          <button className="admin-btn admin-btn--primary" onClick={() => setLoadGame(true)}>
+            ▶ Load simulation
+          </button>
+        )}
+      </section>
+
+      {showProjects && d.projects.length > 0 && (
         <section className="section wrap" aria-labelledby="dev-projects-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="dev-projects-title">Shipped Projects</h3>
-            <span className="section-head__num">/ 01</span>
+            <h3 className="section-head__title" id="dev-projects-title">Selected Work</h3>
+            <span className="section-head__num">/ 03</span>
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
@@ -72,22 +86,17 @@ export default function DeveloperMode({ data, features }) {
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
-                  <p className="project-row__sub">{p.sub}</p>
-                </div>
-                <div className="project-row__tags">
-                  {p.tags.map((t) => (
-                    <span className="tag" key={t}>{t}</span>
-                  ))}
+                  {p.description ? <p className="project-row__desc">{p.description}</p> : null}
+                  <div className="project-row__stack">
+                    {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
+                  </div>
                 </div>
                 <button
-                  type="button"
-                  className="project-row__preview-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedProject(p);
-                  }}
+                  className="project-row__arrow project-row__cta"
+                  onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
+                  aria-label={`Preview ${p.title}`}
                 >
-                  Preview ↗
+                  Preview Details →
                 </button>
               </div>
             ))}
@@ -95,123 +104,93 @@ export default function DeveloperMode({ data, features }) {
         </section>
       )}
 
-      {showSkills && d.skills && d.skills.length > 0 && (
+      {showSkills && d.skills.length > 0 && (
         <section className="section wrap" aria-labelledby="dev-skills-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="dev-skills-title">Engineering Stack</h3>
-            <span className="section-head__num">/ 02</span>
+            <h3 className="section-head__title" id="dev-skills-title">Capabilities</h3>
+            <span className="section-head__num">/ 03</span>
           </div>
           <div className="skills-grid">
-            {d.skills.map((grp) => (
-              <div className="skill-group" key={grp.title}>
-                <h4 className="skill-group__title">{grp.title}</h4>
-                <div className="skill-bars">
-                  {grp.bars.map((b) => (
-                    <div className="skill-bar" key={b.label} data-level={b.level}>
-                      <div className="skill-bar__info">
-                        <span className="skill-bar__label">{b.label}</span>
-                        <span className="skill-bar__pct">{b.level}%</span>
-                      </div>
-                      <div className="skill-bar__track">
-                        <div className="skill-bar__fill" style={{ width: `${b.level}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {d.skills.map((block) => (
+              <div className="skill-block" key={block.label}>
+                <div className="skill-block__label">{block.label}</div>
+                {block.bars.map((bar) => (
+                  <div className="skill-bar" data-level={bar.level} key={bar.name}>
+                    <span className="skill-bar__name">{bar.name}</span>
+                    <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* Interactive Canvas/Unity Game Section */}
-      <section className="section wrap" aria-labelledby="dev-game-title">
-        <div className="section-head">
-          <h3 className="section-head__title" id="dev-game-title">Interactive Game Sandbox</h3>
-          <span className="section-head__num">/ 03</span>
-        </div>
-        <UnityGame />
-      </section>
-
-      {showPapers && d.papers && d.papers.length > 0 && (
-        <section className="section wrap" aria-labelledby="dev-papers-title">
-          <div className="section-head">
-            <h3 className="section-head__title" id="dev-papers-title">Research &amp; Systems Papers</h3>
-            <span className="section-head__num">/ 04</span>
-          </div>
-          <div className="papers-list">
-            {d.papers.map((p) => (
-              <article className="paper-row" key={p.title}>
-                <div className="paper-row__meta">
-                  <span className="label-mono">{p.venue}</span>
-                  <span className="paper-row__year">{p.year}</span>
-                </div>
-                <h4 className="paper-row__title">{p.title}</h4>
-                <p className="paper-row__abstract">{p.abstract}</p>
-                {p.url && (
-                  <a className="paper-row__link" href={p.url} target="_blank" rel="noopener noreferrer">
-                    Read Paper ↗
-                  </a>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {showCertificates && d.certificates && d.certificates.length > 0 && (
+      {showCertificates && d.certificates.length > 0 && (
         <section className="section wrap" aria-labelledby="dev-certs-title">
           <div className="section-head">
             <h3 className="section-head__title" id="dev-certs-title">Certifications</h3>
-            <span className="section-head__num">/ 05</span>
+            <span className="section-head__num">/ {String(d.certificates.length).padStart(2, "0")}</span>
           </div>
-          <div className="certs-grid">
+          <div className="cert-grid">
             {d.certificates.map((c) => (
-              <div className="cert-card" key={c.id || c.name} onClick={() => setSelectedCert(c)} style={{ cursor: "pointer" }}>
-                <div className="cert-card__org">{c.org}</div>
-                <h4 className="cert-card__name">{c.name}</h4>
-                <div className="cert-card__year">{c.year}</div>
+              <div className="cert-card" key={c.title} onClick={() => setSelectedCert(c)} style={{ cursor: "pointer" }}>
+                <h4 className="cert-card__title">{c.title}</h4>
+                <div className="cert-card__meta">
+                  {c.issuer && <span>{c.issuer}</span>}
+                  {c.year && <span>{c.year}</span>}
+                </div>
+                {c.url && (
+                  <a className="cert-card__link" href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>View credential →</a>
+                )}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {showAchievements && d.achievements && d.achievements.length > 0 && (
-        <section className="section wrap" aria-labelledby="dev-achieve-title">
+      {showAchievements && d.achievements.length > 0 && (
+        <section className="section wrap" aria-labelledby="dev-achievements-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="dev-achieve-title">Key Achievements</h3>
-            <span className="section-head__num">/ 06</span>
+            <h3 className="section-head__title" id="dev-achievements-title">Achievements</h3>
+            <span className="section-head__num">/ {String(d.achievements.length).padStart(2, "0")}</span>
           </div>
-          <div className="certs-grid">
+          <div className="achievements-list">
             {d.achievements.map((a) => (
-              <div className="cert-card" key={a.id || a.title} onClick={() => setSelectedCert(a)} style={{ cursor: "pointer" }}>
-                <div className="cert-card__org">{a.year}</div>
-                <h4 className="cert-card__name">{a.title}</h4>
-                {a.desc && <p style={{ fontSize: "0.82rem", color: "var(--color-fg-muted)", margin: "6px 0 0 0" }}>{a.desc}</p>}
+              <div className="achievement-row" key={a.title} onClick={() => setSelectedCert(a)} style={{ cursor: "pointer" }}>
+                <div className="achievement-row__body">
+                  <h4 className="achievement-row__title">{a.title}</h4>
+                  {a.description && <p className="achievement-row__desc">{a.description}</p>}
+                </div>
+                {a.year && <span className="achievement-row__year">{a.year}</span>}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {showEducation && d.education && d.education.length > 0 && (
+      {showEducation && d.education?.length > 0 && (
         <section className="section wrap" aria-labelledby="dev-edu-title">
           <div className="section-head">
             <h3 className="section-head__title" id="dev-edu-title">Education</h3>
-            <span className="section-head__num">/ 07</span>
+            <span className="section-head__num">/ {String(d.education.length).padStart(2, "0")}</span>
           </div>
           <div className="edu-list">
-            {d.education.map((e) => (
-              <div className="edu-row" key={e.degree}>
+            {d.education.map((e, i) => (
+              <div className="edu-row" key={i}>
                 <div className="edu-row__years">
-                  <span>{e.years}</span>
-                  <span className="edu-row__inst">{e.institution}</span>
+                  <span>{e.startYear || "—"}</span>
+                  <span className="edu-row__divider">→</span>
+                  <span>{e.endYear || "—"}</span>
                 </div>
-                <div className="edu-row__main">
-                  <h4 className="edu-row__degree">{e.degree}</h4>
-                  {e.location && <span className="edu-row__loc">{e.location}</span>}
-                  {e.field && <p className="edu-row__field">{e.field}</p>}
+                <div className="edu-row__body">
+                  <h4 className="edu-row__institution">{e.institution}</h4>
+                  {(e.degree || e.field) && (
+                    <p className="edu-row__degree">
+                      {e.degree}{e.degree && e.field ? " · " : ""}{e.field}
+                    </p>
+                  )}
+                  {e.description && <p className="edu-row__desc">{e.description}</p>}
                 </div>
                 {e.grade && <span className="edu-row__grade">{e.grade}</span>}
               </div>
@@ -220,6 +199,7 @@ export default function DeveloperMode({ data, features }) {
         </section>
       )}
 
+      {/* Journey map: show when milestones exist — per-milestone Show/Hide in admin is the control */}
       {features?.milestones?.length > 0 && (
         <section className="section wrap">
           <JourneyMap milestones={features.milestones} accent={d.accent} />
@@ -230,7 +210,9 @@ export default function DeveloperMode({ data, features }) {
         <section className="section wrap wrap--default" aria-labelledby="dev-contact-title">
           <div className="contact-block">
             <h3 className="contact-block__title" id="dev-contact-title">{d.contactHeading}</h3>
-            <a className="contact-block__email" href={`mailto:${d.email || "gp61080@gmail.com"}`}>{d.email || "gp61080@gmail.com"}</a>
+            <a className="contact-block__email" href={`mailto:${d.email || "gp61080@gmail.com"}`}>
+              {d.email || "gp61080@gmail.com"}
+            </a>
             <div className="social-row">
               {d.social.map((s) => (
                 <a href={s.href} target="_blank" rel="noopener noreferrer" key={s.label}>{s.label}</a>
@@ -246,7 +228,11 @@ export default function DeveloperMode({ data, features }) {
         <span>© 2026</span>
       </footer>
 
-      <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        accentColor={d.accent}
+      />
       <CertModal cert={selectedCert} onClose={() => setSelectedCert(null)} />
     </div>
   );

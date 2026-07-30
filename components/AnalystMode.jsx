@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
 import { SITE_VERSION } from "@/lib/version";
 import { drawLineChart } from "./motion";
@@ -11,6 +10,9 @@ import JourneyMap from "./JourneyMap";
 import AnalystDataTicker from "./AnalystDataTicker";
 import CertModal from "./CertModal";
 
+// KPI strip — not DB-modeled (would be overengineering per the brief), but
+// each value is derived from real content already in the database (project
+// count, skill count, top skill average) so it never drifts from admin edits.
 function buildStats(d) {
   const allLevels = d.skills.flatMap((g) => g.bars.map((b) => b.level));
   const avgLevel = allLevels.length ? Math.round(allLevels.reduce((a, b) => a + b, 0) / allLevels.length) : 0;
@@ -22,38 +24,41 @@ function buildStats(d) {
   ];
 }
 
+function StatChart({ accent }) {
+  const svgRef = useRef(null);
+  useEffect(() => {
+    if (svgRef.current) drawLineChart(svgRef.current);
+  }, []);
+  return (
+    <svg ref={svgRef} className="stat-card__chart" viewBox="0 0 200 44" fill="none" aria-hidden="true">
+      <path className="analyst-cue-line" d="M2 36 L36 24 L68 28 L100 12 L132 18 L166 6 L198 2" stroke={accent || "#33c7b0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function AnalystMode({ data, features }) {
   const d = data;
-  const chartRef = useRef(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedCert, setSelectedCert] = useState(null);
-
   useAnalystAnimations("#mode-analyst");
-
-  useEffect(() => {
-    if (chartRef.current) drawLineChart(chartRef.current);
-  }, []);
-
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
-  const showPapers = d.sections.papers?.visible !== false;
   const showCertificates = d.sections.certificates?.visible !== false;
   const showAchievements = d.sections.achievements?.visible !== false;
+  const showPapers = d.sections.papers?.visible !== false;
   const showEducation = d.sections.education?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
-
   const stats = buildStats(d);
 
   return (
-    <div className="mode-view mode-view--analyst" id="mode-analyst" data-theme="analyst">
+    <div className="mode-view" id="mode-analyst" data-theme="analyst">
       <AnalystParallax />
-
-      <section className="hero-mode hero-mode--analyst wrap">
+      <section className="hero-mode wrap">
         <div className="hero-mode__role">
           <span className="label-mono">{d.role}</span>
           <span className="hero-mode__cursor" aria-hidden="true" />
         </div>
-        <h2 className="hero-mode__title hero-mode__title--analyst">
+        <h2 className="hero-mode__title">
           {d.heroTitlePrefix}
           <span className="accent">{d.heroTitleAccent}</span>
           {d.heroTitleSuffix}
@@ -67,48 +72,34 @@ export default function AnalystMode({ data, features }) {
             </span>
           ))}
         </div>
+        <div className="analyst-chart-wrap" aria-hidden="true">
+          <StatChart accent={d.accent || "#33c7b0"} />
+        </div>
       </section>
 
       {/* Cyber Data Ticker Ribbon */}
       <AnalystDataTicker />
 
-      <section className="section wrap" aria-label="Analyst Metrics Overview">
+      <section className="section wrap" aria-labelledby="analyst-stats-title">
+        <div className="section-head">
+          <h3 className="section-head__title" id="analyst-stats-title">At a Glance</h3>
+          <span className="section-head__num">/ 04</span>
+        </div>
         <div className="stats-grid">
           {stats.map((s) => (
             <div className="stat-card" key={s.label}>
-              <span className="stat-card__val">{s.value}</span>
-              <span className="stat-card__lbl">{s.label}</span>
+              <span className="stat-card__value">{s.value}</span>
+              <span className="stat-card__label">{s.label}</span>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="section wrap" aria-label="Skill Proficiency Chart">
-        <div className="analyst-chart-card">
-          <div className="analyst-chart-card__head">
-            <span className="label-mono">ANALYSIS // PROFICIENCY TRAJECTORY</span>
-            <span className="analyst-chart-card__tag">LIVE</span>
-          </div>
-          <svg className="analyst-chart-svg" viewBox="0 0 600 120" ref={chartRef} aria-hidden="true">
-            <line x1="0" y1="30" x2="600" y2="30" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-            <line x1="0" y1="60" x2="600" y2="60" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-            <line x1="0" y1="90" x2="600" y2="90" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-            <path
-              className="chart-line"
-              d="M0 100 Q150 40 300 50 T600 20"
-              fill="none"
-              stroke={d.accent}
-              strokeWidth="2.5"
-            />
-          </svg>
-        </div>
-      </section>
-
-      {showProjects && d.projects && d.projects.length > 0 && (
+      {showProjects && d.projects.length > 0 && (
         <section className="section wrap" aria-labelledby="analyst-projects-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="analyst-projects-title">Data &amp; AI Projects</h3>
-            <span className="section-head__num">/ 01</span>
+            <h3 className="section-head__title" id="analyst-projects-title">Analysis & Dashboards</h3>
+            <span className="section-head__num">/ 03</span>
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
@@ -116,27 +107,22 @@ export default function AnalystMode({ data, features }) {
                 className="project-row"
                 key={p.index}
                 onClick={() => setSelectedProject(p)}
-                style={{ willChange: "transform", cursor: "pointer" }}
+                style={{ cursor: "pointer" }}
               >
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
-                  <p className="project-row__sub">{p.sub}</p>
-                </div>
-                <div className="project-row__tags">
-                  {p.tags.map((t) => (
-                    <span className="tag" key={t}>{t}</span>
-                  ))}
+                  {p.description ? <p className="project-row__desc">{p.description}</p> : null}
+                  <div className="project-row__stack">
+                    {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
+                  </div>
                 </div>
                 <button
-                  type="button"
-                  className="project-row__preview-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedProject(p);
-                  }}
+                  className="project-row__arrow project-row__cta"
+                  onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
+                  aria-label={`Preview ${p.title}`}
                 >
-                  Preview ↗
+                  Preview Details →
                 </button>
               </div>
             ))}
@@ -144,117 +130,123 @@ export default function AnalystMode({ data, features }) {
         </section>
       )}
 
-      {showSkills && d.skills && d.skills.length > 0 && (
+      {showSkills && d.skills.length > 0 && (
         <section className="section wrap" aria-labelledby="analyst-skills-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="analyst-skills-title">Analytics &amp; Technical Skills</h3>
-            <span className="section-head__num">/ 02</span>
+            <h3 className="section-head__title" id="analyst-skills-title">Toolkit & Skill Radar</h3>
+            <span className="section-head__num">/ 03</span>
           </div>
 
-          <AnalystRadarChart skills={d.skills} accent={d.accent || "#33c7b0"} />
+          <div className="analyst-skills-layout">
+            <AnalystRadarChart skills={d.skills} accent={d.accent} />
 
-          <div className="skills-grid" style={{ marginTop: 28 }}>
-            {d.skills.map((grp) => (
-              <div className="skill-group" key={grp.title}>
-                <h4 className="skill-group__title">{grp.title}</h4>
-                <div className="skill-bars">
-                  {grp.bars.map((b) => (
-                    <div className="skill-bar" key={b.label} data-level={b.level}>
-                      <div className="skill-bar__info">
-                        <span className="skill-bar__label">{b.label}</span>
-                        <span className="skill-bar__pct">{b.level}%</span>
-                      </div>
-                      <div className="skill-bar__track">
-                        <div className="skill-bar__fill" style={{ width: `${b.level}%` }} />
-                      </div>
+            <div className="skills-grid">
+              {d.skills.map((block) => (
+                <div className="skill-block" key={block.label}>
+                  <div className="skill-block__label">{block.label}</div>
+                  {block.bars.map((bar) => (
+                    <div className="skill-bar" data-level={bar.level} key={bar.name}>
+                      <span className="skill-bar__name">{bar.name}</span>
+                      <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
                     </div>
                   ))}
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {showCertificates && d.certificates.length > 0 && (
+        <section className="section wrap" aria-labelledby="analyst-certs-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="analyst-certs-title">Certificates</h3>
+            <span className="section-head__num">/ 03</span>
+          </div>
+          <div className="cert-grid">
+            {d.certificates.map((c) => (
+              <div className="cert-card" key={c.title} onClick={() => setSelectedCert(c)} style={{ cursor: "pointer" }}>
+                <h4 className="cert-card__title">{c.title}</h4>
+                <div className="cert-card__meta">
+                  {c.issuer && <span>{c.issuer}</span>}
+                  {c.year && <span>{c.year}</span>}
+                </div>
+                {c.url && (
+                  <a className="cert-card__link" href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>View credential →</a>
+                )}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {showPapers && d.papers && d.papers.length > 0 && (
+      {showAchievements && d.achievements.length > 0 && (
+        <section className="section wrap" aria-labelledby="analyst-achievements-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="analyst-achievements-title">Achievements</h3>
+            <span className="section-head__num">/ {String(d.achievements.length).padStart(2, "0")}</span>
+          </div>
+          <div className="achievements-list">
+            {d.achievements.map((a) => (
+              <div className="achievement-row" key={a.title} onClick={() => setSelectedCert(a)} style={{ cursor: "pointer" }}>
+                <div className="achievement-row__body">
+                  <h4 className="achievement-row__title">{a.title}</h4>
+                  {a.description && <p className="achievement-row__desc">{a.description}</p>}
+                </div>
+                {a.year && <span className="achievement-row__year">{a.year}</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showPapers && d.papers.length > 0 && (
         <section className="section wrap" aria-labelledby="analyst-papers-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="analyst-papers-title">Research &amp; Publications</h3>
+            <h3 className="section-head__title" id="analyst-papers-title">Papers & Publications</h3>
             <span className="section-head__num">/ 03</span>
           </div>
           <div className="papers-list">
             {d.papers.map((p) => (
-              <article className="paper-row" key={p.title}>
-                <div className="paper-row__meta">
-                  <span className="label-mono">{p.venue}</span>
-                  <span className="paper-row__year">{p.year}</span>
+              <div className="paper-row" key={p.title}>
+                <div>
+                  <h4 className="paper-row__title">{p.title}</h4>
+                  <div className="paper-row__meta">
+                    {p.venue && <span>{p.venue}</span>}
+                    {p.year && <span>{p.year}</span>}
+                  </div>
                 </div>
-                <h4 className="paper-row__title">{p.title}</h4>
-                <p className="paper-row__abstract">{p.abstract}</p>
-                {p.url && (
-                  <a className="paper-row__link" href={p.url} target="_blank" rel="noopener noreferrer">
-                    Read Paper ↗
-                  </a>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {showCertificates && d.certificates && d.certificates.length > 0 && (
-        <section className="section wrap" aria-labelledby="analyst-certs-title">
-          <div className="section-head">
-            <h3 className="section-head__title" id="analyst-certs-title">Certifications</h3>
-            <span className="section-head__num">/ 04</span>
-          </div>
-          <div className="certs-grid">
-            {d.certificates.map((c) => (
-              <div className="cert-card" key={c.id || c.name} onClick={() => setSelectedCert(c)} style={{ cursor: "pointer" }}>
-                <div className="cert-card__org">{c.org}</div>
-                <h4 className="cert-card__name">{c.name}</h4>
-                <div className="cert-card__year">{c.year}</div>
+                {p.url ? (
+                  <a className="project-row__arrow project-row__cta" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>View Project →</a>
+                ) : null}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {showAchievements && d.achievements && d.achievements.length > 0 && (
-        <section className="section wrap" aria-labelledby="analyst-achieve-title">
-          <div className="section-head">
-            <h3 className="section-head__title" id="analyst-achieve-title">Key Achievements</h3>
-            <span className="section-head__num">/ 05</span>
-          </div>
-          <div className="certs-grid">
-            {d.achievements.map((a) => (
-              <div className="cert-card" key={a.id || a.title} onClick={() => setSelectedCert(a)} style={{ cursor: "pointer" }}>
-                <div className="cert-card__org">{a.year}</div>
-                <h4 className="cert-card__name">{a.title}</h4>
-                {a.desc && <p style={{ fontSize: "0.82rem", color: "var(--color-fg-muted)", margin: "6px 0 0 0" }}>{a.desc}</p>}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {showEducation && d.education && d.education.length > 0 && (
+      {showEducation && d.education?.length > 0 && (
         <section className="section wrap" aria-labelledby="analyst-edu-title">
           <div className="section-head">
             <h3 className="section-head__title" id="analyst-edu-title">Education</h3>
-            <span className="section-head__num">/ 06</span>
+            <span className="section-head__num">/ {String(d.education.length).padStart(2, "0")}</span>
           </div>
           <div className="edu-list">
-            {d.education.map((e) => (
-              <div className="edu-row" key={e.degree}>
+            {d.education.map((e, i) => (
+              <div className="edu-row" key={i}>
                 <div className="edu-row__years">
-                  <span>{e.years}</span>
-                  <span className="edu-row__inst">{e.institution}</span>
+                  <span>{e.startYear || "—"}</span>
+                  <span className="edu-row__divider">→</span>
+                  <span>{e.endYear || "—"}</span>
                 </div>
-                <div className="edu-row__main">
-                  <h4 className="edu-row__degree">{e.degree}</h4>
-                  {e.location && <span className="edu-row__loc">{e.location}</span>}
-                  {e.field && <p className="edu-row__field">{e.field}</p>}
+                <div className="edu-row__body">
+                  <h4 className="edu-row__institution">{e.institution}</h4>
+                  {(e.degree || e.field) && (
+                    <p className="edu-row__degree">
+                      {e.degree}{e.degree && e.field ? " · " : ""}{e.field}
+                    </p>
+                  )}
+                  {e.description && <p className="edu-row__desc">{e.description}</p>}
                 </div>
                 {e.grade && <span className="edu-row__grade">{e.grade}</span>}
               </div>
@@ -263,6 +255,7 @@ export default function AnalystMode({ data, features }) {
         </section>
       )}
 
+      {/* Journey map: show when milestones exist — per-milestone Show/Hide in admin is the control */}
       {features?.milestones?.length > 0 && (
         <section className="section wrap">
           <JourneyMap milestones={features.milestones} accent={d.accent} />
@@ -289,7 +282,11 @@ export default function AnalystMode({ data, features }) {
         <span>© 2026</span>
       </footer>
 
-      <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        accentColor={d.accent}
+      />
       <CertModal cert={selectedCert} onClose={() => setSelectedCert(null)} />
     </div>
   );
