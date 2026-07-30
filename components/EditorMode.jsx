@@ -8,6 +8,8 @@ import { useFilmReelScroll } from "./useFilmReelScroll";
 import { useEditorAnimations } from "./useEditorAnimations";
 import ProjectModal from "./ProjectModal";
 import EditorCinematicToggle from "./EditorCinematicToggle";
+import EditorVideoReel from "./EditorVideoReel";
+import JourneyMap from "./JourneyMap";
 
 // Not admin-editable this phase (per "do not overengineer" — cinematic
 // flavor text, not core content). Keyed by mode id so this file stays
@@ -18,7 +20,7 @@ const STORY = {
   body: "Across 8 national-level BTech fests, I ran the parts most people never see: the budget spreadsheet at 2am, the decor crew waiting on a call, the chief guest running late, the dance rehearsal that needed one more pass. I led the teams, held the money, coordinated every department in the room, and still sat down afterward to cut the film that made it all look effortless. That's the job -- creative direction and hard logistics, at the same time, under a clock that doesn't stop.",
 };
 
-export default function EditorMode({ data }) {
+export default function EditorMode({ data, features }) {
   const d = data;
   const [selectedProject, setSelectedProject] = useState(null);
   useFilmReelScroll("#mode-editor");
@@ -71,6 +73,10 @@ export default function EditorMode({ data }) {
           <p className="editor-story__body">{STORY.body}</p>
         </div>
       </section>
+
+      {features?.flags?.video_reel?.enabled !== false && (
+        <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} />
+      )}
 
       {showProjects && d.projects.length > 0 && (
         <section className="section wrap" aria-labelledby="editor-productions-title">
@@ -199,6 +205,12 @@ export default function EditorMode({ data }) {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {features?.flags?.journey_map?.enabled !== false && features?.milestones?.length > 0 && (
+        <section className="section wrap">
+          <JourneyMap milestones={features.milestones} accent={d.accent} />
         </section>
       )}
 

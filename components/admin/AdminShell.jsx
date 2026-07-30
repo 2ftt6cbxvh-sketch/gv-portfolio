@@ -21,6 +21,8 @@ const NAV = [
     group: "Site",
     links: [
       { href: "/admin/settings", label: "Contact & Social" },
+      { href: "/admin/features", label: "Creative Features & Toggles" },
+      { href: "/admin/journey", label: "Academic Journey Map" },
       { href: "/admin/sections", label: "Section visibility & order" },
       { href: "/admin/theme", label: "Theme tokens" },
     ],

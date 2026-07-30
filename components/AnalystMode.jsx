@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
 import { SITE_VERSION } from "@/lib/version";
 import { drawLineChart } from "./motion";
@@ -7,6 +6,7 @@ import { useAnalystAnimations } from "./useAnalystAnimations";
 import AnalystParallax from "./AnalystParallax";
 import AnalystRadarChart from "./AnalystRadarChart";
 import ProjectModal from "./ProjectModal";
+import JourneyMap from "./JourneyMap";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -34,7 +34,7 @@ function StatChart({ accent }) {
   );
 }
 
-export default function AnalystMode({ data }) {
+export default function AnalystMode({ data, features }) {
   const d = data;
   const [selectedProject, setSelectedProject] = useState(null);
   useAnalystAnimations("#mode-analyst");
@@ -246,6 +246,12 @@ export default function AnalystMode({ data }) {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {features?.flags?.journey_map?.enabled !== false && features?.milestones?.length > 0 && (
+        <section className="section wrap">
+          <JourneyMap milestones={features.milestones} accent={d.accent} />
         </section>
       )}
 

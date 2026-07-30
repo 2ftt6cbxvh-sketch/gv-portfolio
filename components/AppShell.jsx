@@ -1,6 +1,5 @@
 "use client";
-
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import GVLogo from "./GVLogo";
 import ModeSelector from "./ModeSelector";
 import DeveloperMode from "./DeveloperMode";
@@ -18,6 +17,16 @@ export default function AppShell({ data }) {
   const navBackRef = useRef(null);
   const introLogoEngineRef = useRef(null);
   const navLogoEngineRef = useRef(null);
+  const [features, setFeatures] = useState({ flags: {}, milestones: [] });
+
+  useEffect(() => {
+    fetch("/api/public/features")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData && resData.flags) setFeatures(resData);
+      })
+      .catch(() => {});
+  }, []);
 
   useSiteMotion({
     stageRef, introRef, selectorRef, navRef, navModeLabelRef, navBackRef,
@@ -70,11 +79,11 @@ export default function AppShell({ data }) {
         <GVLogo id="intro-logo" size={140} engineRef={introLogoEngineRef} opts={{ ambient: false }} aria-label="GV logo animating in" />
       </div>
 
-      <ModeSelector selectorRef={selectorRef} person={data.person} modes={data.modes} />
+      <ModeSelector selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
 
-      {modeById.editor && <EditorMode data={modeById.editor} />}
-      {modeById.analyst && <AnalystMode data={modeById.analyst} />}
-      {modeById.developer && <DeveloperMode data={modeById.developer} />}
+      {modeById.editor && <EditorMode data={modeById.editor} features={features} />}
+      {modeById.analyst && <AnalystMode data={modeById.analyst} features={features} />}
+      {modeById.developer && <DeveloperMode data={modeById.developer} features={features} />}
     </div>
   );
 }

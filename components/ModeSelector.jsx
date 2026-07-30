@@ -141,6 +141,17 @@ export default function ModeSelector({ selectorRef, person, modes }) {
             tabIndex={0}
             style={{ opacity: 0, "--portal-accent": mode.accent, "--portal-delay": `${idx * 0.12}s` }}
             key={mode.id}
+            onMouseEnter={(e) => {
+              if (selectorRef.current) {
+                selectorRef.current.style.setProperty("--hover-accent", mode.accent);
+                selectorRef.current.classList.add("has-hover-glow");
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectorRef.current) {
+                selectorRef.current.classList.remove("has-hover-glow");
+              }
+            }}
           >
             {/* Cursor-follow glow layer */}
             <div className="portal__cursor-glow" aria-hidden="true" />

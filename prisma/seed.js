@@ -212,6 +212,49 @@ async function main() {
     console.log(`Admin user already exists: ${adminEmail}`);
   }
 
+  console.log("Seeding feature flags...");
+  const featureFlags = [
+    { key: "ambient_hover", name: "Landing Ambient Hover Glow", enabled: true, metadata: "" },
+    { key: "video_reel", name: "Editor Video Showreel Player", enabled: true, metadata: JSON.stringify({ url: "https://www.youtube.com/embed/dQw4w9WgXcQ", title: "GV Creative Direction Reel", desc: "Selected cuts from 8 national BTech fests and stage productions." }) },
+    { key: "journey_map", name: "Interactive Academic & Career Roadmap", enabled: true, metadata: "" },
+  ];
+  for (const flag of featureFlags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {},
+      create: flag,
+    });
+  }
+
+  console.log("Seeding journey milestones...");
+  const journeyMilestones = [
+    {
+      year: "2020 - 2024",
+      title: "BTech in Artificial Intelligence & Data Science",
+      institution: "KL University",
+      location: "Andhra Pradesh, India",
+      description: "Spearheaded stage & event engineering across 8 national BTech fests. Built early ML models and data analysis pipelines.",
+      tags: ["AI & Data Science", "Machine Learning", "Event Direction", "Python"],
+      order: 0,
+    },
+    {
+      year: "2024 - 2026",
+      title: "MSc in Advanced Computer Science & AI",
+      institution: "University of Liverpool",
+      location: "Liverpool, United Kingdom",
+      description: "Focusing on Computational Intelligence, MRI Brain Tumor Classification, and Distributed Big Data Systems.",
+      tags: ["Deep Learning", "Medical Image AI", "Big Data", "System Design"],
+      order: 1,
+    },
+  ];
+
+  const milestoneCount = await prisma.journeyMilestone.count();
+  if (milestoneCount === 0) {
+    for (const m of journeyMilestones) {
+      await prisma.journeyMilestone.create({ data: m });
+    }
+  }
+
   console.log("Seed complete.");
 }
 

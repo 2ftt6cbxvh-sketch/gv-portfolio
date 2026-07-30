@@ -188,3 +188,30 @@ model ThemeToken {
   key    String @unique // e.g. "editor.accent", "analyst.accent", "developer.accent"
   value  String
 }
+
+// ---------- Feature Flags & Settings ----------
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique // "ambient_hover", "video_reel", "journey_map"
+  name        String
+  enabled     Boolean  @default(true)
+  metadata    String?  @default("") // JSON or text payload (e.g. video URL, title, desc)
+  updatedAt   DateTime @updatedAt
+}
+
+// ---------- Journey Map / Career Milestones ----------
+
+model JourneyMilestone {
+  id          String   @id @default(cuid())
+  year        String   // e.g. "2020 - 2024"
+  title       String   // e.g. "BTech in Artificial Intelligence & Data Science"
+  institution String   // e.g. "KL University"
+  location    String?  @default("")
+  description String?  @default("")
+  tags        String[] @default([])
+  visible     Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

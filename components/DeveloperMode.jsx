@@ -4,8 +4,9 @@ import UnityGame from "./UnityGame";
 import { useDeveloperAnimations } from "./useDeveloperAnimations";
 import DeveloperParallax from "./DeveloperParallax";
 import ProjectModal from "./ProjectModal";
+import JourneyMap from "./JourneyMap";
 
-export default function DeveloperMode({ data }) {
+export default function DeveloperMode({ data, features }) {
   const d = data;
   const [selectedProject, setSelectedProject] = useState(null);
   useDeveloperAnimations("#mode-developer");
@@ -187,6 +188,12 @@ export default function DeveloperMode({ data }) {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {features?.flags?.journey_map?.enabled !== false && features?.milestones?.length > 0 && (
+        <section className="section wrap">
+          <JourneyMap milestones={features.milestones} accent={d.accent} />
         </section>
       )}
 
