@@ -5,6 +5,7 @@ export default function DeveloperMode({ data }) {
   const d = data;
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
+  const showCertificates = d.sections.certificates?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
   const [loadGame, setLoadGame] = useState(false);
 
@@ -89,6 +90,29 @@ export default function DeveloperMode({ data }) {
                     <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
                   </div>
                 ))}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showCertificates && d.certificates.length > 0 && (
+        <section className="section wrap" aria-labelledby="dev-certs-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="dev-certs-title">Certifications</h3>
+            <span className="section-head__num">/ {String(d.certificates.length).padStart(2, "0")}</span>
+          </div>
+          <div className="cert-grid">
+            {d.certificates.map((c) => (
+              <div className="cert-card" key={c.title}>
+                <h4 className="cert-card__title">{c.title}</h4>
+                <div className="cert-card__meta">
+                  {c.issuer && <span>{c.issuer}</span>}
+                  {c.year && <span>{c.year}</span>}
+                </div>
+                {c.url && (
+                  <a className="cert-card__link" href={c.url} target="_blank" rel="noopener noreferrer">View credential →</a>
+                )}
               </div>
             ))}
           </div>

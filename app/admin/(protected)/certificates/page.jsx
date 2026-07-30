@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import ModeTabs from "@/components/admin/ModeTabs";
 import { adminFetch } from "@/components/admin/adminApi";
 
+const ALL_MODES = ["editor", "analyst", "developer"];
+
 export default function CertificatesAdminPage() {
   const [active, setActive] = useState("editor");
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [savedId, setSavedId] = useState("");
+  const [copyingId, setCopyingId] = useState("");
 
   async function load() {
     const modes = await adminFetch("/api/admin/modes");
@@ -44,12 +47,43 @@ export default function CertificatesAdminPage() {
     await load();
   }
 
+  // Duplicate a certificate to all other modes so it shows up everywhere in the frontend
+  async function copyToAllModes(item) {
+    setCopyingId(item.id);
+    setError("");
+    try {
+      const otherModes = ALL_MODES.filter((m) => m !== active);
+      await Promise.all(
+        otherModes.map((modeId) =>
+          adminFetch("/api/admin/certificates", {
+            method: "POST",
+            body: JSON.stringify({
+              modeId,
+              title: item.title,
+              issuer: item.issuer,
+              year: item.year,
+              url: item.url,
+              imageUrl: item.imageUrl,
+              visible: item.visible,
+            }),
+          })
+        )
+      );
+      setSavedId(item.id + "-copied");
+      setTimeout(() => setSavedId(""), 2500);
+    } catch (e) { setError(e.message); }
+    setCopyingId("");
+  }
+
   return (
     <div>
       <div className="admin-topbar">
         <div>
           <h1 className="admin-h1">Certificates</h1>
-          <p className="admin-sub">Add, edit, or remove certificates per mode.</p>
+          <p className="admin-sub">
+            Certificates are <strong>per mode</strong> — switch tabs to manage each mode.
+            Use <strong>Copy to all modes</strong> to share a certificate across Editor, Analyst &amp; Developer at once.
+          </p>
         </div>
         <button className="admin-btn admin-btn--primary" onClick={addNew}>+ Add certificate</button>
       </div>
@@ -57,7 +91,11 @@ export default function CertificatesAdminPage() {
       <ModeTabs active={active} onChange={setActive} />
       {error && <div className="admin-error">{error}</div>}
 
-      {items.length === 0 && <div className="admin-empty">No certificates yet for this mode.</div>}
+      {items.length === 0 && (
+        <div className="admin-empty">
+          No certificates yet for <strong>{active}</strong> mode. Add one above, or switch to another tab and use &quot;Copy to all modes&quot;.
+        </div>
+      )}
 
       {items.map((item) => (
         <div className="admin-card" key={item.id}>
@@ -85,13 +123,23 @@ export default function CertificatesAdminPage() {
             <label>Image URL (optional)</label>
             <input className="admin-input" value={item.imageUrl || ""} onChange={(e) => updateLocal(item.id, "imageUrl", e.target.value)} onBlur={() => save(item)} />
           </div>
-          <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <label className="admin-checkbox-row">
               <input type="checkbox" checked={item.visible} onChange={(e) => { updateLocal(item.id, "visible", e.target.checked); save({ ...item, visible: e.target.checked }); }} />
               Visible
             </label>
             {savedId === item.id && <span className="admin-success" style={{ padding: "4px 10px" }}>Saved</span>}
-            <button className="admin-btn admin-btn--primary admin-btn--sm" style={{ marginLeft: "auto" }} onClick={() => save(item)}>Save changes</button>
+            {savedId === item.id + "-copied" && <span className="admin-success" style={{ padding: "4px 10px" }}>✓ Copied to all modes</span>}
+            <button
+              className="admin-btn admin-btn--sm"
+              style={{ marginLeft: "auto" }}
+              disabled={copyingId === item.id}
+              onClick={() => copyToAllModes(item)}
+              title="Duplicate this certificate to all other modes"
+            >
+              {copyingId === item.id ? "Copying…" : "Copy to all modes"}
+            </button>
+            <button className="admin-btn admin-btn--primary admin-btn--sm" onClick={() => save(item)}>Save changes</button>
             <button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => remove(item.id)}>Delete</button>
           </div>
         </div>
