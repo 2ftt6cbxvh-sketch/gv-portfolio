@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import GVLogo from "./GVLogo";
 import ModeSelector from "./ModeSelector";
 import DeveloperMode from "./DeveloperMode";
@@ -20,6 +20,10 @@ export default function AppShell({ data }) {
   const navLogoEngineRef = useRef(null);
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
   const [showSignatureIntro, setShowSignatureIntro] = useState(true);
+
+  const handleIntroComplete = useCallback(() => {
+    setShowSignatureIntro(false);
+  }, []);
 
   useEffect(() => {
     // Add timestamp to prevent browser or CDN from caching stale feature flags
@@ -94,7 +98,7 @@ export default function AppShell({ data }) {
           text={sigText}
           accentColor={sigAccent}
           glowColor={sigGlow}
-          onComplete={() => setShowSignatureIntro(false)}
+          onComplete={handleIntroComplete}
         />
       ) : (
         <div

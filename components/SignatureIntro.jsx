@@ -4,11 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 /**
- * SignatureIntro Component (v5.1.2):
- * Authentic, 100% readable cursive pen signature of "Ganesh Varma".
- * Uses SVG stroke text animation on real cursive signature typography,
- * fine gel pen stroke (1.6px), no duplicate text below, and buttery-smooth
- * particle dispersion transition.
+ * SignatureIntro Component (v5.1.3):
+ * Single-execution guaranteed signature intro.
+ * Uses hasStartedRef & onCompleteRef to ensure GSAP timeline ONLY runs ONCE
+ * on initial mount and NEVER restarts when parent components re-render.
  */
 export default function SignatureIntro({
   text = "Ganesh Varma",
@@ -19,9 +18,21 @@ export default function SignatureIntro({
   const containerRef = useRef(null);
   const textRef = useRef(null);
   const canvasRef = useRef(null);
+  const hasStartedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+
+  // Always keep onCompleteRef up to date without triggering useEffect re-runs
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   const [isSkipped, setIsSkipped] = useState(false);
 
   useEffect(() => {
+    // Guard against React strict mode or parent re-renders running animation twice
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
     const container = containerRef.current;
     const textEl = textRef.current;
     const canvas = canvasRef.current;
@@ -78,7 +89,7 @@ export default function SignatureIntro({
       if (isExploding) return;
       isExploding = true;
 
-      // Sample 150 particles around screen center where signature is located
+      // Sample 150 particles around screen center
       const count = 150;
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
@@ -104,7 +115,7 @@ export default function SignatureIntro({
         delay: 0.3,
         ease: "power2.inOut",
         onComplete: () => {
-          if (onComplete) onComplete();
+          if (onCompleteRef.current) onCompleteRef.current();
         },
       });
     };
@@ -164,7 +175,7 @@ export default function SignatureIntro({
       cancelAnimationFrame(animFrameId);
       tl.kill();
     };
-  }, [accentColor, glowColor, onComplete, isSkipped]);
+  }, []); // Empty dependency array ensures single execution on mount!
 
   return (
     <div
@@ -173,7 +184,7 @@ export default function SignatureIntro({
       onClick={() => {
         if (!isSkipped) {
           setIsSkipped(true);
-          if (onComplete) onComplete();
+          if (onCompleteRef.current) onCompleteRef.current();
         }
       }}
       style={{
