@@ -9,6 +9,7 @@ export default function DeveloperMode({ data }) {
   const showSkills = d.sections.skills?.visible !== false;
   const showCertificates = d.sections.certificates?.visible !== false;
   const showAchievements = d.sections.achievements?.visible !== false;
+  const showEducation = d.sections.education?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
   const [loadGame, setLoadGame] = useState(false);
 
@@ -19,7 +20,10 @@ export default function DeveloperMode({ data }) {
           <span className="label-mono">{d.role}</span>
           <span className="hero-mode__cursor" aria-hidden="true" />
         </div>
-        <h2 className="hero-mode__title">
+        <h2
+          className="hero-mode__title"
+          data-text={`${d.heroTitlePrefix}${d.heroTitleAccent}${d.heroTitleSuffix}`}
+        >
           {d.heroTitlePrefix}
           <span className="accent">{d.heroTitleAccent}</span>
           {d.heroTitleSuffix}
@@ -59,7 +63,7 @@ export default function DeveloperMode({ data }) {
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
-              <div className="project-row" key={p.index}>
+              <div className="project-row" key={p.index} style={{ willChange: "transform" }}>
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
@@ -136,6 +140,36 @@ export default function DeveloperMode({ data }) {
                   {a.description && <p className="achievement-row__desc">{a.description}</p>}
                 </div>
                 {a.year && <span className="achievement-row__year">{a.year}</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showEducation && d.education?.length > 0 && (
+        <section className="section wrap" aria-labelledby="dev-edu-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="dev-edu-title">Education</h3>
+            <span className="section-head__num">/ {String(d.education.length).padStart(2, "0")}</span>
+          </div>
+          <div className="edu-list">
+            {d.education.map((e, i) => (
+              <div className="edu-row" key={i}>
+                <div className="edu-row__years">
+                  <span>{e.startYear || "—"}</span>
+                  <span className="edu-row__divider">→</span>
+                  <span>{e.endYear || "—"}</span>
+                </div>
+                <div className="edu-row__body">
+                  <h4 className="edu-row__institution">{e.institution}</h4>
+                  {(e.degree || e.field) && (
+                    <p className="edu-row__degree">
+                      {e.degree}{e.degree && e.field ? " · " : ""}{e.field}
+                    </p>
+                  )}
+                  {e.description && <p className="edu-row__desc">{e.description}</p>}
+                </div>
+                {e.grade && <span className="edu-row__grade">{e.grade}</span>}
               </div>
             ))}
           </div>

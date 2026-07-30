@@ -44,6 +44,7 @@ export default function AnalystMode({ data }) {
   const showCertificates = d.sections.certificates?.visible !== false;
   const showAchievements = d.sections.achievements?.visible !== false;
   const showPapers = d.sections.papers?.visible !== false;
+  const showEducation = d.sections.education?.visible !== false;
   const showContact = d.sections.contact?.visible !== false;
   const stats = buildStats(d);
 
@@ -198,6 +199,36 @@ export default function AnalystMode({ data }) {
                 {p.url ? (
                   <a className="project-row__arrow project-row__cta" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>View Project →</a>
                 ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showEducation && d.education?.length > 0 && (
+        <section className="section wrap" aria-labelledby="analyst-edu-title">
+          <div className="section-head">
+            <h3 className="section-head__title" id="analyst-edu-title">Education</h3>
+            <span className="section-head__num">/ {String(d.education.length).padStart(2, "0")}</span>
+          </div>
+          <div className="edu-list">
+            {d.education.map((e, i) => (
+              <div className="edu-row" key={i}>
+                <div className="edu-row__years">
+                  <span>{e.startYear || "—"}</span>
+                  <span className="edu-row__divider">→</span>
+                  <span>{e.endYear || "—"}</span>
+                </div>
+                <div className="edu-row__body">
+                  <h4 className="edu-row__institution">{e.institution}</h4>
+                  {(e.degree || e.field) && (
+                    <p className="edu-row__degree">
+                      {e.degree}{e.degree && e.field ? " · " : ""}{e.field}
+                    </p>
+                  )}
+                  {e.description && <p className="edu-row__desc">{e.description}</p>}
+                </div>
+                {e.grade && <span className="edu-row__grade">{e.grade}</span>}
               </div>
             ))}
           </div>

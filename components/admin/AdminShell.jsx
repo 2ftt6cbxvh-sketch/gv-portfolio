@@ -14,6 +14,7 @@ const NAV = [
       { href: "/admin/certificates", label: "Certificates" },
       { href: "/admin/papers", label: "Papers & Publications" },
       { href: "/admin/achievements", label: "Achievements" },
+      { href: "/admin/education", label: "Education" },
     ],
   },
   {

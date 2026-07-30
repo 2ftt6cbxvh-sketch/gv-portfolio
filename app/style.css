@@ -690,15 +690,16 @@
 .cursor-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 8px var(--color-accent);
+  background: var(--cursor-accent, var(--color-accent));
+  box-shadow: 0 0 8px var(--cursor-accent, var(--color-accent));
+  transition: background 250ms var(--ease-out), box-shadow 250ms var(--ease-out);
 }
 
 .cursor-ring {
   width: 32px; height: 32px;
   border-radius: 50%;
-  border: 1.5px solid color-mix(in oklab, var(--color-accent) 55%, transparent);
-  background: color-mix(in oklab, var(--color-accent) 4%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 55%, transparent);
+  background: color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 4%, transparent);
   transition: width 280ms var(--ease-out),
               height 280ms var(--ease-out),
               border-color 280ms var(--ease-out),
@@ -707,8 +708,8 @@
 
 .cursor-ring.is-hovering {
   width: 52px; height: 52px;
-  border-color: var(--color-accent);
-  background: color-mix(in oklab, var(--color-accent) 9%, transparent);
+  border-color: var(--cursor-accent, var(--color-accent));
+  background: color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 9%, transparent);
 }
 
 /* ============================================================
@@ -884,4 +885,106 @@
   transform-style: preserve-3d;
   will-change: transform;
 }
+
+/* ============================================================
+   EDUCATION SECTION  (shared across all three modes)
+   Timeline row layout: years | body | grade badge
+   ============================================================ */
+.edu-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.edu-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  gap: var(--space-6) var(--space-8);
+  align-items: start;
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+.edu-row::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--color-accent);
+  opacity: 0;
+  border-radius: 2px;
+  transition: opacity 250ms var(--ease-out);
+}
+.edu-row:hover::before { opacity: 0.6; }
+.edu-row:last-child { border-bottom: none; }
+
+.edu-row__years {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  padding-top: 2px;
+}
+.edu-row__divider {
+  color: var(--color-accent);
+  opacity: 0.6;
+  font-size: 0.6rem;
+}
+
+.edu-row__body { min-width: 0; }
+
+.edu-row__institution {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--space-1) 0;
+  letter-spacing: -0.01em;
+}
+
+.edu-row__degree {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  margin: 0 0 var(--space-2) 0;
+  font-weight: 500;
+}
+
+.edu-row__desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.edu-row__grade {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 40%, transparent);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--color-accent) 8%, transparent);
+  align-self: start;
+  margin-top: 2px;
+}
+
+@media (max-width: 720px) {
+  .edu-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+  .edu-row__years {
+    flex-direction: row;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .edu-row__grade { align-self: auto; }
+}
+
 

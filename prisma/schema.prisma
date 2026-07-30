@@ -59,6 +59,7 @@ model ModeContent {
   certificates Certificate[]
   papers       Paper[]
   achievements Achievement[]
+  education    Education[]
 }
 
 // Small "label: value" chips under each hero (e.g. "Based in / Andhra Pradesh")
@@ -149,6 +150,23 @@ model Achievement {
   year       String?
   visible    Boolean     @default(true)
   order      Int         @default(0)
+}
+
+// ---------- Education ----------
+
+model Education {
+  id          String      @id @default(cuid())
+  modeId      String
+  mode        ModeContent @relation(fields: [modeId], references: [modeId], onDelete: Cascade)
+  institution String
+  degree      String?     @default("")
+  field       String?     @default("")
+  startYear   String?     @default("")
+  endYear     String?     @default("")
+  grade       String?     @default("")
+  description String?     @default("")
+  visible     Boolean     @default(true)
+  order       Int         @default(0)
 }
 
 // ---------- Section visibility / ordering (global, per-section on a mode page) ----------

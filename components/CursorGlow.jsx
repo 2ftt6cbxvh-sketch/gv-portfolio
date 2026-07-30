@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Global custom cursor — replaces default cursor on pointer devices.
  * Dot follows instantly; ring lags behind with lerp for a fluid trailing feel.
- * Color automatically tracks --color-accent so it changes per mode.
+ *
+ * Color logic (priority order):
+ *  1. If hovering a .portal → use that portal's --portal-accent CSS variable
+ *  2. If a mode is active on #stage → uses --color-accent (which already
+ *     reflects the active mode via data-mode attribute theming)
+ *  3. Landing page (no mode selected) → default --color-accent
+ *
  * Disabled on touch/hover:none devices and prefers-reduced-motion.
  */
 export default function CursorGlow() {
@@ -25,23 +31,58 @@ export default function CursorGlow() {
     const onMove = (e) => { pos.mx = e.clientX; pos.my = e.clientY; };
     document.addEventListener("mousemove", onMove, { passive: true });
 
-    // Scale ring on interactive elements
+    // ── Helpers to set/clear a temporary accent colour on cursor elements ──
+    const setCursorColor = (color) => {
+      if (!color) return;
+      dotRef.current?.style.setProperty("--cursor-accent", color);
+      ringRef.current?.style.setProperty("--cursor-accent", color);
+    };
+    const clearCursorColor = () => {
+      dotRef.current?.style.removeProperty("--cursor-accent");
+      ringRef.current?.style.removeProperty("--cursor-accent");
+    };
+
+    // ── Scale ring on interactive elements ──────────────────────────────
     const big   = () => ringRef.current?.classList.add("is-hovering");
     const small = () => ringRef.current?.classList.remove("is-hovering");
-    const SELECTORS = "a,button,[tabindex='0'],.portal,.project-row,.cert-card,.achievement-row,.paper-row,.stat-card,.skill-bar,.portal__enter";
+
+    const SELECTORS = "a,button,[tabindex='0'],.portal,.project-row,.cert-card,.achievement-row,.paper-row,.stat-card,.skill-bar";
+
     const addHover = () => {
       document.querySelectorAll(SELECTORS).forEach((el) => {
         el.addEventListener("mouseenter", big);
         el.addEventListener("mouseleave", small);
       });
+
+      // ── Portal-specific accent colour ──────────────────────────────────
+      // Each .portal has --portal-accent set inline via ModeSelector.
+      // When the cursor enters a portal we read that value and apply it
+      // directly to the cursor elements via a --cursor-accent override.
+      document.querySelectorAll(".portal").forEach((portal) => {
+        if (portal.dataset.cursorBound) return;
+        portal.dataset.cursorBound = "1";
+
+        portal.addEventListener("mouseenter", () => {
+          const accentColor = getComputedStyle(portal)
+            .getPropertyValue("--portal-accent").trim();
+          if (accentColor) setCursorColor(accentColor);
+        });
+
+        portal.addEventListener("mouseleave", () => {
+          clearCursorColor();
+          ringRef.current?.classList.remove("is-hovering");
+        });
+      });
     };
+
     addHover();
-    // Re-scan after mode switches (MutationObserver on #stage)
+
+    // Re-scan after mode switches
     const mo = new MutationObserver(addHover);
     const stage = document.getElementById("stage");
-    if (stage) mo.observe(stage, { attributes: true, attributeFilter: ["data-mode"] });
+    if (stage) mo.observe(stage, { attributes: true, childList: true, subtree: false, attributeFilter: ["data-mode"] });
 
-    // Animation loop — dot instant, ring lerped
+    // ── Animation loop ──────────────────────────────────────────────────
     const tick = () => {
       pos.rx += (pos.mx - pos.rx) * 0.13;
       pos.ry += (pos.my - pos.ry) * 0.13;
