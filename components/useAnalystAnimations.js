@@ -60,36 +60,53 @@ export function useAnalystAnimations(rootSelector) {
       `;
       root.appendChild(xhair);
 
-      let rafId, mx=-400, my=-400, cx=-400, cy=-400;
+      const lbl = xhair.querySelector(".analyst-xh__label");
+      let rafId = null, mx = -400, my = -400, cx = -400, cy = -400;
+      let active = false;
+      let rect = { left: 0, top: 0 };
+
+      const updateRect = () => { rect = root.getBoundingClientRect(); };
 
       const onMove = (e) => {
-        const rect = root.getBoundingClientRect();
+        if (!active) return;
         mx = e.clientX - rect.left;
         my = e.clientY - rect.top;
-        xhair.querySelector(".analyst-xh__label").textContent =
-          `${Math.round(mx)} × ${Math.round(my)}`;
+        if (lbl) lbl.textContent = `${Math.round(mx)} × ${Math.round(my)}`;
       };
-      const onEnter = () => xhair.classList.add("is-active");
-      const onLeave = () => xhair.classList.remove("is-active");
 
       const tick = () => {
-        cx += (mx - cx) * 0.1;
-        cy += (my - cy) * 0.1;
+        if (!active) return;
+        cx += (mx - cx) * 0.12;
+        cy += (my - cy) * 0.12;
         xhair.style.setProperty("--xh-x", `${cx}px`);
         xhair.style.setProperty("--xh-y", `${cy}px`);
         rafId = requestAnimationFrame(tick);
       };
 
+      const onEnter = () => {
+        updateRect();
+        active = true;
+        xhair.classList.add("is-active");
+        if (!rafId) tick();
+      };
+
+      const onLeave = () => {
+        active = false;
+        xhair.classList.remove("is-active");
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      };
+
+      window.addEventListener("resize", updateRect, { passive: true });
       root.addEventListener("mousemove", onMove, { passive: true });
       root.addEventListener("mouseenter", onEnter);
       root.addEventListener("mouseleave", onLeave);
-      tick();
 
       cleanups.push(() => {
+        window.removeEventListener("resize", updateRect);
         root.removeEventListener("mousemove", onMove);
         root.removeEventListener("mouseenter", onEnter);
         root.removeEventListener("mouseleave", onLeave);
-        cancelAnimationFrame(rafId);
+        if (rafId) cancelAnimationFrame(rafId);
         xhair.remove();
       });
     }

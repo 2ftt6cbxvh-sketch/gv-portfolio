@@ -66,10 +66,13 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       navLogoEngineRef.current?._onActivate?.();
       const targetTheme = mode;
 
+      lenisRef.current?.stop();
+
       const flash = document.createElement("div");
       Object.assign(flash.style, {
         position: "fixed", inset: "0", zIndex: "60",
         background: "var(--color-bg)", opacity: "0", pointerEvents: "none",
+        willChange: "opacity", transform: "translateZ(0)",
       });
       document.body.appendChild(flash);
 
@@ -79,22 +82,36 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
           document.querySelectorAll(".portal").forEach((p) => (p.style.display = "none"));
           selectorRef.current?.classList.remove("is-visible");
           if (selectorRef.current) selectorRef.current.style.display = "none";
-          document.getElementById("mode-" + targetTheme)?.classList.add("is-active");
+
+          document.querySelectorAll(".mode-view").forEach((v) => v.classList.remove("is-active"));
+          const targetEl = document.getElementById("mode-" + targetTheme);
+          if (targetEl) targetEl.classList.add("is-active");
+
           if (navModeLabelRef.current) {
             navModeLabelRef.current.textContent = "GV / " + targetTheme.charAt(0).toUpperCase() + targetTheme.slice(1);
           }
           if (navBackRef.current) navBackRef.current.style.display = "inline-flex";
-          gsap.to(flash, { opacity: 0, duration: 0.5, ease: "power2.out", onComplete: () => flash.remove() });
-          initModeAnimations(targetTheme);
+
           window.scrollTo(0, 0);
-          ScrollTrigger.refresh();
+
+          gsap.to(flash, {
+            opacity: 0, duration: 0.35, ease: "power2.out",
+            onComplete: () => {
+              flash.remove();
+              lenisRef.current?.start();
+              lenisRef.current?.scrollTo(0, { immediate: true });
+              requestAnimationFrame(() => ScrollTrigger.refresh());
+            },
+          });
+          initModeAnimations(targetTheme);
         },
       })
-        .to(flash, { opacity: 1, duration: 0.35, ease: "power2.in" })
+        .to(flash, { opacity: 1, duration: 0.25, ease: "power2.in" })
         .add(() => navLogoEngineRef.current?.playModeTransition(), 0);
     }
 
     function exitToSelector() {
+      lenisRef.current?.stop();
       document.querySelectorAll(".mode-view").forEach((v) => v.classList.remove("is-active"));
       document.querySelectorAll(".portal").forEach((p) => (p.style.display = ""));
       stageRef.current?.setAttribute("data-mode", "");
@@ -103,7 +120,9 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       if (navModeLabelRef.current) navModeLabelRef.current.textContent = "GV — Select a Mode";
       if (navBackRef.current) navBackRef.current.style.display = "none";
       window.scrollTo(0, 0);
-      ScrollTrigger.refresh();
+      lenisRef.current?.start();
+      lenisRef.current?.scrollTo(0, { immediate: true });
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     }
 
     function initModeAnimations(mode) {

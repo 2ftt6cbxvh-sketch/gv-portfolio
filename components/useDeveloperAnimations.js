@@ -29,30 +29,50 @@ export function useDeveloperAnimations(rootSelector) {
       caret.className = "dev-term-caret";
       root.appendChild(caret);
 
-      let rafId, mx = -400, my = -400, cx = -400, cy = -400;
+      let rafId = null, mx = -400, my = -400, cx = -400, cy = -400;
+      let active = false;
+      let rect = { left: 0, top: 0 };
 
-      const onMove  = (e) => { mx = e.clientX; my = e.clientY; };
-      const onEnter = () => caret.classList.add("is-active");
-      const onLeave = () => caret.classList.remove("is-active");
+      const updateRect = () => { rect = root.getBoundingClientRect(); };
+
+      const onMove = (e) => {
+        if (!active) return;
+        mx = e.clientX;
+        my = e.clientY;
+      };
 
       const tick = () => {
+        if (!active) return;
         cx += (mx - cx) * 0.18;
         cy += (my - cy) * 0.18;
-        const rect = root.getBoundingClientRect();
         caret.style.transform = `translate(${cx - rect.left}px, ${cy - rect.top}px)`;
         rafId = requestAnimationFrame(tick);
       };
 
+      const onEnter = () => {
+        updateRect();
+        active = true;
+        caret.classList.add("is-active");
+        if (!rafId) tick();
+      };
+
+      const onLeave = () => {
+        active = false;
+        caret.classList.remove("is-active");
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      };
+
+      window.addEventListener("resize", updateRect, { passive: true });
       document.addEventListener("mousemove", onMove, { passive: true });
       root.addEventListener("mouseenter", onEnter);
       root.addEventListener("mouseleave", onLeave);
-      tick();
 
       cleanups.push(() => {
+        window.removeEventListener("resize", updateRect);
         document.removeEventListener("mousemove", onMove);
         root.removeEventListener("mouseenter", onEnter);
         root.removeEventListener("mouseleave", onLeave);
-        cancelAnimationFrame(rafId);
+        if (rafId) cancelAnimationFrame(rafId);
         caret.remove();
       });
     }

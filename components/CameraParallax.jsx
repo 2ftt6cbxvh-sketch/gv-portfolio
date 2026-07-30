@@ -86,12 +86,13 @@ export default function CameraParallax() {
     };
 
     const tick = () => {
-      els.forEach((el, i) => {
-        cur[i].x += (tgt[i].x - cur[i].x) * 0.055;
-        cur[i].y += (tgt[i].y - cur[i].y) * 0.055;
-        // Use GSAP x so it composes cleanly with the scroll-driven y
-        gsap.set(el, { x: cur[i].x, overwrite: false });
-      });
+      if (root.classList.contains("is-active")) {
+        els.forEach((el, i) => {
+          cur[i].x += (tgt[i].x - cur[i].x) * 0.055;
+          cur[i].y += (tgt[i].y - cur[i].y) * 0.055;
+          gsap.set(el, { x: cur[i].x, overwrite: false });
+        });
+      }
       rafId = requestAnimationFrame(tick);
     };
     window.addEventListener("mousemove", onMouse, { passive: true });
