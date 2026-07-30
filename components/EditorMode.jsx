@@ -1,7 +1,9 @@
 "use client";
 
 import FilmReel from "./FilmReel";
+import CameraParallax from "./CameraParallax";
 import { useFilmReelScroll } from "./useFilmReelScroll";
+import { useEditorAnimations } from "./useEditorAnimations";
 
 // Not admin-editable this phase (per "do not overengineer" — cinematic
 // flavor text, not core content). Keyed by mode id so this file stays
@@ -15,6 +17,7 @@ const STORY = {
 export default function EditorMode({ data }) {
   const d = data;
   useFilmReelScroll("#mode-editor");
+  useEditorAnimations("#mode-editor");
 
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
@@ -30,6 +33,7 @@ export default function EditorMode({ data }) {
         <FilmReel id="reel-back" labels={reelStrips} className="film-reel--back" />
         <FilmReel id="reel-mid" labels={reelStrips} className="film-reel--mid" />
         <FilmReel id="reel-front" labels={reelStrips} className="film-reel--front" />
+        <CameraParallax />
       </div>
 
       <section className="hero-mode hero-mode--editor wrap">

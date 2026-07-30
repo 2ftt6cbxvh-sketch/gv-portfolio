@@ -1,8 +1,10 @@
 import { useState } from "react";
 import UnityGame from "./UnityGame";
+import { useDeveloperAnimations } from "./useDeveloperAnimations";
 
 export default function DeveloperMode({ data }) {
   const d = data;
+  useDeveloperAnimations("#mode-developer");
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
   const showCertificates = d.sections.certificates?.visible !== false;

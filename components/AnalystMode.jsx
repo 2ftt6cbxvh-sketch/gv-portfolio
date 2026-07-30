@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { drawLineChart } from "./motion";
+import { useAnalystAnimations } from "./useAnalystAnimations";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -37,6 +38,7 @@ function StatChart({ accent }) {
 
 export default function AnalystMode({ data }) {
   const d = data;
+  useAnalystAnimations("#mode-analyst");
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
   const showCertificates = d.sections.certificates?.visible !== false;

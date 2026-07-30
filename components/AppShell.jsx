@@ -6,6 +6,7 @@ import ModeSelector from "./ModeSelector";
 import DeveloperMode from "./DeveloperMode";
 import EditorMode from "./EditorMode";
 import AnalystMode from "./AnalystMode";
+import CursorGlow from "./CursorGlow";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -37,6 +38,7 @@ export default function AppShell({ data }) {
     <div id="stage" data-mode="" ref={stageRef}>
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       <div className="noise-veil" aria-hidden="true" />
+      <CursorGlow />
 
       <nav className="nav" id="nav" ref={navRef} aria-label="Site">
         <GVLogo

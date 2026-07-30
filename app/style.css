@@ -616,7 +616,6 @@
   .portal {
     border-right: none; border-bottom: 1px solid var(--color-border);
     min-height: auto; padding-block: var(--space-10);
-    /* Disable lift on mobile — it can cause layout jank */
   }
   .portal:hover { transform: none; }
   .portal:last-child { border-bottom: none; }
@@ -624,14 +623,11 @@
   .project-row { grid-template-columns: 2rem 1fr; }
   .project-row__arrow { display: none; }
   .hero-mode__meta { gap: var(--space-6); }
-
-  /* Selector title stacks on mobile */
   .selector__title { font-size: var(--text-xl); }
   .selector__sub { font-size: var(--text-sm); }
 }
 
 @media (max-width: 720px) {
-  /* Editor mode: hide deep/back reels on small screens */
   .film-reel--deep { display: none; }
   .film-reel--back { display: none; }
   .film-reel--mid { top: 18%; opacity: 0.28; }
@@ -641,12 +637,12 @@
   .film-reel__cam-icon { display: none; }
   .hero-mode--editor { min-height: 92dvh; }
   .editor-story__frame { padding: var(--space-6); }
-
-  /* Particle field: fewer visible on mobile */
   .selector-particle:nth-child(n+13) { display: none; }
-
-  /* Disable cursor-follow glow on touch devices */
   .portal__cursor-glow { display: none; }
+  .camera-parallax-field { display: none; }
+  .editor-frame-cursor   { display: none; }
+  .analyst-crosshair     { display: none; }
+  .dev-term-caret        { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -655,10 +651,237 @@
   .selector-particle { animation: none; opacity: 0.2; }
   .selector__divider { animation: none; opacity: 0.6; }
   .portal__index { animation: none; opacity: 0.6; }
+  .cursor-dot, .cursor-ring { display: none !important; }
+  .camera-parallax__item { transform: none !important; }
+  .dev-glitch-title { animation: none !important; }
+  .dev-term-caret { display: none; }
+  .editor-frame-cursor { display: none; }
+  .analyst-crosshair { display: none; }
 }
 
 @media (hover: none) {
   .gv-logo-wrap { cursor: default; }
   .portal__cursor-glow { display: none; }
   .portal:hover { transform: none; }
+  .cursor-dot, .cursor-ring { display: none !important; }
+  .editor-frame-cursor { display: none; }
+  .analyst-crosshair { display: none; }
+  .dev-term-caret { display: none; }
 }
+
+/* ============================================================
+   GLOBAL CUSTOM CURSOR
+   Dot follows instantly; ring lags (JS lerp).
+   Color = --color-accent so it switches automatically per mode.
+   ============================================================ */
+@media (hover: hover) and (pointer: fine) {
+  #stage * { cursor: none !important; }
+}
+
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+}
+
+.cursor-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+.cursor-ring {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in oklab, var(--color-accent) 55%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 4%, transparent);
+  transition: width 280ms var(--ease-out),
+              height 280ms var(--ease-out),
+              border-color 280ms var(--ease-out),
+              background 280ms var(--ease-out);
+}
+
+.cursor-ring.is-hovering {
+  width: 52px; height: 52px;
+  border-color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 9%, transparent);
+}
+
+/* ============================================================
+   CAMERA PARALLAX FIELD  (Editor mode, inside .reel-field)
+   ============================================================ */
+.camera-parallax-field {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.camera-parallax__item {
+  position: absolute;
+  will-change: transform;
+}
+
+/* ============================================================
+   EDITOR — FILM-FRAME CURSOR OVERLAY
+   Four L-bracket corners + crosshair lines float near cursor.
+   ============================================================ */
+.editor-frame-cursor {
+  position: absolute;
+  top: 0; left: 0;
+  width: 48px; height: 48px;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+  margin: -24px 0 0 -24px;
+}
+.editor-frame-cursor.is-active { opacity: 1; }
+
+.efc__tl, .efc__tr, .efc__bl, .efc__br {
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: var(--color-accent);
+  border-style: solid;
+  opacity: 0.72;
+}
+.efc__tl { top: 0; left: 0;     border-width: 1.5px 0 0 1.5px; }
+.efc__tr { top: 0; right: 0;    border-width: 1.5px 1.5px 0 0; }
+.efc__bl { bottom: 0; left: 0;  border-width: 0 0 1.5px 1.5px; }
+.efc__br { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; }
+
+.efc__hline, .efc__vline {
+  position: absolute;
+  background: color-mix(in oklab, var(--color-accent) 28%, transparent);
+}
+.efc__hline {
+  top: 50%; left: -80px;
+  width: 208px; height: 1px;
+  transform: translateY(-50%);
+}
+.efc__vline {
+  left: 50%; top: -80px;
+  height: 208px; width: 1px;
+  transform: translateX(-50%);
+}
+
+/* Row hover flash — cinematic flicker */
+@keyframes editor-flicker {
+  0%   { background: transparent; }
+  18%  { background: color-mix(in oklab, var(--color-accent) 9%, transparent); }
+  32%  { background: transparent; }
+  52%  { background: color-mix(in oklab, var(--color-accent) 5%, transparent); }
+  100% { background: transparent; }
+}
+.editor-flicker { animation: editor-flicker 340ms var(--ease-out) forwards; }
+
+/* ============================================================
+   ANALYST — DATA CROSSHAIR CURSOR + RIPPLE
+   ============================================================ */
+.analyst-crosshair {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 280ms var(--ease-out);
+  --xh-x: -400px;
+  --xh-y: -400px;
+}
+.analyst-crosshair.is-active { opacity: 1; }
+
+.analyst-xh__h {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 1px;
+  background: color-mix(in oklab, var(--color-accent) 18%, transparent);
+  transform: translateY(var(--xh-y));
+  pointer-events: none;
+}
+.analyst-xh__v {
+  position: fixed;
+  left: 0; top: 0;
+  width: 1px; height: 100vh;
+  background: color-mix(in oklab, var(--color-accent) 18%, transparent);
+  transform: translateX(var(--xh-x));
+  pointer-events: none;
+}
+.analyst-xh__label {
+  position: fixed;
+  left: 0; top: 0;
+  transform: translate(calc(var(--xh-x) + 12px), calc(var(--xh-y) + 8px));
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: color-mix(in oklab, var(--color-accent) 55%, transparent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@keyframes analyst-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 28%, transparent); }
+  70%  { box-shadow: 0 0 0 16px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.analyst-pulse { animation: analyst-pulse 550ms var(--ease-out) forwards; }
+
+/* ============================================================
+   DEVELOPER — GLITCH + TERMINAL CARET
+   ============================================================ */
+@keyframes dev-glitch-a {
+  0%, 85%, 100% { clip-path: none; transform: none; }
+  87% { clip-path: inset(12% 0 72% 0); transform: translate(-4px, 0); }
+  89% { clip-path: inset(55% 0 22% 0); transform: translate( 3px, 0); }
+  91% { clip-path: inset(30% 0 45% 0); transform: translate(-2px, 0); }
+  93% { clip-path: none; transform: none; }
+}
+@keyframes dev-glitch-b {
+  0%, 85%, 100% { clip-path: none; transform: none; opacity: 0; }
+  87% { clip-path: inset(60% 0 18% 0); transform: translate( 5px, 0); opacity: 0.35; color: hsl(0 80% 60%); }
+  89% { clip-path: inset(20% 0 60% 0); transform: translate(-4px, 0); opacity: 0.25; color: hsl(175 80% 60%); }
+  93% { clip-path: none; opacity: 0; }
+}
+
+.dev-glitch-title { position: relative; }
+.dev-glitch-title.dev-glitch-active { animation: dev-glitch-a 600ms steps(1) forwards; }
+.dev-glitch-title::after {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  opacity: 0; pointer-events: none;
+}
+.dev-glitch-title.dev-glitch-active::after {
+  animation: dev-glitch-b 600ms steps(1) forwards;
+}
+
+/* Terminal block caret */
+.dev-term-caret {
+  position: absolute;
+  top: 0; left: 0;
+  width: 10px; height: 18px;
+  background: var(--color-accent);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  will-change: transform;
+  margin: -9px 0 0 -5px;
+  animation: term-blink 1s steps(1) infinite;
+  transition: opacity 180ms var(--ease-out);
+}
+.dev-term-caret.is-active { opacity: 0.65; }
+
+@keyframes term-blink {
+  0%, 49%  { opacity: 0.65; }
+  50%, 100% { opacity: 0; }
+}
+
+/* Smooth transform for magnetic project row tilt */
+.mode-view .project-row {
+  transition: transform 200ms var(--ease-out), background var(--transition-interactive);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
