@@ -210,7 +210,7 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
 
             <div className="portal__top">
               <span className="portal__index">0{idx + 1}</span>
-              <span className="portal__mode-tag">[{idx + 1}] {mode.id}</span>
+              <span className="portal__mode-tag">{mode.id}</span>
             </div>
 
             <div className="portal__body">
