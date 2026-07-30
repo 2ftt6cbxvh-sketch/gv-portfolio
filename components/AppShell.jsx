@@ -6,6 +6,7 @@ import DeveloperMode from "./DeveloperMode";
 import EditorMode from "./EditorMode";
 import AnalystMode from "./AnalystMode";
 import CursorGlow from "./CursorGlow";
+import AmbientEdgeBar from "./AmbientEdgeBar";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -55,6 +56,7 @@ export default function AppShell({ data }) {
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       <div className="noise-veil" aria-hidden="true" />
       <CursorGlow />
+      <AmbientEdgeBar />
 
       <nav className="nav" id="nav" ref={navRef} aria-label="Site">
         <GVLogo

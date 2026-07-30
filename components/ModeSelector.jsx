@@ -101,7 +101,7 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
     } catch (e) {}
   }
 
-  // Cursor-follow radial glow per portal
+  // 3D Perspective Hologram Tilt & Cursor-follow radial glow per portal
   useEffect(() => {
     const portals = portalsRef.current?.querySelectorAll(".portal");
     if (!portals) return;
@@ -110,17 +110,33 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
     portals.forEach((portal) => {
       const move = (e) => {
         const rect = portal.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        portal.style.setProperty("--mouse-x", `${x}%`);
-        portal.style.setProperty("--mouse-y", `${y}%`);
+        const posX = e.clientX - rect.left;
+        const posY = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = (-(posY - centerY) / centerY) * 7;
+        const rotateY = ((posX - centerX) / centerX) * 7;
+
+        portal.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.02, 1.02, 1.02)`;
+        portal.style.setProperty("--mouse-x", `${(posX / rect.width) * 100}%`);
+        portal.style.setProperty("--mouse-y", `${(posY / rect.height) * 100}%`);
       };
+
+      const leave = () => {
+        portal.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+      };
+
       portal.addEventListener("mousemove", move);
-      handlers.push({ portal, move });
+      portal.addEventListener("mouseleave", leave);
+      handlers.push({ portal, move, leave });
     });
 
     return () => {
-      handlers.forEach(({ portal, move }) => portal.removeEventListener("mousemove", move));
+      handlers.forEach(({ portal, move, leave }) => {
+        portal.removeEventListener("mousemove", move);
+        portal.removeEventListener("mouseleave", leave);
+      });
     };
   }, []);
 
@@ -190,7 +206,12 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
             data-mode-id={mode.id}
             role="listitem"
             tabIndex={0}
-            style={{ opacity: 0, "--portal-accent": mode.accent, "--portal-delay": `${idx * 0.12}s` }}
+            style={{
+              opacity: 0,
+              "--portal-accent": mode.accent,
+              "--portal-delay": `${idx * 0.12}s`,
+              transition: "transform 0.15s ease-out, border-color 0.3s ease, box-shadow 0.3s ease",
+            }}
             key={mode.id}
             onMouseEnter={() => {
               if (selectorRef.current) {
