@@ -20,7 +20,8 @@ export default function AppShell({ data }) {
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
 
   useEffect(() => {
-    fetch("/api/public/features")
+    // Add timestamp to prevent browser or CDN from caching stale feature flags
+    fetch(`/api/public/features?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((resData) => {
         if (resData && resData.flags) setFeatures(resData);
