@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { SITE_VERSION } from "@/lib/version";
 import UnityGame from "./UnityGame";

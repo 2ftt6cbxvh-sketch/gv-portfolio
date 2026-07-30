@@ -10,23 +10,26 @@ const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
  * before settling cleanly back to original text.
  */
 export default function TextScramble({ text, className = "", style = {} }) {
-  const [displayText, setDisplayText] = useState(text);
+  const safeText = text || "";
+  const [displayText, setDisplayText] = useState(safeText);
   const isScramblingRef = useRef(false);
 
+  if (!safeText) return null;
+
   const handleMouseEnter = () => {
-    if (isScramblingRef.current) return;
+    if (isScramblingRef.current || !safeText) return;
     isScramblingRef.current = true;
 
     let iteration = 0;
-    const maxIterations = text.length;
+    const maxIterations = safeText.length;
 
     const interval = setInterval(() => {
       setDisplayText(
-        text
+        safeText
           .split("")
           .map((char, index) => {
             if (char === " ") return " ";
-            if (index < iteration) return text[index];
+            if (index < iteration) return safeText[index];
             return CHARS[Math.floor(Math.random() * CHARS.length)];
           })
           .join("")
@@ -34,7 +37,7 @@ export default function TextScramble({ text, className = "", style = {} }) {
 
       if (iteration >= maxIterations) {
         clearInterval(interval);
-        setDisplayText(text);
+        setDisplayText(safeText);
         isScramblingRef.current = false;
       }
 
