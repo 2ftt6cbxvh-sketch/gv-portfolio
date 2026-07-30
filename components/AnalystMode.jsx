@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { drawLineChart } from "./motion";
 import { useAnalystAnimations } from "./useAnalystAnimations";
 import AnalystParallax from "./AnalystParallax";
+import AnalystRadarChart from "./AnalystRadarChart";
+import ProjectModal from "./ProjectModal";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -25,20 +27,15 @@ function StatChart({ accent }) {
     if (svgRef.current) drawLineChart(svgRef.current);
   }, []);
   return (
-    <svg ref={svgRef} className="analyst-chart" viewBox="0 0 320 88" fill="none" aria-hidden="true">
-      <path
-        d="M2 70 L40 58 L78 62 L116 34 L154 42 L192 18 L230 26 L268 10 L318 4"
-        stroke={accent}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg ref={svgRef} className="stat-card__chart" viewBox="0 0 200 44" fill="none" aria-hidden="true">
+      <path className="analyst-cue-line" d="M2 36 L36 24 L68 28 L100 12 L132 18 L166 6 L198 2" stroke={accent || "#33c7b0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 export default function AnalystMode({ data }) {
   const d = data;
+  const [selectedProject, setSelectedProject] = useState(null);
   useAnalystAnimations("#mode-analyst");
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
@@ -99,7 +96,12 @@ export default function AnalystMode({ data }) {
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
-              <div className="project-row" key={p.index}>
+              <div
+                className="project-row"
+                key={p.index}
+                onClick={() => setSelectedProject(p)}
+                style={{ cursor: "pointer" }}
+              >
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
@@ -108,9 +110,13 @@ export default function AnalystMode({ data }) {
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
                   </div>
                 </div>
-                {p.url ? (
-                  <a className="project-row__arrow project-row__cta" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>View Project →</a>
-                ) : null}
+                <button
+                  className="project-row__arrow project-row__cta"
+                  onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
+                  aria-label={`Preview ${p.title}`}
+                >
+                  Preview Details →
+                </button>
               </div>
             ))}
           </div>
@@ -120,21 +126,26 @@ export default function AnalystMode({ data }) {
       {showSkills && d.skills.length > 0 && (
         <section className="section wrap" aria-labelledby="analyst-skills-title">
           <div className="section-head">
-            <h3 className="section-head__title" id="analyst-skills-title">Toolkit</h3>
+            <h3 className="section-head__title" id="analyst-skills-title">Toolkit & Skill Radar</h3>
             <span className="section-head__num">/ 03</span>
           </div>
-          <div className="skills-grid">
-            {d.skills.map((block) => (
-              <div className="skill-block" key={block.label}>
-                <div className="skill-block__label">{block.label}</div>
-                {block.bars.map((bar) => (
-                  <div className="skill-bar" data-level={bar.level} key={bar.name}>
-                    <span className="skill-bar__name">{bar.name}</span>
-                    <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
-                  </div>
-                ))}
-              </div>
-            ))}
+
+          <div className="analyst-skills-layout">
+            <AnalystRadarChart skills={d.skills} accent={d.accent} />
+
+            <div className="skills-grid">
+              {d.skills.map((block) => (
+                <div className="skill-block" key={block.label}>
+                  <div className="skill-block__label">{block.label}</div>
+                  {block.bars.map((bar) => (
+                    <div className="skill-bar" data-level={bar.level} key={bar.name}>
+                      <span className="skill-bar__name">{bar.name}</span>
+                      <div className="skill-bar__track"><div className="skill-bar__fill" /></div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -256,6 +267,12 @@ export default function AnalystMode({ data }) {
         <span className="version-badge">v4.7.1</span>
         <span>© 2026</span>
       </footer>
+
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        accentColor={d.accent}
+      />
     </div>
   );
 }

@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import FilmReel from "./FilmReel";
 import CameraParallax from "./CameraParallax";
 import { useFilmReelScroll } from "./useFilmReelScroll";
 import { useEditorAnimations } from "./useEditorAnimations";
+import ProjectModal from "./ProjectModal";
+import EditorCinematicToggle from "./EditorCinematicToggle";
 
 // Not admin-editable this phase (per "do not overengineer" — cinematic
 // flavor text, not core content). Keyed by mode id so this file stays
@@ -16,6 +19,7 @@ const STORY = {
 
 export default function EditorMode({ data }) {
   const d = data;
+  const [selectedProject, setSelectedProject] = useState(null);
   useFilmReelScroll("#mode-editor");
   useEditorAnimations("#mode-editor");
 
@@ -41,6 +45,7 @@ export default function EditorMode({ data }) {
         <div className="hero-mode__role">
           <span className="label-mono">{d.role}</span>
           <span className="hero-mode__cursor" aria-hidden="true" />
+          <EditorCinematicToggle />
         </div>
         <h2 className="hero-mode__title hero-mode__title--editor">
           {d.heroTitlePrefix}
@@ -74,7 +79,12 @@ export default function EditorMode({ data }) {
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
-              <div className="project-row" key={p.index}>
+              <div
+                className="project-row"
+                key={p.index}
+                onClick={() => setSelectedProject(p)}
+                style={{ cursor: "pointer" }}
+              >
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
@@ -83,9 +93,13 @@ export default function EditorMode({ data }) {
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
                   </div>
                 </div>
-                {p.url ? (
-                  <a className="project-row__arrow project-row__cta" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>View Project →</a>
-                ) : null}
+                <button
+                  className="project-row__arrow project-row__cta"
+                  onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
+                  aria-label={`Preview ${p.title}`}
+                >
+                  Preview Details →
+                </button>
               </div>
             ))}
           </div>
@@ -206,6 +220,12 @@ export default function EditorMode({ data }) {
         <span className="version-badge">v4.7.1</span>
         <span>© 2026</span>
       </footer>
+
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        accentColor={d.accent}
+      />
     </div>
   );
 }

@@ -2,9 +2,11 @@ import { useState } from "react";
 import UnityGame from "./UnityGame";
 import { useDeveloperAnimations } from "./useDeveloperAnimations";
 import DeveloperParallax from "./DeveloperParallax";
+import ProjectModal from "./ProjectModal";
 
 export default function DeveloperMode({ data }) {
   const d = data;
+  const [selectedProject, setSelectedProject] = useState(null);
   useDeveloperAnimations("#mode-developer");
   const showProjects = d.sections.projects?.visible !== false;
   const showSkills = d.sections.skills?.visible !== false;
@@ -65,7 +67,12 @@ export default function DeveloperMode({ data }) {
           </div>
           <div className="projects-list">
             {d.projects.map((p) => (
-              <div className="project-row" key={p.index} style={{ willChange: "transform" }}>
+              <div
+                className="project-row"
+                key={p.index}
+                style={{ willChange: "transform", cursor: "pointer" }}
+                onClick={() => setSelectedProject(p)}
+              >
                 <span className="project-row__index">{p.index}</span>
                 <div>
                   <h4 className="project-row__title">{p.title}</h4>
@@ -74,9 +81,13 @@ export default function DeveloperMode({ data }) {
                     {p.stack.map((s) => <span className="tag" key={s}>{s}</span>)}
                   </div>
                 </div>
-                {p.url ? (
-                  <a className="project-row__arrow project-row__cta" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${p.title}`}>View Project →</a>
-                ) : null}
+                <button
+                  className="project-row__arrow project-row__cta"
+                  onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
+                  aria-label={`Preview ${p.title}`}
+                >
+                  Preview Details →
+                </button>
               </div>
             ))}
           </div>
@@ -199,6 +210,12 @@ export default function DeveloperMode({ data }) {
         <span className="version-badge">v4.7.1</span>
         <span>© 2026</span>
       </footer>
+
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        accentColor={d.accent}
+      />
     </div>
   );
 }
