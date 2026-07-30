@@ -12,6 +12,7 @@ export default function JourneyAdminPage() {
     location: "",
     description: "",
     tagsStr: "",
+    order: 0,
     visible: true,
   });
 
@@ -38,6 +39,7 @@ export default function JourneyAdminPage() {
       location: "",
       description: "",
       tagsStr: "",
+      order: milestones.length,
       visible: true,
     });
   };
@@ -50,7 +52,8 @@ export default function JourneyAdminPage() {
       institution: m.institution || "",
       location: m.location || "",
       description: m.description || "",
-      tagsStr: Array.isArray(m.tags) ? m.tags.join(", ") : "",
+      tagsStr: m.tags ? m.tags.join(", ") : "",
+      order: m.order ?? 0,
       visible: m.visible !== false,
     });
   };
@@ -69,6 +72,7 @@ export default function JourneyAdminPage() {
       location: formData.location,
       description: formData.description,
       tags,
+      order: parseInt(formData.order, 10) || 0,
       visible: formData.visible,
     };
 
@@ -105,16 +109,43 @@ export default function JourneyAdminPage() {
     fetchMilestones();
   };
 
+  const handleMove = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= milestones.length) return;
+
+    const itemA = milestones[index];
+    const itemB = milestones[targetIndex];
+
+    const orderA = itemB.order ?? targetIndex;
+    const orderB = itemA.order ?? index;
+
+    // Swap order in database
+    await Promise.all([
+      fetch(`/api/admin/journey/${itemA.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: orderA }),
+      }),
+      fetch(`/api/admin/journey/${itemB.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: orderB }),
+      }),
+    ]);
+
+    fetchMilestones();
+  };
+
   if (loading) {
     return <div style={{ padding: 24, color: "var(--a-muted)" }}>Loading Journey Milestones...</div>;
   }
 
   return (
-    <div style={{ maxWidth: 800 }}>
+    <div style={{ maxWidth: 840 }}>
       <div className="admin-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h1>Academic & Career Journey Map</h1>
-          <p>Add, edit, or delete roadmap milestones (e.g. KL University, Liverpool MSc).</p>
+          <h1>Academic &amp; Career Journey Map</h1>
+          <p>Add, edit, reorder (↑ ↓), or toggle visibility of roadmap milestones.</p>
         </div>
         <button onClick={openNewForm} className="admin-btn admin-btn--primary">
           + Add Milestone
@@ -126,7 +157,7 @@ export default function JourneyAdminPage() {
         <div className="admin-card" style={{ marginBottom: 24, border: "1px solid var(--a-accent)" }}>
           <h3 style={{ marginTop: 0 }}>{editingItem === "NEW" ? "New Journey Milestone" : "Edit Milestone"}</h3>
           <form onSubmit={handleSave}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px", gap: 12, marginBottom: 12 }}>
               <div>
                 <label style={{ display: "block", fontSize: 12, marginBottom: 4 }}>Year / Duration</label>
                 <input
@@ -147,6 +178,15 @@ export default function JourneyAdminPage() {
                   onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
                   placeholder="University of Liverpool"
                   required
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, marginBottom: 4 }}>Sort Order</label>
+                <input
+                  type="number"
+                  className="admin-input"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: e.target.value })}
                 />
               </div>
             </div>
@@ -212,41 +252,68 @@ export default function JourneyAdminPage() {
       {/* List of Milestones */}
       <div className="admin-card">
         {milestones.length === 0 ? (
-          <div style={{ color: "var(--a-muted)" }}>No journey milestones yet. Click "+ Add Milestone" above.</div>
+          <div style={{ color: "var(--a-muted)" }}>No journey milestones yet. Click &quot;+ Add Milestone&quot; above.</div>
         ) : (
-          milestones.map((m) => (
+          milestones.map((m, index) => (
             <div
               key={m.id}
               style={{
                 display: "flex",
-                alignItems: "flex-start",
+                alignItems: "center",
                 justifyContent: "space-between",
-                padding: "16px 0",
+                padding: "14px 0",
                 borderBottom: "1px solid var(--a-border)",
                 opacity: m.visible ? 1 : 0.5,
               }}
             >
-              <div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "var(--a-accent)", fontWeight: 600 }}>{m.year}</span>
-                  <strong style={{ fontSize: 16 }}>{m.title}</strong>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/* Reorder Up / Down Controls */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <button
+                    onClick={() => handleMove(index, -1)}
+                    disabled={index === 0}
+                    className="admin-btn admin-btn--sm"
+                    style={{ padding: "2px 6px", fontSize: 11, opacity: index === 0 ? 0.3 : 1 }}
+                    title="Move Up"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => handleMove(index, 1)}
+                    disabled={index === milestones.length - 1}
+                    className="admin-btn admin-btn--sm"
+                    style={{ padding: "2px 6px", fontSize: 11, opacity: index === milestones.length - 1 ? 0.3 : 1 }}
+                    title="Move Down"
+                  >
+                    ▼
+                  </button>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--a-muted)", marginTop: 2 }}>
-                  {m.institution} {m.location ? `· ${m.location}` : ""}
-                </div>
-                {m.description && <p style={{ fontSize: 13, margin: "6px 0 0 0" }}>{m.description}</p>}
-                {m.tags && m.tags.length > 0 && (
-                  <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
-                    {m.tags.map((t, i) => (
-                      <span key={i} style={{ fontSize: 11, padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: 4 }}>
-                        {t}
-                      </span>
-                    ))}
+
+                <div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "var(--a-accent)", fontWeight: 700, background: "rgba(0,240,255,0.1)", padding: "2px 6px", borderRadius: 4 }}>
+                      #{index + 1}
+                    </span>
+                    <span style={{ fontSize: 12, color: "var(--a-accent)", fontWeight: 600 }}>{m.year}</span>
+                    <strong style={{ fontSize: 15 }}>{m.title}</strong>
                   </div>
-                )}
+                  <div style={{ fontSize: 13, color: "var(--a-muted)", marginTop: 2 }}>
+                    {m.institution} {m.location ? `· ${m.location}` : ""}
+                  </div>
+                  {m.description && <p style={{ fontSize: 13, margin: "4px 0 0 0" }}>{m.description}</p>}
+                  {m.tags && m.tags.length > 0 && (
+                    <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                      {m.tags.map((t, i) => (
+                        <span key={i} style={{ fontSize: 11, padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: 4 }}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <button onClick={() => handleToggleVisible(m)} className="admin-btn admin-btn--sm">
                   {m.visible ? "Hide" : "Show"}
                 </button>

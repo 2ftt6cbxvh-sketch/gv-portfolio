@@ -1623,3 +1623,54 @@ body.is-cinematic-mode .mode-view--editor .hero-mode--editor {
 }
 
 
+
+/* ============================================================
+   LANDING PAGE ENHANCEMENTS (Status Pill, Kinetic Headline, Hotkeys)
+   ============================================================ */
+.landing-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.08);
+}
+.landing-status-pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+  animation: statusPulse 2s infinite;
+}
+.landing-status-pill__sep {
+  opacity: 0.4;
+}
+.landing-status-pill__loc {
+  color: var(--color-fg);
+  font-weight: 500;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.kinetic-headline__text {
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, #ffffff 0%, var(--logo-color, #00f0ff) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+
+.hotkey-hint-row kbd {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.15);
+}
