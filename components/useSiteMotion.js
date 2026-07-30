@@ -35,7 +35,12 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
     }
 
     function runIntro() {
-      showSelector();
+      // Ensure landing page elements are ready without duplicate staggering
+      if (selectorRef.current) selectorRef.current.classList.add("is-visible");
+      if (navRef.current) navRef.current.classList.add("is-visible");
+      if (navModeLabelRef.current) navModeLabelRef.current.textContent = "GV — Select a Mode";
+      gsap.set(".selector__intro, .portal", { opacity: 1, y: 0, scale: 1 });
+      drawPortalCues();
     }
 
     function showSelector() {
