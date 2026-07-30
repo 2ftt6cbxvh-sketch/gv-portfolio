@@ -69,7 +69,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Per-Mode Cinematic Transition Orchestration
+    // Per-Mode Cinematic Transition Orchestration (Comfortable Readable Pacing)
     // ──────────────────────────────────────────────────────────────────────────
     function enterMode(mode, e) {
       navLogoEngineRef.current?._onActivate?.();
@@ -83,17 +83,17 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       // 3D Portal Deep-Zooming
       if (clickedPortal) {
         gsap.to(clickedPortal, {
-          scale: 1.4,
+          scale: 1.3,
           opacity: 0.9,
-          duration: 0.5,
+          duration: 0.6,
           ease: "power3.inOut",
         });
         document.querySelectorAll(".portal").forEach((p) => {
           if (p !== clickedPortal) {
-            gsap.to(p, { opacity: 0, scale: 0.9, duration: 0.35, ease: "power2.out" });
+            gsap.to(p, { opacity: 0, scale: 0.9, duration: 0.4, ease: "power2.out" });
           }
         });
-        gsap.to(".selector__intro", { opacity: 0, y: -20, duration: 0.35, ease: "power2.out" });
+        gsap.to(".selector__intro", { opacity: 0, y: -20, duration: 0.4, ease: "power2.out" });
       }
 
       // Custom Per-Mode Transition Overlay Container
@@ -129,7 +129,6 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
           const targetEl = document.getElementById("mode-" + targetTheme);
           if (targetEl) {
             targetEl.classList.add("is-active");
-            // Fix: Reset inline opacity & transform so 2nd entry is NEVER blank!
             gsap.set(targetEl, { opacity: 1, scale: 1, clearProps: "opacity,transform" });
           }
 
@@ -140,10 +139,10 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
 
           window.scrollTo(0, 0);
 
-          // Fade out custom overlay and restore smooth scroll
+          // Fade out custom overlay smoothly and restore scroll
           gsap.to(overlay, {
             opacity: 0,
-            duration: 0.35,
+            duration: 0.5,
             ease: "power2.out",
             onComplete: () => {
               overlay.remove();
@@ -156,12 +155,12 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
         },
       });
 
-      // 🎬 Feature 1: Editor Mode — Anamorphic Film Letterbox Shutter Wipe
+      // 🎬 Feature 1: Editor Mode — Anamorphic Film Letterbox Shutter Wipe (Smooth & Readable)
       if (targetTheme === "editor") {
         overlay.innerHTML = `
           <div class="trans-editor-bar trans-editor-bar--top" style="position:absolute;top:0;left:0;right:0;height:50vh;background:#06050a;border-bottom:1px solid ${accent};transform:translateY(-100%);"></div>
           <div class="trans-editor-bar trans-editor-bar--bottom" style="position:absolute;bottom:0;left:0;right:0;height:50vh;background:#06050a;border-top:1px solid ${accent};transform:translateY(100%);"></div>
-          <div class="trans-editor-meta" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:13px;color:${accent};letter-spacing:0.15em;opacity:0;background:rgba(6,5,10,0.8);padding:8px 16px;border-radius:4px;border:1px solid ${accent}44;">
+          <div class="trans-editor-meta" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:14px;color:${accent};letter-spacing:0.18em;opacity:0;background:rgba(6,5,10,0.9);padding:10px 22px;border-radius:6px;border:1px solid ${accent}66;box-shadow:0 0 25px ${accent}33;">
             REC ● CAM A // 24FPS // CUT 01
           </div>
         `;
@@ -169,53 +168,62 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
         const btmBar = overlay.querySelector(".trans-editor-bar--bottom");
         const metaText = overlay.querySelector(".trans-editor-meta");
 
-        tl.to([topBar, btmBar], { translateY: "0%", duration: 0.4, ease: "power3.inOut" }, 0.1)
-          .to(metaText, { opacity: 1, duration: 0.25 }, 0.25);
+        tl.to([topBar, btmBar], { translateY: "0%", duration: 0.55, ease: "power3.inOut" }, 0.1)
+          .to(metaText, { opacity: 1, duration: 0.4 }, 0.4)
+          .to({}, { duration: 1.1 }); // Hold for readability
       }
 
-      // 📊 Feature 2: Analyst Mode — Cyber Data Scanline & Binary Matrix Sweep
+      // 📊 Feature 2: Analyst Mode — Cyber Data Scanline & Binary Matrix Sweep (Smooth & Readable)
       else if (targetTheme === "analyst") {
         overlay.innerHTML = `
           <div class="trans-analyst-bg" style="position:absolute;inset:0;background:#06050a;opacity:0;"></div>
-          <div class="trans-analyst-scanline" style="position:absolute;top:0;bottom:0;left:0;width:4px;background:${accent};box-shadow:0 0 20px ${accent};transform:translateX(-10vw);"></div>
-          <div class="trans-analyst-data" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:13px;color:${accent};letter-spacing:0.1em;opacity:0;text-align:center;background:rgba(6,5,10,0.85);padding:14px 24px;border-radius:6px;border:1px solid ${accent}44;">
-            <div>[0100 1001 0100 1110 0100 1001]</div>
-            <div style="font-size:11px;opacity:0.95;margin-top:6px;color:#ffffff;">INITIALIZING METRICS &amp; DATA PIPELINES...</div>
+          <div class="trans-analyst-scanline" style="position:absolute;top:0;bottom:0;left:0;width:5px;background:${accent};box-shadow:0 0 25px ${accent};transform:translateX(-10vw);"></div>
+          <div class="trans-analyst-data" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:14px;color:${accent};letter-spacing:0.12em;opacity:0;text-align:center;background:rgba(6,5,10,0.9);padding:16px 28px;border-radius:8px;border:1px solid ${accent}66;box-shadow:0 0 30px ${accent}33;">
+            <div style="font-weight:700;">[0100 1001 0100 1110 0100 1001]</div>
+            <div style="font-size:12px;opacity:0.95;margin-top:8px;color:#ffffff;letter-spacing:0.08em;">INITIALIZING METRICS &amp; DATA PIPELINES...</div>
           </div>
         `;
         const bg = overlay.querySelector(".trans-analyst-bg");
         const scanline = overlay.querySelector(".trans-analyst-scanline");
         const dataText = overlay.querySelector(".trans-analyst-data");
 
-        tl.to(bg, { opacity: 1, duration: 0.3 }, 0.1)
-          .to(scanline, { translateX: "110vw", duration: 0.5, ease: "power2.inOut" }, 0.1)
-          .to(dataText, { opacity: 1, duration: 0.25 }, 0.2);
+        tl.to(bg, { opacity: 1, duration: 0.4 }, 0.1)
+          .to(scanline, { translateX: "110vw", duration: 1.1, ease: "power2.inOut" }, 0.1)
+          .to(dataText, { opacity: 1, duration: 0.4 }, 0.3)
+          .to({}, { duration: 1.1 }); // Hold for readability
       }
 
-      // 💻 Feature 3: Developer Mode — CLI Command Execution Modal
+      // 💻 Feature 3: Developer Mode — CLI Command Execution Modal (Staggered Typed Reveal)
       else if (targetTheme === "developer") {
         overlay.innerHTML = `
           <div class="trans-dev-bg" style="position:absolute;inset:0;background:#06050a;opacity:0;"></div>
-          <div class="trans-dev-terminal" style="position:relative;z-index:2;width:90%;max-width:520px;padding:20px;background:rgba(12,14,20,0.95);border:1px solid ${accent};border-radius:8px;box-shadow:0 0 35px ${accent}44;font-family:var(--font-mono);font-size:13px;color:${accent};transform:translateY(20px);opacity:0;">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;opacity:0.7;font-size:11px;">
+          <div class="trans-dev-terminal" style="position:relative;z-index:2;width:90%;max-width:540px;padding:22px;background:rgba(12,14,20,0.96);border:1px solid ${accent};border-radius:10px;box-shadow:0 0 40px ${accent}44;font-family:var(--font-mono);font-size:13.5px;color:${accent};transform:translateY(24px);opacity:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;opacity:0.75;font-size:11px;">
               <span style="width:10px;height:10px;border-radius:50%;background:#ff5f56;"></span>
               <span style="width:10px;height:10px;border-radius:50%;background:#ffbd2e;"></span>
               <span style="width:10px;height:10px;border-radius:50%;background:#27c93f;"></span>
-              <span style="margin-left:8px;color:#888;">bash - gv@portfolio:~</span>
+              <span style="margin-left:8px;color:#aaa;">bash - gv@portfolio:~</span>
             </div>
-            <div>$ gv --init-mode developer</div>
-            <div style="color:#ffffff;margin-top:6px;">&gt; loading modules: React / Next.js / Python / AI... [100%]</div>
-            <div style="color:${accent};margin-top:6px;">&gt; launching environment...</div>
+            <div class="dev-line-1" style="opacity:0;">$ gv --init-mode developer</div>
+            <div class="dev-line-2" style="color:#ffffff;margin-top:8px;opacity:0;">&gt; loading modules: React / Next.js / Python / AI... [100%]</div>
+            <div class="dev-line-3" style="color:${accent};margin-top:8px;opacity:0;">&gt; launching environment...</div>
           </div>
         `;
         const bg = overlay.querySelector(".trans-dev-bg");
         const terminal = overlay.querySelector(".trans-dev-terminal");
+        const line1 = overlay.querySelector(".dev-line-1");
+        const line2 = overlay.querySelector(".dev-line-2");
+        const line3 = overlay.querySelector(".dev-line-3");
 
-        tl.to(bg, { opacity: 1, duration: 0.3 }, 0.1)
-          .to(terminal, { opacity: 1, translateY: "0px", duration: 0.4, ease: "back.out(1.4)" }, 0.15);
+        tl.to(bg, { opacity: 1, duration: 0.4 }, 0.1)
+          .to(terminal, { opacity: 1, translateY: "0px", duration: 0.45, ease: "back.out(1.2)" }, 0.15)
+          .to(line1, { opacity: 1, duration: 0.3 }, 0.3)
+          .to(line2, { opacity: 1, duration: 0.3 }, 0.65)
+          .to(line3, { opacity: 1, duration: 0.3 }, 1.0)
+          .to({}, { duration: 1.0 }); // Hold for readability
       } else {
         overlay.style.background = "#06050a";
-        tl.to(overlay, { opacity: 1, duration: 0.3 });
+        tl.to(overlay, { opacity: 1, duration: 0.4 });
       }
     }
 
@@ -267,7 +275,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       });
 
       if (activeView) {
-        tl.to(activeView, { opacity: 0, scale: 0.98, duration: 0.3, ease: "power2.in" });
+        tl.to(activeView, { opacity: 0, scale: 0.98, duration: 0.35, ease: "power2.in" });
       }
     }
 
@@ -275,11 +283,9 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       const root = document.getElementById("mode-" + mode);
       if (!root) return;
 
-      // Make sure root view and sections are visible when re-entering
       gsap.set(root, { opacity: 1, scale: 1, clearProps: "opacity,transform" });
 
       if (initedModes.current.has(mode)) {
-        // Re-entering mode: restore opacity on sections so it is NEVER blank!
         gsap.utils.toArray(root.querySelectorAll(".section-head, .project-row, .stat-card, .cert-card, .paper-row")).forEach((el) => {
           gsap.set(el, { opacity: 1, y: 0 });
         });
