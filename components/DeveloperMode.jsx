@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SITE_VERSION } from "@/lib/version";
 import UnityGame from "./UnityGame";
 import { useDeveloperAnimations } from "./useDeveloperAnimations";
 import DeveloperParallax from "./DeveloperParallax";
@@ -207,7 +208,7 @@ export default function DeveloperMode({ data }) {
 
       <footer className="footer-mode wrap">
         <span>GV / Software Developer</span>
-        <span className="version-badge">v4.7.1</span>
+        <span className="version-badge">{SITE_VERSION}</span>
         <span>© 2026</span>
       </footer>
 

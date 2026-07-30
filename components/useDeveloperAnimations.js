@@ -23,53 +23,7 @@ export function useDeveloperAnimations(rootSelector) {
       title.classList.remove("dev-glitch-active", "dev-glitch-title");
     }
 
-    // ── 2. Terminal block cursor ───────────────────────────────────────
-    if (!isTouch && !reduce) {
-      const caret = document.createElement("div");
-      caret.className = "dev-term-caret";
-      document.body.appendChild(caret);
-
-      let rafId = null, mx = -400, my = -400, cx = -400, cy = -400;
-      let active = false;
-
-      const onMove = (e) => {
-        if (!active) return;
-        mx = e.clientX;
-        my = e.clientY;
-      };
-
-      const tick = () => {
-        if (!active) return;
-        cx += (mx - cx) * 0.2;
-        cy += (my - cy) * 0.2;
-        caret.style.transform = `translate(${cx}px, ${cy}px) translate(-5px, -9px)`;
-        rafId = requestAnimationFrame(tick);
-      };
-
-      const onEnter = () => {
-        active = true;
-        caret.classList.add("is-active");
-        if (!rafId) tick();
-      };
-
-      const onLeave = () => {
-        active = false;
-        caret.classList.remove("is-active");
-        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-      };
-
-      document.addEventListener("mousemove", onMove, { passive: true });
-      root.addEventListener("mouseenter", onEnter);
-      root.addEventListener("mouseleave", onLeave);
-
-      cleanups.push(() => {
-        document.removeEventListener("mousemove", onMove);
-        root.removeEventListener("mouseenter", onEnter);
-        root.removeEventListener("mouseleave", onLeave);
-        if (rafId) cancelAnimationFrame(rafId);
-        caret.remove();
-      });
-    }
+    // (Extra floating caret removed completely to ensure only the inline text cursor remains)
 
     // ── 3. Magnetic tilt on project rows ──────────────────────────────
     if (!isTouch && !reduce) {

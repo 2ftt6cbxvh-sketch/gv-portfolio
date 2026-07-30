@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SITE_VERSION } from "@/lib/version";
 import FilmReel from "./FilmReel";
 import CameraParallax from "./CameraParallax";
 import { useFilmReelScroll } from "./useFilmReelScroll";
@@ -217,7 +218,7 @@ export default function EditorMode({ data }) {
 
       <footer className="footer-mode wrap">
         <span>GV / Editor</span>
-        <span className="version-badge">v4.7.1</span>
+        <span className="version-badge">{SITE_VERSION}</span>
         <span>© 2026</span>
       </footer>
 

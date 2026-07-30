@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SITE_VERSION } from "@/lib/version";
 import { drawLineChart } from "./motion";
 import { useAnalystAnimations } from "./useAnalystAnimations";
 import AnalystParallax from "./AnalystParallax";
@@ -264,7 +265,7 @@ export default function AnalystMode({ data }) {
 
       <footer className="footer-mode wrap">
         <span>GV / Data Analyst</span>
-        <span className="version-badge">v4.7.1</span>
+        <span className="version-badge">{SITE_VERSION}</span>
         <span>© 2026</span>
       </footer>
 

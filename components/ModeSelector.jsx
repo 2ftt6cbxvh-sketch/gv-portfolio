@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { SITE_VERSION } from "@/lib/version";
 
 // Per-mode animated SVG cues shown inside each portal card
 function EditorCue({ accent }) {
@@ -171,7 +172,7 @@ export default function ModeSelector({ selectorRef, person, modes }) {
 
       <footer className="selector__footer">
         <span className="selector__footer-brand">{person.name} / {person.initials}</span>
-        <span className="version-badge">v4.7.1</span>
+        <span className="version-badge">{SITE_VERSION}</span>
         <span className="selector__footer-copy">© 2026</span>
       </footer>
     </main>
