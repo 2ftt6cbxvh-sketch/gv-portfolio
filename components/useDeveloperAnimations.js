@@ -27,13 +27,10 @@ export function useDeveloperAnimations(rootSelector) {
     if (!isTouch && !reduce) {
       const caret = document.createElement("div");
       caret.className = "dev-term-caret";
-      root.appendChild(caret);
+      document.body.appendChild(caret);
 
       let rafId = null, mx = -400, my = -400, cx = -400, cy = -400;
       let active = false;
-      let rect = { left: 0, top: 0 };
-
-      const updateRect = () => { rect = root.getBoundingClientRect(); };
 
       const onMove = (e) => {
         if (!active) return;
@@ -43,14 +40,13 @@ export function useDeveloperAnimations(rootSelector) {
 
       const tick = () => {
         if (!active) return;
-        cx += (mx - cx) * 0.18;
-        cy += (my - cy) * 0.18;
-        caret.style.transform = `translate(${cx - rect.left}px, ${cy - rect.top}px)`;
+        cx += (mx - cx) * 0.2;
+        cy += (my - cy) * 0.2;
+        caret.style.transform = `translate(${cx}px, ${cy}px) translate(-5px, -9px)`;
         rafId = requestAnimationFrame(tick);
       };
 
       const onEnter = () => {
-        updateRect();
         active = true;
         caret.classList.add("is-active");
         if (!rafId) tick();
@@ -62,13 +58,11 @@ export function useDeveloperAnimations(rootSelector) {
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
       };
 
-      window.addEventListener("resize", updateRect, { passive: true });
       document.addEventListener("mousemove", onMove, { passive: true });
       root.addEventListener("mouseenter", onEnter);
       root.addEventListener("mouseleave", onLeave);
 
       cleanups.push(() => {
-        window.removeEventListener("resize", updateRect);
         document.removeEventListener("mousemove", onMove);
         root.removeEventListener("mouseenter", onEnter);
         root.removeEventListener("mouseleave", onLeave);
