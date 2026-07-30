@@ -34,10 +34,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       lenis.on("scroll", ScrollTrigger.update);
     }
 
-    async function runIntro() {
-      await introLogoEngineRef.current?.playIntro();
-      await gsap.to(introRef.current, { opacity: 0, duration: 0.5, ease: "power2.in" });
-      if (introRef.current) introRef.current.style.display = "none";
+    function runIntro() {
       showSelector();
     }
 

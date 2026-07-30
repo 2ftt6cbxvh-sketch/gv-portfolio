@@ -4,15 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 /**
- * SignatureIntro Component:
- * Full-screen cinematic intro featuring an elegant cursive signature scribble of "Ganesh Varma".
- * Includes glowing laser tip, interactive cursor aura bending, skip option,
- * and a fluid ink-to-constellation particle burst transition.
+ * SignatureIntro Component (v5.1.1):
+ * Authentic cursive handwriting signature intro of "Ganesh Varma".
+ * Uses a fine gel pen stroke (1.5px), smooth single-pass pen drawing,
+ * no extra text below, and a buttery-smooth particle dispersion transition.
  */
 export default function SignatureIntro({
-  text = "Ganesh Varma",
   accentColor = "#00f0ff",
-  glowColor = "#00ffff",
   onComplete,
 }) {
   const containerRef = useRef(null);
@@ -37,11 +35,6 @@ export default function SignatureIntro({
     };
     window.addEventListener("resize", handleResize);
 
-    // Particle burst array
-    const particles = [];
-    let isExploded = false;
-
-    // Path length for SVG stroke animation
     const pathLength = path.getTotalLength();
     gsap.set(path, {
       strokeDasharray: pathLength,
@@ -49,67 +42,75 @@ export default function SignatureIntro({
       opacity: 1,
     });
 
-    // Timeline for signature scribble
+    const particles = [];
+    let isExploding = false;
+
+    // Single smooth pen drawing timeline (2.0s duration)
     const tl = gsap.timeline({
       onComplete: () => {
-        triggerExplosion();
+        startFluidTransition();
       },
     });
 
-    // Animate stroke draw over 2.2 seconds
     tl.to(path, {
       strokeDashoffset: 0,
-      duration: 2.2,
-      ease: "power2.inOut",
+      duration: 2.0,
+      ease: "power1.inOut",
     });
 
-    // Trigger Fluid Ink-to-Constellation Particle Burst
-    const triggerExplosion = () => {
-      if (isExploded) return;
-      isExploded = true;
+    const startFluidTransition = () => {
+      if (isExploding) return;
+      isExploding = true;
 
-      // Sample points along SVG path to create particles
-      const pointCount = 120;
-      for (let i = 0; i < pointCount; i++) {
-        const pt = path.getPointAtLength((i / pointCount) * pathLength);
-        // Translate SVG coords to screen center coords
-        const bbox = path.getBBox();
-        const screenX = width / 2 + (pt.x - bbox.width / 2);
-        const screenY = height / 2 + (pt.y - bbox.height / 2);
+      // Sample 160 points along the signature path for fine ink particles
+      const count = 160;
+      const svgBox = path.ownerSVGElement.getBoundingClientRect();
+      const pathBox = path.getBBox();
+
+      for (let i = 0; i < count; i++) {
+        const pt = path.getPointAtLength((i / count) * pathLength);
+        // Convert SVG point to absolute screen coordinates
+        const screenX = svgBox.left + (pt.x / 800) * svgBox.width;
+        const screenY = svgBox.top + (pt.y / 240) * svgBox.height;
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 2.2 + 0.5;
 
         particles.push({
           x: screenX,
           y: screenY,
-          vx: (Math.random() - 0.5) * 6,
-          vy: (Math.random() - 0.5) * 6,
-          radius: Math.random() * 2.5 + 1,
-          alpha: 1,
-          decay: Math.random() * 0.02 + 0.015,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 0.4,
+          radius: Math.random() * 1.5 + 0.8,
+          alpha: 1.0,
+          decay: Math.random() * 0.015 + 0.012,
         });
       }
 
-      // Fade out path & container background smoothly
-      gsap.to(path, { opacity: 0, duration: 0.4 });
+      // Smoothly fade out signature path and overlay backdrop
+      gsap.to(path, { opacity: 0, duration: 0.6, ease: "power2.out" });
       gsap.to(container, {
         opacity: 0,
-        duration: 0.8,
-        delay: 0.4,
-        ease: "power2.out",
+        duration: 1.0,
+        delay: 0.3,
+        ease: "power2.inOut",
         onComplete: () => {
           if (onComplete) onComplete();
         },
       });
     };
 
-    // Render loop for particle burst
-    const renderParticles = () => {
+    // Render loop for particle dispersion
+    const drawParticles = () => {
       ctx.clearRect(0, 0, width, height);
 
-      if (isExploded) {
+      if (isExploding) {
         for (let i = particles.length - 1; i >= 0; i--) {
           const p = particles[i];
           p.x += p.vx;
           p.y += p.vy;
+          p.vx *= 0.98; // Smooth friction deceleration
+          p.vy *= 0.98;
           p.alpha -= p.decay;
 
           if (p.alpha <= 0) {
@@ -121,25 +122,25 @@ export default function SignatureIntro({
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
           ctx.fillStyle = accentColor;
           ctx.globalAlpha = p.alpha;
-          ctx.shadowColor = glowColor;
-          ctx.shadowBlur = 10;
+          ctx.shadowColor = accentColor;
+          ctx.shadowBlur = 4;
           ctx.fill();
           ctx.shadowBlur = 0;
         }
       }
 
       ctx.globalAlpha = 1;
-      animFrameId = requestAnimationFrame(renderParticles);
+      animFrameId = requestAnimationFrame(drawParticles);
     };
 
-    renderParticles();
+    drawParticles();
 
-    // Skip handler (click anywhere or press key)
+    // Skip handler
     const handleSkip = () => {
       if (isSkipped) return;
       setIsSkipped(true);
       tl.kill();
-      triggerExplosion();
+      startFluidTransition();
     };
 
     const handleKeyDown = (e) => {
@@ -154,7 +155,7 @@ export default function SignatureIntro({
       cancelAnimationFrame(animFrameId);
       tl.kill();
     };
-  }, [accentColor, glowColor, onComplete, isSkipped]);
+  }, [accentColor, onComplete, isSkipped]);
 
   return (
     <div
@@ -163,8 +164,6 @@ export default function SignatureIntro({
       onClick={() => {
         if (!isSkipped) {
           setIsSkipped(true);
-          const path = pathRef.current;
-          if (path) path.style.opacity = "0";
           if (onComplete) onComplete();
         }
       }}
@@ -190,54 +189,37 @@ export default function SignatureIntro({
         }}
       />
 
-      {/* Elegant Cursive Signature SVG Scribble */}
-      <div style={{ position: "relative", width: "90%", maxWidth: 650, height: 180 }}>
+      {/* Cursive Handwriting Signature SVG — "Ganesh Varma" */}
+      <div style={{ position: "relative", width: "85%", maxWidth: 620, height: 180 }}>
         <svg
-          viewBox="0 0 700 200"
+          viewBox="0 0 800 240"
           style={{
             width: "100%",
             height: "100%",
-            filter: `drop-shadow(0 0 12px ${glowColor})`,
+            filter: `drop-shadow(0 0 4px ${accentColor})`,
           }}
         >
-          {/* Custom cursive handwriting path for Ganesh Varma */}
+          {/* Detailed cursive handwriting path for "Ganesh Varma" */}
           <path
             ref={pathRef}
-            d="M 40 110 C 60 40, 70 30, 90 110 C 100 140, 110 150, 130 110 C 140 90, 150 90, 160 110 C 170 120, 180 120, 190 100 C 200 80, 210 140, 220 110 M 260 70 C 270 130, 280 150, 290 110 M 310 110 C 320 90, 330 90, 340 110 C 350 120, 360 120, 370 100 M 390 110 C 400 130, 410 130, 420 110 M 450 60 C 440 150, 470 150, 480 100 M 500 110 C 510 90, 520 90, 530 110 M 540 120 C 550 120, 560 100, 570 110 M 580 110 C 590 130, 600 130, 610 110 M 620 110 L 650 110"
+            d="M 50 140 C 30 80, 70 30, 110 50 C 130 60, 140 100, 110 130 C 80 160, 60 170, 90 170 C 120 170, 140 120, 150 110 C 160 100, 170 120, 175 130 C 185 140, 195 100, 205 110 C 215 120, 220 130, 230 110 C 240 90, 245 120, 255 130 C 265 140, 270 100, 280 110 M 300 80 L 305 150 C 305 175, 290 185, 280 175 C 270 165, 290 140, 320 120 C 330 110, 340 120, 350 130 M 370 100 L 375 160 M 420 50 L 460 150 C 470 175, 480 175, 490 140 L 510 60 M 530 110 C 540 90, 550 120, 560 130 C 570 140, 575 105, 585 110 C 595 115, 600 130, 610 110 M 620 90 L 625 150 C 625 170, 615 175, 610 165 C 605 155, 620 135, 640 120 M 655 110 C 665 95, 675 120, 685 130 C 695 140, 705 110, 720 130"
             fill="none"
             stroke={accentColor}
-            strokeWidth="4"
+            strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         </svg>
-
-        {/* Cursive Name Label beneath */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: "0.82rem",
-            letterSpacing: "0.25em",
-            fontFamily: "var(--font-mono)",
-            color: "rgba(255, 255, 255, 0.6)",
-            textTransform: "uppercase",
-          }}
-        >
-          {text}
-        </div>
       </div>
 
       {/* Minimal Skip Prompt */}
       <div
         style={{
           position: "absolute",
-          bottom: 36,
+          bottom: 32,
           fontSize: "0.72rem",
           fontFamily: "var(--font-mono)",
-          color: "rgba(255, 255, 255, 0.35)",
+          color: "rgba(255, 255, 255, 0.3)",
           letterSpacing: "0.1em",
         }}
       >
