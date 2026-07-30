@@ -639,7 +639,7 @@
   .editor-story__frame { padding: var(--space-6); }
   .selector-particle:nth-child(n+13) { display: none; }
   .portal__cursor-glow { display: none; }
-  .camera-parallax-field { display: none; }
+  .camera-parallax-field, .mode-parallax-field { display: none; }
   .editor-frame-cursor   { display: none; }
   .analyst-crosshair     { display: none; }
   .dev-term-caret        { display: none; }
@@ -713,16 +713,18 @@
 }
 
 /* ============================================================
-   CAMERA PARALLAX FIELD  (Editor mode, inside .reel-field)
+   CAMERA / MODE PARALLAX FIELD (Editor, Analyst & Developer modes)
    ============================================================ */
-.camera-parallax-field {
+.camera-parallax-field,
+.mode-parallax-field {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
-.camera-parallax__item {
+.camera-parallax__item,
+.mode-parallax__item {
   position: absolute;
   will-change: transform;
 }

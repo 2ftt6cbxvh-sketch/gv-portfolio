@@ -1,6 +1,7 @@
 import { useState } from "react";
 import UnityGame from "./UnityGame";
 import { useDeveloperAnimations } from "./useDeveloperAnimations";
+import DeveloperParallax from "./DeveloperParallax";
 
 export default function DeveloperMode({ data }) {
   const d = data;
@@ -15,6 +16,7 @@ export default function DeveloperMode({ data }) {
 
   return (
     <div className="mode-view" id="mode-developer" data-theme="developer">
+      <DeveloperParallax />
       <section className="hero-mode wrap">
         <div className="hero-mode__role">
           <span className="label-mono">{d.role}</span>

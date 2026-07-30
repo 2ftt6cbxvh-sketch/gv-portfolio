@@ -17,24 +17,10 @@ export function useDeveloperAnimations(rootSelector) {
 
     const cleanups = [];
 
-    // ── 1. Periodic glitch on hero title ──────────────────────────────
-    if (!reduce) {
-      const title = root.querySelector(".hero-mode__title");
-      if (title) {
-        title.classList.add("dev-glitch-title");
-        let timerId;
-        const scheduleGlitch = () => {
-          timerId = setTimeout(() => {
-            title.classList.add("dev-glitch-active");
-            setTimeout(() => {
-              title.classList.remove("dev-glitch-active");
-              scheduleGlitch();
-            }, 600);
-          }, 4000 + Math.random() * 4000);
-        };
-        scheduleGlitch();
-        cleanups.push(() => clearTimeout(timerId));
-      }
+    // ── 1. Clean hero title setup (glitch timer disabled to prevent text flickering) ──
+    const title = root.querySelector(".hero-mode__title");
+    if (title) {
+      title.classList.remove("dev-glitch-active", "dev-glitch-title");
     }
 
     // ── 2. Terminal block cursor ───────────────────────────────────────

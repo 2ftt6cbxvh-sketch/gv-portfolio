@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { drawLineChart } from "./motion";
 import { useAnalystAnimations } from "./useAnalystAnimations";
+import AnalystParallax from "./AnalystParallax";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -50,6 +51,7 @@ export default function AnalystMode({ data }) {
 
   return (
     <div className="mode-view" id="mode-analyst" data-theme="analyst">
+      <AnalystParallax />
       <section className="hero-mode wrap">
         <div className="hero-mode__role">
           <span className="label-mono">{d.role}</span>
