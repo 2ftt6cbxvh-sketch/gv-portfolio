@@ -64,8 +64,42 @@ function PortalCue({ modeId, accent }) {
   return null;
 }
 
-export default function ModeSelector({ selectorRef, person, modes }) {
+export default function ModeSelector({ selectorRef, person, modes, features = {} }) {
   const portalsRef = useRef(null);
+
+  const flags = features.flags || {};
+  const constellationFlag = flags.constellation_bg;
+  const statusPillFlag = flags.status_pill;
+  const kineticFlag = flags.kinetic_headline;
+  const hotkeyFlag = flags.hotkey_hints;
+
+  // Parse status pill metadata
+  let statusPillData = {};
+  if (statusPillFlag?.metadata) {
+    try {
+      statusPillData = typeof statusPillFlag.metadata === "string" ? JSON.parse(statusPillFlag.metadata) : statusPillFlag.metadata;
+    } catch (e) {}
+  }
+
+  // Parse kinetic headline metadata
+  let kineticRoles = null;
+  if (kineticFlag?.metadata) {
+    try {
+      const parsed = typeof kineticFlag.metadata === "string" ? JSON.parse(kineticFlag.metadata) : kineticFlag.metadata;
+      if (parsed.roles) kineticRoles = parsed.roles;
+    } catch (e) {
+      kineticRoles = kineticFlag.metadata;
+    }
+  }
+
+  // Parse constellation metadata
+  let constellationAccent = "#00f0ff";
+  if (constellationFlag?.metadata) {
+    try {
+      const parsed = typeof constellationFlag.metadata === "string" ? JSON.parse(constellationFlag.metadata) : constellationFlag.metadata;
+      if (parsed.accent) constellationAccent = parsed.accent;
+    } catch (e) {}
+  }
 
   // Cursor-follow radial glow per portal
   useEffect(() => {
@@ -92,6 +126,7 @@ export default function ModeSelector({ selectorRef, person, modes }) {
 
   // Keyboard shortcut listener: Press 1, 2, 3 to enter mode
   useEffect(() => {
+    if (hotkeyFlag?.enabled === false) return;
     const handleKeyDown = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       if (["1", "2", "3"].includes(e.key)) {
@@ -104,17 +139,22 @@ export default function ModeSelector({ selectorRef, person, modes }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [hotkeyFlag]);
 
   return (
     <main className="selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
-      {/* Interactive Canvas Constellation background */}
-      <LandingConstellation accentColor="#00f0ff" />
+      {/* Interactive Canvas Constellation background (Controlled by Admin toggle) */}
+      {constellationFlag?.enabled !== false && (
+        <LandingConstellation accentColor={constellationAccent} />
+      )}
 
       <div className="selector__intro reveal" style={{ opacity: 0, position: "relative", zIndex: 2 }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-          <LandingStatusPill />
-        </div>
+        {/* Status Pill (Controlled by Admin toggle & customizable text) */}
+        {statusPillFlag?.enabled !== false && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+            <LandingStatusPill status={statusPillData.status} location={statusPillData.location} />
+          </div>
+        )}
 
         <span className="label-mono selector__eyebrow">{person.name} / {person.initials}</span>
         
@@ -123,17 +163,21 @@ export default function ModeSelector({ selectorRef, person, modes }) {
           <span className="selector__title-line selector__title-line--accent">One line of work.</span>
         </h1>
 
-        {/* Dynamic Kinetic Scramble Subheadline */}
-        <div style={{ margin: "12px 0 16px 0", fontSize: "1.05rem", color: "var(--color-fg-muted)" }}>
-          <KineticHeadline />
-        </div>
+        {/* Dynamic Kinetic Scramble Subheadline (Controlled by Admin toggle & custom roles) */}
+        {kineticFlag?.enabled !== false && (
+          <div style={{ margin: "12px 0 16px 0", fontSize: "1.05rem", color: "var(--color-fg-muted)" }}>
+            <KineticHeadline roles={kineticRoles} />
+          </div>
+        )}
 
         <p className="selector__sub">Choose how you&apos;d like to explore — each mode is a distinct world, built from the same person.</p>
         
-        {/* Hotkey hint pill */}
-        <div className="hotkey-hint-row" style={{ marginTop: 12, fontSize: "0.78rem", opacity: 0.7, fontFamily: "var(--font-mono)" }}>
-          <span>Press <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>1</kbd> Editor &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>2</kbd> Analyst &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>3</kbd> Developer</span>
-        </div>
+        {/* Hotkey hint pill (Controlled by Admin toggle) */}
+        {hotkeyFlag?.enabled !== false && (
+          <div className="hotkey-hint-row" style={{ marginTop: 12, fontSize: "0.78rem", opacity: 0.7, fontFamily: "var(--font-mono)" }}>
+            <span>Press <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>1</kbd> Editor &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>2</kbd> Analyst &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>3</kbd> Developer</span>
+          </div>
+        )}
 
         <div className="selector__divider" aria-hidden="true" />
       </div>

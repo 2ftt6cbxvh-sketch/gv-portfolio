@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-const ROLES = [
+const DEFAULT_ROLES = [
   "🎬 Video Director & Film Editor",
   "📊 Data Science & AI Architect",
   "💻 Full-Stack Software Engineer",
@@ -10,16 +10,27 @@ const ROLES = [
 
 const GLITCH_CHARS = "ABCDEFGHJKLMNOPQRSTUVWXYZ0123456789%#@$&*";
 
-export default function KineticHeadline() {
+export default function KineticHeadline({ roles }) {
+  const rolesList = useMemo(() => {
+    if (Array.isArray(roles) && roles.length > 0) return roles;
+    if (typeof roles === "string" && roles.trim() !== "") {
+      const parsed = roles.split(",").map((r) => r.trim()).filter((r) => r.length > 0);
+      if (parsed.length > 0) return parsed;
+    }
+    return DEFAULT_ROLES;
+  }, [roles]);
+
   const [roleIndex, setRoleIndex] = useState(0);
-  const [displayText, setDisplayText] = useState(ROLES[0]);
+  const [displayText, setDisplayText] = useState(rolesList[0] || "");
   const [isScrambling, setIsScrambling] = useState(false);
 
   useEffect(() => {
+    if (rolesList.length === 0) return;
+    
     const interval = setInterval(() => {
       setIsScrambling(true);
-      const nextIndex = (roleIndex + 1) % ROLES.length;
-      const targetText = ROLES[nextIndex];
+      const nextIndex = (roleIndex + 1) % rolesList.length;
+      const targetText = rolesList[nextIndex];
 
       let frame = 0;
       const maxFrames = 18;
@@ -32,7 +43,6 @@ export default function KineticHeadline() {
           setRoleIndex(nextIndex);
           setIsScrambling(false);
         } else {
-          // Generate scrambled string with progressive resolution
           const progress = frame / maxFrames;
           const resolvedChars = Math.floor(targetText.length * progress);
           
@@ -51,7 +61,7 @@ export default function KineticHeadline() {
     }, 3600);
 
     return () => clearInterval(interval);
-  }, [roleIndex]);
+  }, [roleIndex, rolesList]);
 
   return (
     <div className="kinetic-headline" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
