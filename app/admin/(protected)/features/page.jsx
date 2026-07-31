@@ -26,7 +26,7 @@ export default function FeaturesAdminPage() {
   });
 
   const [moodConfig, setMoodConfig] = useState({
-    defaultMood: "oled",
+    defaultMood: "auto",
     oledAccent: "#00f0ff",
     cyberpunkAccent: "#39ff88",
     cinemaAccent: "#a56ce8",
@@ -48,13 +48,31 @@ export default function FeaturesAdminPage() {
   });
 
   const [aiSandboxConfig, setAiSandboxConfig] = useState({
-    inputsStr: "MRI Scan Data, Time Series Data, Tabular Metrics",
-    output1Label: "Tumor Classification",
-    output1Val: "99.4% Accuracy",
+    input1Label: "MRI Scan Data",
+    input1Desc: "Brain Image Tensors",
+    input1Layers: "h1, h3",
+    input1Acc: "99.4% Accuracy",
+    input1Loss: "0.012 Loss",
+    input1Conf: "98.7% Conf",
+
+    input2Label: "Time Series Data",
+    input2Desc: "Sequential Signals",
+    input2Layers: "h2, h4",
+    input2Acc: "98.6% Accuracy",
+    input2Loss: "0.018 Loss",
+    input2Conf: "99.1% Conf",
+
+    input3Label: "Tabular Metrics",
+    input3Desc: "32-Feature Vectors",
+    input3Layers: "h3, h4",
+    input3Acc: "99.1% Accuracy",
+    input3Loss: "0.009 Loss",
+    input3Conf: "99.5% Conf",
+
+    output1Label: "Classification",
     output2Label: "Anomaly Prediction",
-    output2Val: "0.012 Loss",
     output3Label: "Confidence Score",
-    output3Val: "98.7% Conf",
+
     f1Title: "15+ DATASETS",
     f1Sub: "Processed & Modeled",
     f2Title: "99.4% ACCURACY",
@@ -115,7 +133,7 @@ export default function FeaturesAdminPage() {
             try {
               const parsed = typeof moodFlag.metadata === "string" ? JSON.parse(moodFlag.metadata) : moodFlag.metadata;
               setMoodConfig({
-                defaultMood: parsed.defaultMood || "oled",
+                defaultMood: parsed.defaultMood || "auto",
                 oledAccent: parsed.oledAccent || "#00f0ff",
                 cyberpunkAccent: parsed.cyberpunkAccent || "#39ff88",
                 cinemaAccent: parsed.cinemaAccent || "#a56ce8",
@@ -166,13 +184,31 @@ export default function FeaturesAdminPage() {
               const parsed = typeof sandboxFlag.metadata === "string" ? JSON.parse(sandboxFlag.metadata) : sandboxFlag.metadata;
               setAiSandboxConfig((prev) => ({
                 ...prev,
-                inputsStr: parsed.inputsStr || prev.inputsStr,
+                input1Label: parsed.inputs?.[0]?.label || prev.input1Label,
+                input1Desc: parsed.inputs?.[0]?.desc || prev.input1Desc,
+                input1Layers: Array.isArray(parsed.inputs?.[0]?.activeLayers) ? parsed.inputs[0].activeLayers.join(", ") : prev.input1Layers,
+                input1Acc: parsed.inputs?.[0]?.accuracy || prev.input1Acc,
+                input1Loss: parsed.inputs?.[0]?.loss || prev.input1Loss,
+                input1Conf: parsed.inputs?.[0]?.conf || prev.input1Conf,
+
+                input2Label: parsed.inputs?.[1]?.label || prev.input2Label,
+                input2Desc: parsed.inputs?.[1]?.desc || prev.input2Desc,
+                input2Layers: Array.isArray(parsed.inputs?.[1]?.activeLayers) ? parsed.inputs[1].activeLayers.join(", ") : prev.input2Layers,
+                input2Acc: parsed.inputs?.[1]?.accuracy || prev.input2Acc,
+                input2Loss: parsed.inputs?.[1]?.loss || prev.input2Loss,
+                input2Conf: parsed.inputs?.[1]?.conf || prev.input2Conf,
+
+                input3Label: parsed.inputs?.[2]?.label || prev.input3Label,
+                input3Desc: parsed.inputs?.[2]?.desc || prev.input3Desc,
+                input3Layers: Array.isArray(parsed.inputs?.[2]?.activeLayers) ? parsed.inputs[2].activeLayers.join(", ") : prev.input3Layers,
+                input3Acc: parsed.inputs?.[2]?.accuracy || prev.input3Acc,
+                input3Loss: parsed.inputs?.[2]?.loss || prev.input3Loss,
+                input3Conf: parsed.inputs?.[2]?.conf || prev.input3Conf,
+
                 output1Label: parsed.outputs?.[0]?.label || prev.output1Label,
-                output1Val: parsed.outputs?.[0]?.defaultVal || prev.output1Val,
                 output2Label: parsed.outputs?.[1]?.label || prev.output2Label,
-                output2Val: parsed.outputs?.[1]?.defaultVal || prev.output2Val,
                 output3Label: parsed.outputs?.[2]?.label || prev.output3Label,
-                output3Val: parsed.outputs?.[2]?.defaultVal || prev.output3Val,
+
                 f1Title: parsed.cubeFaces?.[0]?.title || prev.f1Title,
                 f1Sub: parsed.cubeFaces?.[0]?.sub || prev.f1Sub,
                 f2Title: parsed.cubeFaces?.[1]?.title || prev.f2Title,
@@ -356,11 +392,39 @@ export default function FeaturesAdminPage() {
     try {
       const currentFlag = flags.find((f) => f.key === "analyst_ai_sandbox");
       const metadataObj = {
-        inputsStr: aiSandboxConfig.inputsStr,
+        inputs: [
+          {
+            id: "i1",
+            label: aiSandboxConfig.input1Label,
+            desc: aiSandboxConfig.input1Desc,
+            activeLayers: aiSandboxConfig.input1Layers.split(",").map((s) => s.trim()).filter(Boolean),
+            accuracy: aiSandboxConfig.input1Acc,
+            loss: aiSandboxConfig.input1Loss,
+            conf: aiSandboxConfig.input1Conf,
+          },
+          {
+            id: "i2",
+            label: aiSandboxConfig.input2Label,
+            desc: aiSandboxConfig.input2Desc,
+            activeLayers: aiSandboxConfig.input2Layers.split(",").map((s) => s.trim()).filter(Boolean),
+            accuracy: aiSandboxConfig.input2Acc,
+            loss: aiSandboxConfig.input2Loss,
+            conf: aiSandboxConfig.input2Conf,
+          },
+          {
+            id: "i3",
+            label: aiSandboxConfig.input3Label,
+            desc: aiSandboxConfig.input3Desc,
+            activeLayers: aiSandboxConfig.input3Layers.split(",").map((s) => s.trim()).filter(Boolean),
+            accuracy: aiSandboxConfig.input3Acc,
+            loss: aiSandboxConfig.input3Loss,
+            conf: aiSandboxConfig.input3Conf,
+          },
+        ],
         outputs: [
-          { label: aiSandboxConfig.output1Label, defaultVal: aiSandboxConfig.output1Val },
-          { label: aiSandboxConfig.output2Label, defaultVal: aiSandboxConfig.output2Val },
-          { label: aiSandboxConfig.output3Label, defaultVal: aiSandboxConfig.output3Val },
+          { label: aiSandboxConfig.output1Label, defaultVal: aiSandboxConfig.input1Acc },
+          { label: aiSandboxConfig.output2Label, defaultVal: aiSandboxConfig.input1Loss },
+          { label: aiSandboxConfig.output3Label, defaultVal: aiSandboxConfig.input1Conf },
         ],
         cubeFaces: [
           { title: aiSandboxConfig.f1Title, sub: aiSandboxConfig.f1Sub, icon: "📊" },
@@ -383,7 +447,7 @@ export default function FeaturesAdminPage() {
       });
 
       if (res.ok) {
-        alert("Analyst AI Sandbox & Hologram Cube text updated successfully! Changes are live on frontend.");
+        alert("Analyst AI Sandbox & Hologram Cube settings updated successfully! Changes are live on frontend.");
       }
     } catch (e) {
       alert("Failed to save Analyst AI Sandbox settings.");
@@ -652,37 +716,105 @@ export default function FeaturesAdminPage() {
       <div className="admin-card" style={{ marginBottom: 24 }}>
         <h3 style={{ marginTop: 0, marginBottom: 6 }}>🧠 Analyst AI Neural Net &amp; 3D Hologram Cube Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
-          Edit the Neural Network input nodes, prediction outputs, and 3D Hologram Cube face titles.
+          Edit the Neural Network input nodes, active hidden layers (h1=Conv2D, h2=LSTM, h3=Dense, h4=Attention), and outputs.
         </p>
 
-        <div style={{ display: "grid", gap: 14 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-              Neural Net Input Layer Nodes (Comma Separated)
-            </label>
-            <input
-              type="text"
-              className="admin-input"
-              value={aiSandboxConfig.inputsStr}
-              onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, inputsStr: e.target.value })}
-              placeholder="e.g. MRI Scan Data, Time Series Data, Tabular Metrics"
-            />
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Prediction 1 (Label / Value)</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 6 }}>
-                <input type="text" className="admin-input" value={aiSandboxConfig.output1Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output1Label: e.target.value })} />
-                <input type="text" className="admin-input" value={aiSandboxConfig.output1Val} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output1Val: e.target.value })} />
+        <div style={{ display: "grid", gap: 16 }}>
+          {/* Input Node 1 */}
+          <div style={{ padding: 14, background: "rgba(255,255,255,0.02)", border: "1px solid var(--a-border)", borderRadius: 8 }}>
+            <h4 style={{ margin: "0 0 10px 0", fontSize: 14 }}>⚡ Input Node 1</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+              <div>
+                <label style={{ fontSize: 12 }}>Label</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input1Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input1Label: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12 }}>Description</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input1Desc} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input1Desc: e.target.value })} />
               </div>
             </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 11 }}>Active Layers (e.g. h1, h3)</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input1Layers} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input1Layers: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Accuracy Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input1Acc} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input1Acc: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Loss Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input1Loss} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input1Loss: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Conf Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input1Conf} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input1Conf: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+            </div>
+          </div>
 
-            <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Prediction 2 (Label / Value)</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 6 }}>
-                <input type="text" className="admin-input" value={aiSandboxConfig.output2Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output2Label: e.target.value })} />
-                <input type="text" className="admin-input" value={aiSandboxConfig.output2Val} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output2Val: e.target.value })} />
+          {/* Input Node 2 */}
+          <div style={{ padding: 14, background: "rgba(255,255,255,0.02)", border: "1px solid var(--a-border)", borderRadius: 8 }}>
+            <h4 style={{ margin: "0 0 10px 0", fontSize: 14 }}>⚡ Input Node 2</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+              <div>
+                <label style={{ fontSize: 12 }}>Label</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input2Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input2Label: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12 }}>Description</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input2Desc} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input2Desc: e.target.value })} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 11 }}>Active Layers (e.g. h2, h4)</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input2Layers} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input2Layers: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Accuracy Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input2Acc} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input2Acc: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Loss Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input2Loss} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input2Loss: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Conf Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input2Conf} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input2Conf: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Input Node 3 */}
+          <div style={{ padding: 14, background: "rgba(255,255,255,0.02)", border: "1px solid var(--a-border)", borderRadius: 8 }}>
+            <h4 style={{ margin: "0 0 10px 0", fontSize: 14 }}>⚡ Input Node 3</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+              <div>
+                <label style={{ fontSize: 12 }}>Label</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input3Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input3Label: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12 }}>Description</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input3Desc} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input3Desc: e.target.value })} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 11 }}>Active Layers (e.g. h3, h4)</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input3Layers} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input3Layers: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Accuracy Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input3Acc} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input3Acc: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Loss Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input3Loss} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input3Loss: e.target.value })} style={{ fontSize: 12 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Conf Output</label>
+                <input type="text" className="admin-input" value={aiSandboxConfig.input3Conf} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, input3Conf: e.target.value })} style={{ fontSize: 12 }} />
               </div>
             </div>
           </div>
