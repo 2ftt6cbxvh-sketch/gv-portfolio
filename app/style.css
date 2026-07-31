@@ -127,17 +127,53 @@
 .nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 40;
   display: flex; align-items: center; justify-content: space-between;
-  padding: var(--space-5) clamp(var(--space-5), 4vw, var(--space-10));
+  padding: 16px clamp(16px, 4vw, 36px);
   pointer-events: none;
   opacity: 0;
 }
 .nav.is-visible { opacity: 1; pointer-events: auto; transition: opacity 500ms var(--ease-out); }
-.nav__mode-label { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); }
+
+.nav__mode-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.nav__right-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
 .nav__back {
   font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--color-text-muted); display: inline-flex; align-items: center; gap: var(--space-2);
 }
 .nav__back:hover { color: var(--color-accent); }
+
+@media (max-width: 768px) {
+  .nav {
+    padding: 12px 14px;
+  }
+  .nav__mode-label {
+    display: none; /* Hide center label on small screens to prevent overlap with logo & theme pill */
+  }
+  .theme-mood-switcher {
+    gap: 2px !important;
+    font-size: 0.65rem !important;
+  }
+  .theme-mood-switcher button {
+    padding: 3px 6px !important;
+  }
+}
 
 /* ============ LOGO SYSTEM ============ */
 .gv-logo-wrap {

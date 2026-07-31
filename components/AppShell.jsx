@@ -88,13 +88,15 @@ export default function AppShell({ data }) {
           aria-label="GV — return to mode select"
         />
         <span className="nav__mode-label" id="nav-mode-label" ref={navModeLabelRef} />
-        <ThemeMoodSwitcher
-          metadata={features?.flags?.theme_moods?.metadata}
-          enabled={features?.flags?.theme_moods?.enabled !== false}
-        />
-        <button className="nav__back" id="nav-back" ref={navBackRef} style={{ display: "none" }}>
-          ← All modes
-        </button>
+        <div className="nav__right-group">
+          <ThemeMoodSwitcher
+            metadata={features?.flags?.theme_moods?.metadata}
+            enabled={features?.flags?.theme_moods?.enabled !== false}
+          />
+          <button className="nav__back" id="nav-back" ref={navBackRef} style={{ display: "none" }}>
+            ← All modes
+          </button>
+        </div>
       </nav>
 
       {/* Signature Scribble Intro Overlay */}
