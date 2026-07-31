@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 
 const MOODS = [
-  { id: "oled", label: "🌙 OLED", defaultAccent: "#00f0ff" },
-  { id: "cyberpunk", label: "⚡ CYBERPUNK", defaultAccent: "#39ff88" },
-  { id: "cinema", label: "🎬 CINEMA", defaultAccent: "#a56ce8" },
+  { id: "auto", label: "✨ AUTO" },
+  { id: "oled", label: "🌙 OLED" },
+  { id: "cyberpunk", label: "⚡ CYBERPUNK" },
+  { id: "cinema", label: "🎬 CINEMA" },
 ];
 
 export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
-  const [activeMood, setActiveMood] = useState("oled");
+  const [activeMood, setActiveMood] = useState("auto");
 
   let oledAccent = "#00f0ff";
   let cyberpunkAccent = "#39ff88";
@@ -18,9 +19,6 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
   if (metadata) {
     try {
       const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-      if (parsed.defaultMood) {
-        // Only set default mood once on initial load
-      }
       if (parsed.oledAccent) oledAccent = parsed.oledAccent;
       if (parsed.cyberpunkAccent) cyberpunkAccent = parsed.cyberpunkAccent;
       if (parsed.cinemaAccent) cinemaAccent = parsed.cinemaAccent;
@@ -31,6 +29,15 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
     setActiveMood(moodId);
     const stage = document.getElementById("stage");
     if (!stage) return;
+
+    if (moodId === "auto") {
+      // Restore native per-mode colors (Editor=Purple, Analyst=Teal, Developer=Green, Landing=Cyan)
+      stage.style.removeProperty("--color-accent");
+      stage.style.removeProperty("--landing-logo-color");
+      stage.style.removeProperty("--landing-spark-color");
+      stage.removeAttribute("data-theme-mood");
+      return;
+    }
 
     let accent = oledAccent;
     if (moodId === "cyberpunk") accent = cyberpunkAccent;
@@ -46,8 +53,14 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
     if (metadata) {
       try {
         const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-        if (parsed.defaultMood) applyMood(parsed.defaultMood);
-      } catch (e) {}
+        if (parsed.defaultMood) {
+          applyMood(parsed.defaultMood);
+        } else {
+          applyMood("auto");
+        }
+      } catch (e) {
+        applyMood("auto");
+      }
     }
   }, [metadata]);
 
@@ -70,7 +83,7 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
       }}
     >
       {MOODS.map((mood) => {
-        let accent = oledAccent;
+        let accent = "#00f0ff";
         if (mood.id === "cyberpunk") accent = cyberpunkAccent;
         if (mood.id === "cinema") accent = cinemaAccent;
 
@@ -81,9 +94,9 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
             key={mood.id}
             onClick={() => applyMood(mood.id)}
             style={{
-              background: isActive ? `color-mix(in oklab, ${accent} 22%, transparent)` : "transparent",
-              border: isActive ? `1px solid ${accent}` : "1px solid transparent",
-              color: isActive ? accent : "rgba(255, 255, 255, 0.6)",
+              background: isActive ? (mood.id === "auto" ? "rgba(255,255,255,0.15)" : `color-mix(in oklab, ${accent} 22%, transparent)`) : "transparent",
+              border: isActive ? (mood.id === "auto" ? "1px solid rgba(255,255,255,0.4)" : `1px solid ${accent}`) : "1px solid transparent",
+              color: isActive ? (mood.id === "auto" ? "#ffffff" : accent) : "rgba(255, 255, 255, 0.6)",
               borderRadius: 16,
               padding: "3px 9px",
               cursor: "pointer",

@@ -565,6 +565,7 @@ export default function FeaturesAdminPage() {
               value={moodConfig.defaultMood}
               onChange={(e) => setMoodConfig({ ...moodConfig, defaultMood: e.target.value })}
             >
+              <option value="auto">✨ AUTO (Native Mode Colors: Editor=Purple, Analyst=Teal, Dev=Green)</option>
               <option value="oled">🌙 OLED (Deep Dark &amp; Cyan)</option>
               <option value="cyberpunk">⚡ CYBERPUNK (Matrix Neon Green)</option>
               <option value="cinema">🎬 CINEMA (Anamorphic Gold &amp; Purple)</option>
