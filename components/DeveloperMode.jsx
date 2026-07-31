@@ -10,6 +10,9 @@ import JourneyMap from "./JourneyMap";
 import DeveloperCodeIDE from "./DeveloperCodeIDE";
 import CertModal from "./CertModal";
 import TextScramble from "./TextScramble";
+import DeveloperSQLSandbox from "./DeveloperSQLSandbox";
+import DeveloperGitGraph from "./DeveloperGitGraph";
+import DeveloperAPITester from "./DeveloperAPITester";
 
 export default function DeveloperMode({ data, features }) {
   const d = data;
@@ -54,6 +57,17 @@ export default function DeveloperMode({ data, features }) {
       {/* Interactive VSCode Code Playground & GitHub Contribution Matrix */}
       <section className="section wrap">
         <DeveloperCodeIDE />
+      </section>
+
+      {/* Interactive Systems & Engineering Sandbox */}
+      <section className="section wrap">
+        <div className="section-head">
+          <h3 className="section-head__title">Interactive Systems &amp; Engineering Sandbox</h3>
+          <span className="section-head__num">/ INTERACTIVE</span>
+        </div>
+        <DeveloperSQLSandbox accent={d.accent || "#39ff88"} />
+        <DeveloperGitGraph accent={d.accent || "#39ff88"} />
+        <DeveloperAPITester accent={d.accent || "#39ff88"} />
       </section>
 
       <section className="section wrap" aria-labelledby="dev-sim-title">

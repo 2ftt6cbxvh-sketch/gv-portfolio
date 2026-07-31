@@ -9,6 +9,7 @@ import { useEditorAnimations } from "./useEditorAnimations";
 import ProjectModal from "./ProjectModal";
 import EditorCinematicToggle from "./EditorCinematicToggle";
 import EditorVideoReel from "./EditorVideoReel";
+import EditorLUTMatrix from "./EditorLUTMatrix";
 import JourneyMap from "./JourneyMap";
 import EditorAudioWave from "./EditorAudioWave";
 import EditorFilmGrainToggle from "./EditorFilmGrainToggle";
@@ -27,6 +28,7 @@ export default function EditorMode({ data, features }) {
   const d = data;
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedCert, setSelectedCert] = useState(null);
+  const [lutFilter, setLutFilter] = useState("none");
   useFilmReelScroll("#mode-editor");
   useEditorAnimations("#mode-editor");
 
@@ -79,8 +81,14 @@ export default function EditorMode({ data, features }) {
         </div>
       </section>
 
+      <section className="section wrap">
+        <EditorLUTMatrix onSelectLUT={(filterStr) => setLutFilter(filterStr)} accent={d.accent || "#a56ce8"} />
+      </section>
+
       {features?.flags?.video_reel?.enabled !== false && (
-        <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} />
+        <div style={{ filter: lutFilter, transition: "filter 0.4s ease-in-out" }}>
+          <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} />
+        </div>
       )}
 
       {showProjects && d.projects.length > 0 && (
