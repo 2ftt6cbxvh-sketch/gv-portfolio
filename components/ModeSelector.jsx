@@ -151,17 +151,53 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
         portal.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
       };
 
+      // Touch Drag 3D Tilt for Mobile Screens
+      const touchMove = (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        const rect = portal.getBoundingClientRect();
+        const posX = touch.clientX - rect.left;
+        const posY = touch.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        portal.dataset.isHovered = "true";
+        targetRotX = (-(posY - centerY) / centerY) * 12;
+        targetRotY = ((posX - centerX) / centerX) * 12;
+        portal.style.setProperty("--mouse-x", `${(posX / rect.width) * 100}%`);
+        portal.style.setProperty("--mouse-y", `${(posY / rect.height) * 100}%`);
+      };
+
+      const touchEnd = () => {
+        portal.dataset.isHovered = "false";
+        targetRotX = 0;
+        targetRotY = 0;
+        portal.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
+      };
+
+      // Request iOS Gyroscope Permission on touch start if needed
+      const touchStart = () => {
+        if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+          DeviceOrientationEvent.requestPermission().then((res) => {
+            if (res === "granted") {
+              window.addEventListener("deviceorientation", handleOrientation);
+            }
+          }).catch(() => {});
+        }
+      };
+
       portal.addEventListener("mousemove", move);
       portal.addEventListener("mouseleave", leave);
-      handlers.push({ portal, move, leave });
+      portal.addEventListener("touchstart", touchStart, { passive: true });
+      portal.addEventListener("touchmove", touchMove, { passive: true });
+      portal.addEventListener("touchend", touchEnd, { passive: true });
+      handlers.push({ portal, move, leave, touchStart, touchMove, touchEnd });
     });
 
     // Mobile Gyroscope Hardware Orientation Listener
     const handleOrientation = (e) => {
       if (e.beta === null || e.gamma === null) return;
-      // Beta: tilt front/back (-90 to 90), Gamma: tilt left/right (-90 to 90)
-      const gyroRotX = Math.max(-12, Math.min(12, (e.beta - 45) * 0.3));
-      const gyroRotY = Math.max(-12, Math.min(12, e.gamma * 0.3));
+      const gyroRotX = Math.max(-14, Math.min(14, (e.beta - 45) * 0.35));
+      const gyroRotY = Math.max(-14, Math.min(14, e.gamma * 0.35));
 
       targetRotX = gyroRotX;
       targetRotY = gyroRotY;
@@ -169,18 +205,21 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
       portals.forEach((p) => { p.dataset.isMobileTilt = "true"; });
     };
 
-    if (window.DeviceOrientationEvent) {
+    if (typeof window !== "undefined" && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== "function") {
       window.addEventListener("deviceorientation", handleOrientation);
     }
 
     return () => {
       cancelAnimationFrame(animId);
-      if (window.DeviceOrientationEvent) {
+      if (typeof window !== "undefined" && window.DeviceOrientationEvent) {
         window.removeEventListener("deviceorientation", handleOrientation);
       }
-      handlers.forEach(({ portal, move, leave }) => {
+      handlers.forEach(({ portal, move, leave, touchStart, touchMove, touchEnd }) => {
         portal.removeEventListener("mousemove", move);
         portal.removeEventListener("mouseleave", leave);
+        portal.removeEventListener("touchstart", touchStart);
+        portal.removeEventListener("touchmove", touchMove);
+        portal.removeEventListener("touchend", touchEnd);
       });
     };
   }, []);
