@@ -7,9 +7,9 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
   const [isFiring, setIsFiring] = useState(false);
 
   let inputs = [
-    { id: "i1", label: "MRI Scan Data", desc: "Brain Image Tensors", accuracy: "99.4% Accuracy", loss: "0.012 Loss", conf: "98.7% Conf" },
-    { id: "i2", label: "Time Series Data", desc: "Sequential Signals", accuracy: "98.6% Accuracy", loss: "0.018 Loss", conf: "99.1% Conf" },
-    { id: "i3", label: "Tabular Metrics", desc: "32-Feature Vectors", accuracy: "99.1% Accuracy", loss: "0.009 Loss", conf: "99.5% Conf" },
+    { id: "i1", label: "MRI Scan Data", desc: "Brain Image Tensors", activeLayers: ["h1", "h3"], accuracy: "99.4% Accuracy", loss: "0.012 Loss", conf: "98.7% Conf" },
+    { id: "i2", label: "Time Series Data", desc: "Sequential Signals", activeLayers: ["h2", "h4"], accuracy: "98.6% Accuracy", loss: "0.018 Loss", conf: "99.1% Conf" },
+    { id: "i3", label: "Tabular Metrics", desc: "32-Feature Vectors", activeLayers: ["h3", "h4"], accuracy: "99.1% Accuracy", loss: "0.009 Loss", conf: "99.5% Conf" },
   ];
 
   let hidden = [
@@ -29,15 +29,19 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
     try {
       const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
       if (parsed.inputs && Array.isArray(parsed.inputs) && parsed.inputs.length > 0) {
-        inputs = parsed.inputs;
+        inputs = parsed.inputs.map((inp, idx) => ({
+          ...inp,
+          activeLayers: idx === 0 ? ["h1", "h3"] : idx === 1 ? ["h2", "h4"] : ["h3", "h4"],
+        }));
       } else if (parsed.inputsStr) {
         inputs = parsed.inputsStr.split(",").map((s, idx) => ({
           id: `i${idx + 1}`,
           label: s.trim(),
           desc: "Feature Array",
+          activeLayers: idx === 0 ? ["h1", "h3"] : idx === 1 ? ["h2", "h4"] : ["h3", "h4"],
           accuracy: `${(98.5 + idx * 0.4).toFixed(1)}% Accuracy`,
           loss: `0.00${12 + idx} Loss`,
-          conf: `99.${idx} % Conf`,
+          conf: `99.${idx}% Conf`,
         }));
       }
       if (parsed.outputs && Array.isArray(parsed.outputs) && parsed.outputs.length > 0) {
@@ -49,10 +53,11 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
   const triggerForwardPass = (index) => {
     setActiveInput(index);
     setIsFiring(true);
-    setTimeout(() => setIsFiring(false), 600);
+    setTimeout(() => setIsFiring(false), 700);
   };
 
   const selectedInput = inputs[activeInput] || inputs[0];
+  const activeHiddenLayers = selectedInput.activeLayers || ["h1", "h3"];
 
   return (
     <div
@@ -83,7 +88,7 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
             fontFamily: "var(--font-mono)",
           }}
         >
-          {isFiring ? "⚡ FIRING FORWARD PASS..." : "Click any Input Node to Fire Signal"}
+          {isFiring ? `⚡ ACTIVATING NODES (${activeHiddenLayers.join(" + ").toUpperCase()})` : "Click any Input Node to Fire Signal"}
         </span>
       </div>
 
@@ -115,30 +120,42 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
           ))}
         </div>
 
-        {/* Hidden Layer (Animated Connections) */}
+        {/* Hidden Layer (Selective Node Activations) */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", justifyContent: "center" }}>
           <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>HIDDEN WEIGHT LAYERS</span>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
-            {hidden.map((h, idx) => (
-              <div
-                key={h.id}
-                style={{
-                  padding: "12px 8px",
-                  background: isFiring ? `color-mix(in oklab, ${accent} 30%, rgba(0,0,0,0.6))` : "rgba(0,0,0,0.4)",
-                  border: `1.5px dashed ${isFiring ? accent : `color-mix(in oklab, ${accent} 40%, transparent)`}`,
-                  borderRadius: 6,
-                  textAlign: "center",
-                  fontSize: "0.78rem",
-                  fontFamily: "var(--font-mono)",
-                  color: isFiring ? accent : "rgba(255,255,255,0.85)",
-                  boxShadow: isFiring ? `0 0 20px ${accent}` : "none",
-                  transform: isFiring ? "scale(1.05)" : "scale(1)",
-                  transition: "all 0.25s ease",
-                }}
-              >
-                {h.label}
-              </div>
-            ))}
+            {hidden.map((h) => {
+              const isActiveNode = activeHiddenLayers.includes(h.id);
+              const nodeFiring = isFiring && isActiveNode;
+
+              return (
+                <div
+                  key={h.id}
+                  style={{
+                    padding: "12px 8px",
+                    background: nodeFiring
+                      ? `color-mix(in oklab, ${accent} 35%, rgba(0,0,0,0.6))`
+                      : isActiveNode
+                      ? `color-mix(in oklab, ${accent} 10%, rgba(0,0,0,0.4))`
+                      : "rgba(0,0,0,0.3)",
+                    border: `1.5px ${nodeFiring ? "solid" : "dashed"} ${
+                      nodeFiring ? accent : isActiveNode ? `color-mix(in oklab, ${accent} 50%, transparent)` : "rgba(255,255,255,0.08)"
+                    }`,
+                    borderRadius: 6,
+                    textAlign: "center",
+                    fontSize: "0.78rem",
+                    fontFamily: "var(--font-mono)",
+                    color: nodeFiring ? accent : isActiveNode ? "#ffffff" : "rgba(255,255,255,0.35)",
+                    boxShadow: nodeFiring ? `0 0 24px ${accent}` : "none",
+                    transform: nodeFiring ? "scale(1.08)" : "scale(1)",
+                    opacity: isActiveNode ? 1 : 0.4,
+                    transition: "all 0.25s ease",
+                  }}
+                >
+                  {h.label}
+                </div>
+              );
+            })}
           </div>
         </div>
 
