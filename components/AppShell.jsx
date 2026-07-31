@@ -7,6 +7,7 @@ import EditorMode from "./EditorMode";
 import AnalystMode from "./AnalystMode";
 import CursorGlow from "./CursorGlow";
 import SignatureIntro from "./SignatureIntro";
+import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -87,6 +88,10 @@ export default function AppShell({ data }) {
           aria-label="GV — return to mode select"
         />
         <span className="nav__mode-label" id="nav-mode-label" ref={navModeLabelRef} />
+        <ThemeMoodSwitcher
+          metadata={features?.flags?.theme_moods?.metadata}
+          enabled={features?.flags?.theme_moods?.enabled !== false}
+        />
         <button className="nav__back" id="nav-back" ref={navBackRef} style={{ display: "none" }}>
           ← All modes
         </button>

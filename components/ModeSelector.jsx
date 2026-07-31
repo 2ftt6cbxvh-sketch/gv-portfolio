@@ -101,11 +101,34 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
     } catch (e) {}
   }
 
-  // 3D perspective tilt + cursor-follow radial glow per portal
+  // 3D perspective tilt (Desktop Mouse + Mobile Gyroscope with Lerp Smoothing)
   useEffect(() => {
     const portals = portalsRef.current?.querySelectorAll(".portal");
     if (!portals) return;
 
+    let targetRotX = 0;
+    let targetRotY = 0;
+    let currentRotX = 0;
+    let currentRotY = 0;
+    let animId;
+
+    // Smooth Lerp Loop for physics
+    const updateLerp = () => {
+      currentRotX += (targetRotX - currentRotX) * 0.12;
+      currentRotY += (targetRotY - currentRotY) * 0.12;
+
+      portals.forEach((portal) => {
+        if (portal.dataset.isHovered === "true" || portal.dataset.isMobileTilt === "true") {
+          portal.style.transform = `perspective(1000px) rotateX(${currentRotX.toFixed(2)}deg) rotateY(${currentRotY.toFixed(2)}deg) scale3d(1.03,1.03,1.03)`;
+        }
+      });
+
+      animId = requestAnimationFrame(updateLerp);
+    };
+
+    animId = requestAnimationFrame(updateLerp);
+
+    // Desktop Mouse Handlers
     const handlers = [];
     portals.forEach((portal) => {
       const move = (e) => {
@@ -114,23 +137,47 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
         const posY = e.clientY - rect.top;
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        // 3D tilt
-        const rotX = (-(posY - centerY) / centerY) * 7;
-        const rotY = ((posX - centerX) / centerX) * 7;
-        portal.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale3d(1.02,1.02,1.02)`;
-        // cursor glow
+        portal.dataset.isHovered = "true";
+        targetRotX = (-(posY - centerY) / centerY) * 8;
+        targetRotY = ((posX - centerX) / centerX) * 8;
         portal.style.setProperty("--mouse-x", `${(posX / rect.width) * 100}%`);
         portal.style.setProperty("--mouse-y", `${(posY / rect.height) * 100}%`);
       };
+
       const leave = () => {
+        portal.dataset.isHovered = "false";
+        targetRotX = 0;
+        targetRotY = 0;
         portal.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
       };
+
       portal.addEventListener("mousemove", move);
       portal.addEventListener("mouseleave", leave);
       handlers.push({ portal, move, leave });
     });
 
+    // Mobile Gyroscope Hardware Orientation Listener
+    const handleOrientation = (e) => {
+      if (e.beta === null || e.gamma === null) return;
+      // Beta: tilt front/back (-90 to 90), Gamma: tilt left/right (-90 to 90)
+      const gyroRotX = Math.max(-12, Math.min(12, (e.beta - 45) * 0.3));
+      const gyroRotY = Math.max(-12, Math.min(12, e.gamma * 0.3));
+
+      targetRotX = gyroRotX;
+      targetRotY = gyroRotY;
+
+      portals.forEach((p) => { p.dataset.isMobileTilt = "true"; });
+    };
+
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener("deviceorientation", handleOrientation);
+    }
+
     return () => {
+      cancelAnimationFrame(animId);
+      if (window.DeviceOrientationEvent) {
+        window.removeEventListener("deviceorientation", handleOrientation);
+      }
       handlers.forEach(({ portal, move, leave }) => {
         portal.removeEventListener("mousemove", move);
         portal.removeEventListener("mouseleave", leave);

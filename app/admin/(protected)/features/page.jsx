@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 const REQUIRED_FLAGS = [
   { key: "signature_intro", name: "Full-Screen Signature Scribble Intro", defaultEnabled: true },
+  { key: "theme_moods", name: "Instant Theme Mood Switcher Pill (OLED / Cyberpunk / Cinema)", defaultEnabled: true },
   { key: "constellation_bg", name: "Landing Particle Constellation Canvas", defaultEnabled: true },
   { key: "kinetic_headline", name: "Landing Cyber Scramble Sub-Headline", defaultEnabled: true },
   { key: "status_pill", name: "Landing Status Indicator Pill", defaultEnabled: true },
@@ -21,6 +22,13 @@ export default function FeaturesAdminPage() {
     text: "Ganesh Varma",
     accentColor: "#00f0ff",
     glowColor: "#00ffff",
+  });
+
+  const [moodConfig, setMoodConfig] = useState({
+    defaultMood: "oled",
+    oledAccent: "#00f0ff",
+    cyberpunkAccent: "#39ff88",
+    cinemaAccent: "#a56ce8",
   });
 
   const [statusPillConfig, setStatusPillConfig] = useState({
@@ -75,6 +83,19 @@ export default function FeaturesAdminPage() {
                 text: parsed.text || "Ganesh Varma",
                 accentColor: parsed.accentColor || "#00f0ff",
                 glowColor: parsed.glowColor || "#00ffff",
+              });
+            } catch (e) {}
+          }
+
+          const moodFlag = flagMap.get("theme_moods");
+          if (moodFlag && moodFlag.metadata) {
+            try {
+              const parsed = typeof moodFlag.metadata === "string" ? JSON.parse(moodFlag.metadata) : moodFlag.metadata;
+              setMoodConfig({
+                defaultMood: parsed.defaultMood || "oled",
+                oledAccent: parsed.oledAccent || "#00f0ff",
+                cyberpunkAccent: parsed.cyberpunkAccent || "#39ff88",
+                cinemaAccent: parsed.cinemaAccent || "#a56ce8",
               });
             } catch (e) {}
           }
@@ -178,6 +199,28 @@ export default function FeaturesAdminPage() {
       }
     } catch (e) {
       alert("Failed to save signature intro settings.");
+    }
+    setSavingKey(null);
+  };
+
+  const handleSaveMoodMetadata = async () => {
+    setSavingKey("theme_moods");
+    try {
+      const currentFlag = flags.find((f) => f.key === "theme_moods");
+      const res = await fetch("/api/admin/features", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "theme_moods",
+          enabled: currentFlag?.enabled !== false,
+          metadata: JSON.stringify(moodConfig),
+        }),
+      });
+      if (res.ok) {
+        alert("Theme Mood Switcher settings updated successfully! Changes are live on frontend.");
+      }
+    } catch (e) {
+      alert("Failed to save theme mood settings.");
     }
     setSavingKey(null);
   };
@@ -409,6 +452,118 @@ export default function FeaturesAdminPage() {
             disabled={savingKey === "signature_intro"}
           >
             {savingKey === "signature_intro" ? "Saving..." : "Save Signature Settings"}
+          </button>
+        </div>
+      </div>
+
+      {/* 0.5. Theme Mood Switcher Config */}
+      <div className="admin-card" style={{ marginBottom: 24 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>🌓 Instant Theme Mood Switcher Customization</h3>
+        <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
+          Edit the default theme mood and accent colors for OLED, Cyberpunk, and Cinema modes.
+        </p>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Default Mood on Page Load
+            </label>
+            <select
+              className="admin-input"
+              value={moodConfig.defaultMood}
+              onChange={(e) => setMoodConfig({ ...moodConfig, defaultMood: e.target.value })}
+            >
+              <option value="oled">🌙 OLED (Deep Dark &amp; Cyan)</option>
+              <option value="cyberpunk">⚡ CYBERPUNK (Matrix Neon Green)</option>
+              <option value="cinema">🎬 CINEMA (Anamorphic Gold &amp; Purple)</option>
+            </select>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                OLED Accent Color
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="color"
+                  value={moodConfig.oledAccent.startsWith("#") && moodConfig.oledAccent.length === 7 ? moodConfig.oledAccent : "#00f0ff"}
+                  onChange={(e) => setMoodConfig({ ...moodConfig, oledAccent: e.target.value })}
+                  style={{ width: 34, height: 34, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent" }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={moodConfig.oledAccent}
+                  onChange={(e) => setMoodConfig({ ...moodConfig, oledAccent: e.target.value })}
+                  style={{ fontSize: 12 }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                Cyberpunk Accent Color
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="color"
+                  value={moodConfig.cyberpunkAccent.startsWith("#") && moodConfig.cyberpunkAccent.length === 7 ? moodConfig.cyberpunkAccent : "#39ff88"}
+                  onChange={(e) => setMoodConfig({ ...moodConfig, cyberpunkAccent: e.target.value })}
+                  style={{ width: 34, height: 34, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent" }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={moodConfig.cyberpunkAccent}
+                  onChange={(e) => setMoodConfig({ ...moodConfig, cyberpunkAccent: e.target.value })}
+                  style={{ fontSize: 12 }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                Cinema Accent Color
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="color"
+                  value={moodConfig.cinemaAccent.startsWith("#") && moodConfig.cinemaAccent.length === 7 ? moodConfig.cinemaAccent : "#a56ce8"}
+                  onChange={(e) => setMoodConfig({ ...moodConfig, cinemaAccent: e.target.value })}
+                  style={{ width: 34, height: 34, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent" }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={moodConfig.cinemaAccent}
+                  onChange={(e) => setMoodConfig({ ...moodConfig, cinemaAccent: e.target.value })}
+                  style={{ fontSize: 12 }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Live Mini Preview */}
+          <div style={{ padding: 12, background: "#06050a", border: "1px solid var(--a-border)", borderRadius: 8, display: "flex", gap: 8, justifyContent: "center" }}>
+            <span style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${moodConfig.oledAccent}`, color: moodConfig.oledAccent, borderRadius: 12 }}>
+              🌙 OLED ({moodConfig.oledAccent})
+            </span>
+            <span style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${moodConfig.cyberpunkAccent}`, color: moodConfig.cyberpunkAccent, borderRadius: 12 }}>
+              ⚡ CYBERPUNK ({moodConfig.cyberpunkAccent})
+            </span>
+            <span style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${moodConfig.cinemaAccent}`, color: moodConfig.cinemaAccent, borderRadius: 12 }}>
+              🎬 CINEMA ({moodConfig.cinemaAccent})
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveMoodMetadata}
+            disabled={savingKey === "theme_moods"}
+          >
+            {savingKey === "theme_moods" ? "Saving..." : "Save Theme Mood Settings"}
           </button>
         </div>
       </div>
