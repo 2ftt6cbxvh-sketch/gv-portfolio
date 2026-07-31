@@ -9,6 +9,7 @@ const REQUIRED_FLAGS = [
   { key: "status_pill", name: "Landing Status Indicator Pill", defaultEnabled: true },
   { key: "hotkey_hints", name: "Landing Keyboard Shortcut Hints ([1], [2], [3])", defaultEnabled: true },
   { key: "analyst_ticker", name: "Analyst Mode Data Ticker Ribbon", defaultEnabled: true },
+  { key: "analyst_ai_sandbox", name: "Analyst Mode AI Neural Net & 3D Hologram Cube Sandbox", defaultEnabled: true },
   { key: "video_reel", name: "Editor Video Showreel Player", defaultEnabled: true },
 ];
 
@@ -44,6 +45,28 @@ export default function FeaturesAdminPage() {
     itemsStr: "⚡ LIVE DATA STREAM, 📊 15+ DATASETS PROCESSED, 🧠 99.4% AI MODEL ACCURACY, 🔬 MRI BRAIN TUMOR CLASSIFICATION, 🎓 LIVERPOOL MSc RESEARCH, 📈 PYTHON / PYTORCH / SQL / POWER BI",
     accentColor: "#33c7b0",
     speedSec: "24",
+  });
+
+  const [aiSandboxConfig, setAiSandboxConfig] = useState({
+    inputsStr: "MRI Scan Data, Time Series Data, Tabular Metrics",
+    output1Label: "Tumor Classification",
+    output1Val: "99.4% Accuracy",
+    output2Label: "Anomaly Prediction",
+    output2Val: "0.012 Loss",
+    output3Label: "Confidence Score",
+    output3Val: "98.7% Conf",
+    f1Title: "15+ DATASETS",
+    f1Sub: "Processed & Modeled",
+    f2Title: "99.4% ACCURACY",
+    f2Sub: "ML Classification",
+    f3Title: "PYTORCH & ML",
+    f3Sub: "Deep Neural Nets",
+    f4Title: "SQL & PIPELINES",
+    f4Sub: "Big Data Processing",
+    f5Title: "LIVERPOOL MSc",
+    f5Sub: "AI & Data Science",
+    f6Title: "POWER BI DASHBOARDS",
+    f6Sub: "Live Analytics",
   });
 
   const [videoConfig, setVideoConfig] = useState({
@@ -134,6 +157,35 @@ export default function FeaturesAdminPage() {
                 accentColor: parsed.accentColor || "#33c7b0",
                 speedSec: String(parsed.speedSec || "24"),
               });
+            } catch (e) {}
+          }
+
+          const sandboxFlag = flagMap.get("analyst_ai_sandbox");
+          if (sandboxFlag && sandboxFlag.metadata) {
+            try {
+              const parsed = typeof sandboxFlag.metadata === "string" ? JSON.parse(sandboxFlag.metadata) : sandboxFlag.metadata;
+              setAiSandboxConfig((prev) => ({
+                ...prev,
+                inputsStr: parsed.inputsStr || prev.inputsStr,
+                output1Label: parsed.outputs?.[0]?.label || prev.output1Label,
+                output1Val: parsed.outputs?.[0]?.defaultVal || prev.output1Val,
+                output2Label: parsed.outputs?.[1]?.label || prev.output2Label,
+                output2Val: parsed.outputs?.[1]?.defaultVal || prev.output2Val,
+                output3Label: parsed.outputs?.[2]?.label || prev.output3Label,
+                output3Val: parsed.outputs?.[2]?.defaultVal || prev.output3Val,
+                f1Title: parsed.cubeFaces?.[0]?.title || prev.f1Title,
+                f1Sub: parsed.cubeFaces?.[0]?.sub || prev.f1Sub,
+                f2Title: parsed.cubeFaces?.[1]?.title || prev.f2Title,
+                f2Sub: parsed.cubeFaces?.[1]?.sub || prev.f2Sub,
+                f3Title: parsed.cubeFaces?.[2]?.title || prev.f3Title,
+                f3Sub: parsed.cubeFaces?.[2]?.sub || prev.f3Sub,
+                f4Title: parsed.cubeFaces?.[3]?.title || prev.f4Title,
+                f4Sub: parsed.cubeFaces?.[3]?.sub || prev.f4Sub,
+                f5Title: parsed.cubeFaces?.[4]?.title || prev.f5Title,
+                f5Sub: parsed.cubeFaces?.[4]?.sub || prev.f5Sub,
+                f6Title: parsed.cubeFaces?.[5]?.title || prev.f6Title,
+                f6Sub: parsed.cubeFaces?.[5]?.sub || prev.f6Sub,
+              }));
             } catch (e) {}
           }
 
@@ -295,6 +347,46 @@ export default function FeaturesAdminPage() {
       }
     } catch (e) {
       alert("Failed to save Analyst Data Ticker settings.");
+    }
+    setSavingKey(null);
+  };
+
+  const handleSaveAiSandboxMetadata = async () => {
+    setSavingKey("analyst_ai_sandbox");
+    try {
+      const currentFlag = flags.find((f) => f.key === "analyst_ai_sandbox");
+      const metadataObj = {
+        inputsStr: aiSandboxConfig.inputsStr,
+        outputs: [
+          { label: aiSandboxConfig.output1Label, defaultVal: aiSandboxConfig.output1Val },
+          { label: aiSandboxConfig.output2Label, defaultVal: aiSandboxConfig.output2Val },
+          { label: aiSandboxConfig.output3Label, defaultVal: aiSandboxConfig.output3Val },
+        ],
+        cubeFaces: [
+          { title: aiSandboxConfig.f1Title, sub: aiSandboxConfig.f1Sub, icon: "📊" },
+          { title: aiSandboxConfig.f2Title, sub: aiSandboxConfig.f2Sub, icon: "🧠" },
+          { title: aiSandboxConfig.f3Title, sub: aiSandboxConfig.f3Sub, icon: "🔬" },
+          { title: aiSandboxConfig.f4Title, sub: aiSandboxConfig.f4Sub, icon: "⚡" },
+          { title: aiSandboxConfig.f5Title, sub: aiSandboxConfig.f5Sub, icon: "🎓" },
+          { title: aiSandboxConfig.f6Title, sub: aiSandboxConfig.f6Sub, icon: "📈" },
+        ],
+      };
+
+      const res = await fetch("/api/admin/features", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "analyst_ai_sandbox",
+          enabled: currentFlag?.enabled !== false,
+          metadata: JSON.stringify(metadataObj),
+        }),
+      });
+
+      if (res.ok) {
+        alert("Analyst AI Sandbox & Hologram Cube text updated successfully! Changes are live on frontend.");
+      }
+    } catch (e) {
+      alert("Failed to save Analyst AI Sandbox settings.");
     }
     setSavingKey(null);
   };
@@ -544,19 +636,6 @@ export default function FeaturesAdminPage() {
             </div>
           </div>
 
-          {/* Live Mini Preview */}
-          <div style={{ padding: 12, background: "#06050a", border: "1px solid var(--a-border)", borderRadius: 8, display: "flex", gap: 8, justifyContent: "center" }}>
-            <span style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${moodConfig.oledAccent}`, color: moodConfig.oledAccent, borderRadius: 12 }}>
-              🌙 OLED ({moodConfig.oledAccent})
-            </span>
-            <span style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${moodConfig.cyberpunkAccent}`, color: moodConfig.cyberpunkAccent, borderRadius: 12 }}>
-              ⚡ CYBERPUNK ({moodConfig.cyberpunkAccent})
-            </span>
-            <span style={{ fontSize: 11, padding: "4px 10px", border: `1px solid ${moodConfig.cinemaAccent}`, color: moodConfig.cinemaAccent, borderRadius: 12 }}>
-              🎬 CINEMA ({moodConfig.cinemaAccent})
-            </span>
-          </div>
-
           <button
             type="button"
             className="admin-btn admin-btn--primary"
@@ -568,83 +647,96 @@ export default function FeaturesAdminPage() {
         </div>
       </div>
 
-      {/* 1. Status Pill Config */}
+      {/* 3. Analyst AI Sandbox Customization */}
       <div className="admin-card" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 6 }}>🟢 Status Pill Customization</h3>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>🧠 Analyst AI Neural Net &amp; 3D Hologram Cube Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
-          Edit the live status message and location shown on the landing page pill.
+          Edit the Neural Network input nodes, prediction outputs, and 3D Hologram Cube face titles.
         </p>
 
         <div style={{ display: "grid", gap: 14 }}>
           <div>
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-              Status Text
+              Neural Net Input Layer Nodes (Comma Separated)
             </label>
             <input
               type="text"
               className="admin-input"
-              value={statusPillConfig.status}
-              onChange={(e) => setStatusPillConfig({ ...statusPillConfig, status: e.target.value })}
-              placeholder="e.g. Available for Opportunities"
+              value={aiSandboxConfig.inputsStr}
+              onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, inputsStr: e.target.value })}
+              placeholder="e.g. MRI Scan Data, Time Series Data, Tabular Metrics"
             />
           </div>
 
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-              Location Text
-            </label>
-            <input
-              type="text"
-              className="admin-input"
-              value={statusPillConfig.location}
-              onChange={(e) => setStatusPillConfig({ ...statusPillConfig, location: e.target.value })}
-              placeholder="e.g. Liverpool, UK &amp; India"
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Prediction 1 (Label / Value)</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 6 }}>
+                <input type="text" className="admin-input" value={aiSandboxConfig.output1Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output1Label: e.target.value })} />
+                <input type="text" className="admin-input" value={aiSandboxConfig.output1Val} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output1Val: e.target.value })} />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Prediction 2 (Label / Value)</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 6 }}>
+                <input type="text" className="admin-input" value={aiSandboxConfig.output2Label} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output2Label: e.target.value })} />
+                <input type="text" className="admin-input" value={aiSandboxConfig.output2Val} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, output2Val: e.target.value })} />
+              </div>
+            </div>
+          </div>
+
+          <h4 style={{ margin: "10px 0 4px 0", fontSize: "0.95rem" }}>🎲 3D Hologram Cube Faces (Title / Sub-description)</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Face 1 (Front)</label>
+              <input type="text" className="admin-input" value={aiSandboxConfig.f1Title} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f1Title: e.target.value })} placeholder="Title" style={{ marginBottom: 4 }} />
+              <input type="text" className="admin-input" value={aiSandboxConfig.f1Sub} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f1Sub: e.target.value })} placeholder="Sub" />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Face 2 (Back)</label>
+              <input type="text" className="admin-input" value={aiSandboxConfig.f2Title} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f2Title: e.target.value })} placeholder="Title" style={{ marginBottom: 4 }} />
+              <input type="text" className="admin-input" value={aiSandboxConfig.f2Sub} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f2Sub: e.target.value })} placeholder="Sub" />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Face 3 (Right)</label>
+              <input type="text" className="admin-input" value={aiSandboxConfig.f3Title} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f3Title: e.target.value })} placeholder="Title" style={{ marginBottom: 4 }} />
+              <input type="text" className="admin-input" value={aiSandboxConfig.f3Sub} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f3Sub: e.target.value })} placeholder="Sub" />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Face 4 (Left)</label>
+              <input type="text" className="admin-input" value={aiSandboxConfig.f4Title} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f4Title: e.target.value })} placeholder="Title" style={{ marginBottom: 4 }} />
+              <input type="text" className="admin-input" value={aiSandboxConfig.f4Sub} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f4Sub: e.target.value })} placeholder="Sub" />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Face 5 (Top)</label>
+              <input type="text" className="admin-input" value={aiSandboxConfig.f5Title} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f5Title: e.target.value })} placeholder="Title" style={{ marginBottom: 4 }} />
+              <input type="text" className="admin-input" value={aiSandboxConfig.f5Sub} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f5Sub: e.target.value })} placeholder="Sub" />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Face 6 (Bottom)</label>
+              <input type="text" className="admin-input" value={aiSandboxConfig.f6Title} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f6Title: e.target.value })} placeholder="Title" style={{ marginBottom: 4 }} />
+              <input type="text" className="admin-input" value={aiSandboxConfig.f6Sub} onChange={(e) => setAiSandboxConfig({ ...aiSandboxConfig, f6Sub: e.target.value })} placeholder="Sub" />
+            </div>
           </div>
 
           <button
             type="button"
             className="admin-btn admin-btn--primary"
-            onClick={handleSaveStatusPillMetadata}
-            disabled={savingKey === "status_pill"}
+            onClick={handleSaveAiSandboxMetadata}
+            disabled={savingKey === "analyst_ai_sandbox"}
           >
-            {savingKey === "status_pill" ? "Saving..." : "Save Status Pill Settings"}
+            {savingKey === "analyst_ai_sandbox" ? "Saving..." : "Save AI Sandbox Settings"}
           </button>
         </div>
       </div>
 
-      {/* 2. Kinetic Roles Config */}
-      <div className="admin-card" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 6 }}>⚡ Kinetic Headline Roles Customization</h3>
-        <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
-          Comma-separated list of roles that scramble sequentially under your name.
-        </p>
-
-        <div style={{ display: "grid", gap: 14 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-              Roles (Comma Separated)
-            </label>
-            <textarea
-              className="admin-input"
-              rows={3}
-              value={kineticConfig.rolesStr}
-              onChange={(e) => setKineticConfig({ rolesStr: e.target.value })}
-            />
-          </div>
-
-          <button
-            type="button"
-            className="admin-btn admin-btn--primary"
-            onClick={handleSaveKineticMetadata}
-            disabled={savingKey === "kinetic_headline"}
-          >
-            {savingKey === "kinetic_headline" ? "Saving..." : "Save Kinetic Roles"}
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Analyst Data Ticker Config */}
+      {/* 4. Analyst Data Ticker Config */}
       <div className="admin-card" style={{ marginBottom: 24 }}>
         <h3 style={{ marginTop: 0, marginBottom: 6 }}>📊 Analyst Mode Data Ticker Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
@@ -727,7 +819,7 @@ export default function FeaturesAdminPage() {
         </div>
       </div>
 
-      {/* 4. Video Showreel Config */}
+      {/* 5. Video Showreel Config */}
       <div className="admin-card">
         <h3 style={{ marginTop: 0, marginBottom: 6 }}>🎬 Editor Mode Video Showreel Customization</h3>
         <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>

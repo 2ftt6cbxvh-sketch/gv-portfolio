@@ -2,20 +2,34 @@
 
 import { useState, useRef } from "react";
 
-const CUBE_FACES = [
-  { id: "front", title: "15+ DATASETS", sub: "Processed & Modeled", icon: "📊", transform: "translateZ(100px)" },
-  { id: "back", title: "99.4% ACCURACY", sub: "ML Classification", icon: "🧠", transform: "rotateY(180deg) translateZ(100px)" },
-  { id: "right", title: "PYTORCH & ML", sub: "Deep Neural Nets", icon: "🔬", transform: "rotateY(90deg) translateZ(100px)" },
-  { id: "left", title: "SQL & PIPELINES", sub: "Big Data Processing", icon: "⚡", transform: "rotateY(-90deg) translateZ(100px)" },
-  { id: "top", title: "LIVERPOOL MSc", sub: "AI & Data Science", icon: "🎓", transform: "rotateX(90deg) translateZ(100px)" },
-  { id: "bottom", title: "POWER BI DASHBOARDS", sub: "Live Analytics", icon: "📈", transform: "rotateX(-90deg) translateZ(100px)" },
-];
-
-export default function AnalystHologramCube({ accent = "#33c7b0" }) {
+export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
   const [rotX, setRotX] = useState(-15);
   const [rotY, setRotY] = useState(25);
   const isDragging = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
+
+  let faces = [
+    { id: "front", title: "15+ DATASETS", sub: "Processed & Modeled", icon: "📊", transform: "translateZ(100px)" },
+    { id: "back", title: "99.4% ACCURACY", sub: "ML Classification", icon: "🧠", transform: "rotateY(180deg) translateZ(100px)" },
+    { id: "right", title: "PYTORCH & ML", sub: "Deep Neural Nets", icon: "🔬", transform: "rotateY(90deg) translateZ(100px)" },
+    { id: "left", title: "SQL & PIPELINES", sub: "Big Data Processing", icon: "⚡", transform: "rotateY(-90deg) translateZ(100px)" },
+    { id: "top", title: "LIVERPOOL MSc", sub: "AI & Data Science", icon: "🎓", transform: "rotateX(90deg) translateZ(100px)" },
+    { id: "bottom", title: "POWER BI DASHBOARDS", sub: "Live Analytics", icon: "📈", transform: "rotateX(-90deg) translateZ(100px)" },
+  ];
+
+  if (metadata) {
+    try {
+      const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
+      if (parsed.cubeFaces && Array.isArray(parsed.cubeFaces) && parsed.cubeFaces.length === 6) {
+        faces = faces.map((f, i) => ({
+          ...f,
+          title: parsed.cubeFaces[i].title || f.title,
+          sub: parsed.cubeFaces[i].sub || f.sub,
+          icon: parsed.cubeFaces[i].icon || f.icon,
+        }));
+      }
+    } catch (e) {}
+  }
 
   const handleMouseDown = (e) => {
     isDragging.current = true;
@@ -95,7 +109,7 @@ export default function AnalystHologramCube({ accent = "#33c7b0" }) {
             transition: isDragging.current ? "none" : "transform 0.1s ease-out",
           }}
         >
-          {CUBE_FACES.map((face) => (
+          {faces.map((face) => (
             <div
               key={face.id}
               style={{

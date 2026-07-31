@@ -108,8 +108,8 @@ export default function AnalystMode({ data, features }) {
             <h3 className="section-head__title">AI Neural Net &amp; 3D Data Hologram Sandbox</h3>
             <span className="section-head__num">/ INTERACTIVE</span>
           </div>
-          <AnalystNeuralNet accent={d.accent || "#33c7b0"} />
-          <AnalystHologramCube accent={d.accent || "#33c7b0"} />
+          <AnalystNeuralNet metadata={features?.flags?.analyst_ai_sandbox?.metadata} accent={d.accent || "#33c7b0"} />
+          <AnalystHologramCube metadata={features?.flags?.analyst_ai_sandbox?.metadata} accent={d.accent || "#33c7b0"} />
         </section>
       )}
 
