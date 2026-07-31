@@ -10,10 +10,7 @@ import JourneyMap from "./JourneyMap";
 import DeveloperCodeIDE from "./DeveloperCodeIDE";
 import CertModal from "./CertModal";
 import TextScramble from "./TextScramble";
-import DeveloperAIAssistant from "./DeveloperAIAssistant";
-import DeveloperPhysicsMatrix from "./DeveloperPhysicsMatrix";
-import DeveloperSystemFlow from "./DeveloperSystemFlow";
-import DeveloperWebPlayground from "./DeveloperWebPlayground";
+import DeveloperInteractiveSuite from "./DeveloperInteractiveSuite";
 
 export default function DeveloperMode({ data, features }) {
   const d = data;
@@ -60,16 +57,9 @@ export default function DeveloperMode({ data, features }) {
         <DeveloperCodeIDE />
       </section>
 
-      {/* Interactive Systems & AI Sandbox */}
+      {/* Interactive AI & Systems Executive Suite */}
       <section className="section wrap">
-        <div className="section-head">
-          <h3 className="section-head__title">Interactive AI &amp; Systems Engineering Sandbox</h3>
-          <span className="section-head__num">/ INTERACTIVE</span>
-        </div>
-        <DeveloperAIAssistant accent={d.accent || "#39ff88"} />
-        <DeveloperPhysicsMatrix accent={d.accent || "#39ff88"} />
-        <DeveloperSystemFlow accent={d.accent || "#39ff88"} />
-        <DeveloperWebPlayground accent={d.accent || "#39ff88"} />
+        <DeveloperInteractiveSuite accent={d.accent || "#39ff88"} />
       </section>
 
       <section className="section wrap" aria-labelledby="dev-sim-title">
