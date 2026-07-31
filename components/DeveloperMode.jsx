@@ -10,9 +10,10 @@ import JourneyMap from "./JourneyMap";
 import DeveloperCodeIDE from "./DeveloperCodeIDE";
 import CertModal from "./CertModal";
 import TextScramble from "./TextScramble";
-import DeveloperSQLSandbox from "./DeveloperSQLSandbox";
-import DeveloperGitGraph from "./DeveloperGitGraph";
-import DeveloperAPITester from "./DeveloperAPITester";
+import DeveloperAIAssistant from "./DeveloperAIAssistant";
+import DeveloperPhysicsMatrix from "./DeveloperPhysicsMatrix";
+import DeveloperSystemFlow from "./DeveloperSystemFlow";
+import DeveloperWebPlayground from "./DeveloperWebPlayground";
 
 export default function DeveloperMode({ data, features }) {
   const d = data;
@@ -59,15 +60,16 @@ export default function DeveloperMode({ data, features }) {
         <DeveloperCodeIDE />
       </section>
 
-      {/* Interactive Systems & Engineering Sandbox */}
+      {/* Interactive Systems & AI Sandbox */}
       <section className="section wrap">
         <div className="section-head">
-          <h3 className="section-head__title">Interactive Systems &amp; Engineering Sandbox</h3>
+          <h3 className="section-head__title">Interactive AI &amp; Systems Engineering Sandbox</h3>
           <span className="section-head__num">/ INTERACTIVE</span>
         </div>
-        <DeveloperSQLSandbox accent={d.accent || "#39ff88"} />
-        <DeveloperGitGraph accent={d.accent || "#39ff88"} />
-        <DeveloperAPITester accent={d.accent || "#39ff88"} />
+        <DeveloperAIAssistant accent={d.accent || "#39ff88"} />
+        <DeveloperPhysicsMatrix accent={d.accent || "#39ff88"} />
+        <DeveloperSystemFlow accent={d.accent || "#39ff88"} />
+        <DeveloperWebPlayground accent={d.accent || "#39ff88"} />
       </section>
 
       <section className="section wrap" aria-labelledby="dev-sim-title">
