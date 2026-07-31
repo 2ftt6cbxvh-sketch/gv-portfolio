@@ -392,6 +392,16 @@ export default function FeaturesAdminPage() {
             </div>
           </div>
 
+          {/* Live Mini Preview Box */}
+          <div style={{ marginTop: 12, padding: 16, background: "#06050a", border: "1px solid var(--a-border)", borderRadius: 8, textAlign: "center" }}>
+            <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--a-muted)", display: "block", marginBottom: 8 }}>
+              LIVE SIGNATURE INTRO PREVIEW
+            </span>
+            <div style={{ fontSize: 32, fontFamily: "'Great Vibes', cursive", color: signatureConfig.accentColor, textShadow: `0 0 10px ${signatureConfig.glowColor}` }}>
+              {signatureConfig.text || "Ganesh Varma"}
+            </div>
+          </div>
+
           <button
             type="button"
             className="admin-btn admin-btn--primary"
@@ -538,6 +548,16 @@ export default function FeaturesAdminPage() {
                 onChange={(e) => setAnalystTickerConfig({ ...analystTickerConfig, speedSec: e.target.value })}
                 style={{ width: "100%", height: 38, cursor: "pointer", accentColor: "#33c7b0" }}
               />
+            </div>
+          </div>
+
+          {/* Live Mini Preview Box */}
+          <div style={{ marginTop: 12, padding: 12, background: "#06050a", border: `1px solid ${analystTickerConfig.accentColor}`, borderRadius: 8, overflow: "hidden", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: "0.76rem", color: analystTickerConfig.accentColor }}>
+            <span style={{ fontSize: 10, opacity: 0.6, display: "block", marginBottom: 6 }}>LIVE DATA TICKER PREVIEW (SPEED: {analystTickerConfig.speedSec}s)</span>
+            <div style={{ display: "inline-flex", gap: 20 }}>
+              {analystTickerConfig.itemsStr.split(",").slice(0, 3).map((item, idx) => (
+                <span key={idx}>⚡ {item.trim()} //</span>
+              ))}
             </div>
           </div>
 

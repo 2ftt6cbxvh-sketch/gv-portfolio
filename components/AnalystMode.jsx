@@ -9,6 +9,8 @@ import ProjectModal from "./ProjectModal";
 import JourneyMap from "./JourneyMap";
 import AnalystDataTicker from "./AnalystDataTicker";
 import CertModal from "./CertModal";
+import AnalystNeuralNet from "./AnalystNeuralNet";
+import AnalystHologramCube from "./AnalystHologramCube";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -98,6 +100,18 @@ export default function AnalystMode({ data, features }) {
           ))}
         </div>
       </section>
+
+      {/* AI Model & Data Hologram Sandbox */}
+      {features?.flags?.analyst_ai_sandbox?.enabled !== false && (
+        <section className="section wrap">
+          <div className="section-head">
+            <h3 className="section-head__title">AI Neural Net &amp; 3D Data Hologram Sandbox</h3>
+            <span className="section-head__num">/ INTERACTIVE</span>
+          </div>
+          <AnalystNeuralNet accent={d.accent || "#33c7b0"} />
+          <AnalystHologramCube accent={d.accent || "#33c7b0"} />
+        </section>
+      )}
 
       {showProjects && d.projects.length > 0 && (
         <section className="section wrap" aria-labelledby="analyst-projects-title">
