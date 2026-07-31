@@ -6,7 +6,7 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
   const [rotX, setRotX] = useState(-15);
   const [rotY, setRotY] = useState(25);
   const isDragging = useRef(false);
-  const lastMouse = useRef({ x: 0, y: 0 });
+  const lastPos = useRef({ x: 0, y: 0 });
 
   let faces = [
     { id: "front", title: "15+ DATASETS", sub: "Processed & Modeled", icon: "📊", transform: "translateZ(100px)" },
@@ -31,22 +31,44 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
     } catch (e) {}
   }
 
+  // Mouse Handlers
   const handleMouseDown = (e) => {
     isDragging.current = true;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
+    lastPos.current = { x: e.clientX, y: e.clientY };
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
-    const deltaX = e.clientX - lastMouse.current.x;
-    const deltaY = e.clientY - lastMouse.current.y;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
+    const deltaX = e.clientX - lastPos.current.x;
+    const deltaY = e.clientY - lastPos.current.y;
+    lastPos.current = { x: e.clientX, y: e.clientY };
 
-    setRotY((prev) => prev + deltaX * 0.6);
-    setRotX((prev) => Math.max(-60, Math.min(60, prev - deltaY * 0.6)));
+    setRotY((prev) => prev + deltaX * 0.7);
+    setRotX((prev) => Math.max(-60, Math.min(60, prev - deltaY * 0.7)));
   };
 
   const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  // Mobile Touch Handlers
+  const handleTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    isDragging.current = true;
+    lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging.current || !e.touches || e.touches.length === 0) return;
+    const deltaX = e.touches[0].clientX - lastPos.current.x;
+    const deltaY = e.touches[0].clientY - lastPos.current.y;
+    lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+    setRotY((prev) => prev + deltaX * 0.8);
+    setRotX((prev) => Math.max(-60, Math.min(60, prev - deltaY * 0.8)));
+  };
+
+  const handleTouchEnd = () => {
     isDragging.current = false;
   };
 
@@ -57,18 +79,22 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{
         background: "#080f0d",
         border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
         borderRadius: 12,
-        padding: 24,
+        padding: "20px",
         boxShadow: `0 10px 30px color-mix(in oklab, ${accent} 10%, transparent)`,
         margin: "24px 0",
         cursor: "grab",
         userSelect: "none",
+        touchAction: "none",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <div>
           <span className="label-mono" style={{ color: accent, fontSize: "0.74rem" }}>
             3D DATA MATRIX // HOLOGRAM CUBE
@@ -80,12 +106,12 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
             fontSize: "0.72rem",
             background: `color-mix(in oklab, ${accent} 15%, transparent)`,
             color: accent,
-            padding: "3px 10px",
+            padding: "4px 12px",
             borderRadius: 12,
             fontFamily: "var(--font-mono)",
           }}
         >
-          Drag Mouse to Spin 360°
+          Drag Mouse or Finger to Spin 360°
         </span>
       </div>
 
@@ -101,8 +127,8 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
       >
         <div
           style={{
-            width: 200,
-            height: 200,
+            width: 180,
+            height: 180,
             position: "relative",
             transformStyle: "preserve-3d",
             transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
@@ -114,8 +140,8 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
               key={face.id}
               style={{
                 position: "absolute",
-                width: 200,
-                height: 200,
+                width: 180,
+                height: 180,
                 background: `color-mix(in oklab, ${accent} 12%, rgba(8,15,13,0.92))`,
                 border: `1.5px solid ${accent}`,
                 borderRadius: 10,
@@ -123,17 +149,17 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: 16,
+                padding: 12,
                 boxShadow: `0 0 20px color-mix(in oklab, ${accent} 30%, transparent)`,
                 transform: face.transform,
                 backfaceVisibility: "visible",
               }}
             >
-              <span style={{ fontSize: 32, marginBottom: 8 }}>{face.icon}</span>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem", color: accent, textAlign: "center" }}>
+              <span style={{ fontSize: 28, marginBottom: 6 }}>{face.icon}</span>
+              <div style={{ fontWeight: 700, fontSize: "0.88rem", color: accent, textAlign: "center" }}>
                 {face.title}
               </div>
-              <div style={{ fontSize: "0.75rem", opacity: 0.7, marginTop: 4, textAlign: "center" }}>
+              <div style={{ fontSize: "0.72rem", opacity: 0.7, marginTop: 4, textAlign: "center" }}>
                 {face.sub}
               </div>
             </div>

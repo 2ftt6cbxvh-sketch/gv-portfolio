@@ -3,13 +3,13 @@
 import { useState } from "react";
 
 export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
-  const [activeInput, setActiveInput] = useState("i1");
-  const [pulse, setPulse] = useState(0);
+  const [activeInput, setActiveInput] = useState(0);
+  const [isFiring, setIsFiring] = useState(false);
 
   let inputs = [
-    { id: "i1", label: "MRI Scan Data", desc: "Brain Image Tensors" },
-    { id: "i2", label: "Time Series Data", desc: "Sequential Signals" },
-    { id: "i3", label: "Tabular Metrics", desc: "32-Feature Vectors" },
+    { id: "i1", label: "MRI Scan Data", desc: "Brain Image Tensors", accuracy: "99.4% Accuracy", loss: "0.012 Loss", conf: "98.7% Conf" },
+    { id: "i2", label: "Time Series Data", desc: "Sequential Signals", accuracy: "98.6% Accuracy", loss: "0.018 Loss", conf: "99.1% Conf" },
+    { id: "i3", label: "Tabular Metrics", desc: "32-Feature Vectors", accuracy: "99.1% Accuracy", loss: "0.009 Loss", conf: "99.5% Conf" },
   ];
 
   let hidden = [
@@ -20,7 +20,7 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
   ];
 
   let outputs = [
-    { id: "o1", label: "Tumor Classification", defaultVal: "99.4% Accuracy" },
+    { id: "o1", label: "Classification", defaultVal: "99.4% Accuracy" },
     { id: "o2", label: "Anomaly Prediction", defaultVal: "0.012 Loss" },
     { id: "o3", label: "Confidence Score", defaultVal: "98.7% Conf" },
   ];
@@ -35,6 +35,9 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
           id: `i${idx + 1}`,
           label: s.trim(),
           desc: "Feature Array",
+          accuracy: `${(98.5 + idx * 0.4).toFixed(1)}% Accuracy`,
+          loss: `0.00${12 + idx} Loss`,
+          conf: `99.${idx} % Conf`,
         }));
       }
       if (parsed.outputs && Array.isArray(parsed.outputs) && parsed.outputs.length > 0) {
@@ -43,10 +46,13 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
     } catch (e) {}
   }
 
-  const triggerForwardPass = (id) => {
-    setActiveInput(id);
-    setPulse((p) => p + 1);
+  const triggerForwardPass = (index) => {
+    setActiveInput(index);
+    setIsFiring(true);
+    setTimeout(() => setIsFiring(false), 600);
   };
+
+  const selectedInput = inputs[activeInput] || inputs[0];
 
   return (
     <div
@@ -55,12 +61,12 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
         background: "#080f0d",
         border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
         borderRadius: 12,
-        padding: 24,
+        padding: "20px",
         boxShadow: `0 10px 30px color-mix(in oklab, ${accent} 10%, transparent)`,
         margin: "24px 0",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <div>
           <span className="label-mono" style={{ color: accent, fontSize: "0.74rem" }}>
             INTERACTIVE AI MODEL // FORWARD PASS SIMULATOR
@@ -72,35 +78,36 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
             fontSize: "0.72rem",
             background: `color-mix(in oklab, ${accent} 15%, transparent)`,
             color: accent,
-            padding: "3px 10px",
+            padding: "4px 12px",
             borderRadius: 12,
             fontFamily: "var(--font-mono)",
           }}
         >
-          Click any Input Node to Fire Signal
+          {isFiring ? "⚡ FIRING FORWARD PASS..." : "Click any Input Node to Fire Signal"}
         </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1fr", gap: 20, alignItems: "center" }}>
+      <div className="neural-net-grid">
         {/* Input Layer */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>INPUT LAYER</span>
-          {inputs.map((inp) => (
+          {inputs.map((inp, idx) => (
             <button
-              key={inp.id || inp.label}
-              onClick={() => triggerForwardPass(inp.id || inp.label)}
+              key={inp.id || idx}
+              onClick={() => triggerForwardPass(idx)}
               style={{
                 textAlign: "left",
-                padding: "10px 14px",
-                background: activeInput === (inp.id || inp.label) ? `color-mix(in oklab, ${accent} 20%, transparent)` : "rgba(255,255,255,0.03)",
-                border: `1px solid ${activeInput === (inp.id || inp.label) ? accent : "rgba(255,255,255,0.1)"}`,
+                padding: "12px 14px",
+                background: activeInput === idx ? `color-mix(in oklab, ${accent} 22%, transparent)` : "rgba(255,255,255,0.03)",
+                border: `1.5px solid ${activeInput === idx ? accent : "rgba(255,255,255,0.1)"}`,
                 borderRadius: 8,
                 color: "#fff",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
+                boxShadow: activeInput === idx ? `0 0 16px color-mix(in oklab, ${accent} 40%, transparent)` : "none",
               }}
             >
-              <div style={{ fontWeight: 600, fontSize: "0.85rem", color: activeInput === (inp.id || inp.label) ? accent : "#fff" }}>
+              <div style={{ fontWeight: 600, fontSize: "0.85rem", color: activeInput === idx ? accent : "#fff" }}>
                 ⚡ {inp.label}
               </div>
               {inp.desc && <div style={{ fontSize: "0.72rem", opacity: 0.6, marginTop: 2 }}>{inp.desc}</div>}
@@ -109,23 +116,24 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
         </div>
 
         {/* Hidden Layer (Animated Connections) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", position: "relative" }}>
-          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>HIDDEN LAYERS</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>HIDDEN WEIGHT LAYERS</span>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
             {hidden.map((h, idx) => (
               <div
                 key={h.id}
                 style={{
-                  padding: "10px",
-                  background: "rgba(0,0,0,0.4)",
-                  border: `1px dashed color-mix(in oklab, ${accent} 40%, transparent)`,
+                  padding: "12px 8px",
+                  background: isFiring ? `color-mix(in oklab, ${accent} 30%, rgba(0,0,0,0.6))` : "rgba(0,0,0,0.4)",
+                  border: `1.5px dashed ${isFiring ? accent : `color-mix(in oklab, ${accent} 40%, transparent)`}`,
                   borderRadius: 6,
                   textAlign: "center",
                   fontSize: "0.78rem",
                   fontFamily: "var(--font-mono)",
-                  color: "rgba(255,255,255,0.8)",
-                  boxShadow: pulse % 2 === idx % 2 ? `0 0 15px ${accent}66` : "none",
-                  transition: "all 0.3s ease",
+                  color: isFiring ? accent : "rgba(255,255,255,0.85)",
+                  boxShadow: isFiring ? `0 0 20px ${accent}` : "none",
+                  transform: isFiring ? "scale(1.05)" : "scale(1)",
+                  transition: "all 0.25s ease",
                 }}
               >
                 {h.label}
@@ -135,24 +143,33 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
         </div>
 
         {/* Output Layer */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>PREDICTION OUTPUT</span>
-          {outputs.map((out, idx) => (
-            <div
-              key={out.id || idx}
-              style={{
-                padding: "10px 14px",
-                background: "rgba(0,0,0,0.5)",
-                border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`,
-                borderRadius: 8,
-              }}
-            >
-              <div style={{ fontSize: "0.75rem", opacity: 0.7 }}>{out.label}</div>
-              <div style={{ fontWeight: 700, fontSize: "0.95rem", color: accent, marginTop: 2, fontFamily: "var(--font-mono)" }}>
-                {out.defaultVal || out.value || "99.4% Accuracy"}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>LIVE PREDICTION OUTPUT</span>
+          {outputs.map((out, idx) => {
+            let computedVal = out.defaultVal;
+            if (idx === 0) computedVal = selectedInput.accuracy || out.defaultVal;
+            if (idx === 1) computedVal = selectedInput.loss || out.defaultVal;
+            if (idx === 2) computedVal = selectedInput.conf || out.defaultVal;
+
+            return (
+              <div
+                key={out.id || idx}
+                style={{
+                  padding: "12px 14px",
+                  background: isFiring ? `color-mix(in oklab, ${accent} 15%, rgba(0,0,0,0.6))` : "rgba(0,0,0,0.5)",
+                  border: `1.5px solid ${isFiring ? accent : `color-mix(in oklab, ${accent} 35%, transparent)`}`,
+                  borderRadius: 8,
+                  transition: "all 0.3s ease",
+                  boxShadow: isFiring ? `0 0 15px color-mix(in oklab, ${accent} 30%, transparent)` : "none",
+                }}
+              >
+                <div style={{ fontSize: "0.75rem", opacity: 0.7 }}>{out.label}</div>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem", color: accent, marginTop: 3, fontFamily: "var(--font-mono)" }}>
+                  {computedVal}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
