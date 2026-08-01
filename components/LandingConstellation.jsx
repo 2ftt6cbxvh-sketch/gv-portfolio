@@ -4,19 +4,17 @@ import { useEffect, useRef, useMemo } from "react";
 /**
  * 4-Star Multi-Stroke Harry Potter Spell Rune Constellation Canvas
  * Features:
- * - 4 Floating Secret Stars in Bounded Safe Outer Zones (NEVER under mode cards!)
- * - Multi-Stroke Sequence Verification (Default: 1 -> 3 -> 4 -> 2 -> 1 -> 4)
- * - FULL MOBILE TOUCH & TAP SUPPORT (onTouchStart + onTouchMove)
- * - 3-Strike Failed Attempts Counter
- * - Full-Screen Cyber Security Lockdown Warning Modal with Indian IT Act Law
+ * - 4 FIXED DOCKED Secret Stars in 4 outer corners for 100% EFFORTLESS tapping on Mobile & Desktop!
+ * - Large 110px Touch Detection Target with Instant Visual Golden Ring Ripple Feedback
+ * - Default 4-Tap Sequence: 1 -> 2 -> 3 -> 4 (Configurable in Admin Panel)
+ * - 3-Strike Security Lockdown Modal with Indian IT Act Law
  */
 export default function LandingConstellation({ accentColor = "#00f0ff", metadata }) {
   const canvasRef = useRef(null);
 
-  // Parse Config from Admin Panel
   const config = useMemo(() => {
     const defaults = {
-      sequenceStr: "1,3,4,2,1,4",
+      sequenceStr: "1,2,3,4",
       maxAttempts: 3,
       lockdownSec: 30,
       accentColor: "#ffd700",
@@ -67,19 +65,20 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     let lockdownTimer = null;
     let isSpellFracture = false;
 
-    // 4 Secret Constellation Stars — Bounded to Far Outer Zones (NEVER behind mode cards!)
-    const bottomMinY = Math.max(height - 140, height * 0.78);
-    const bottomMaxY = height - 35;
+    // 4 STATIC DOCKED Secret Stars in 4 Outer Corners (100% Stable & Easy to Hit!)
+    const isMobile = width < 768;
+    const marginX = isMobile ? 36 : 60;
+    const marginY = isMobile ? 55 : 80;
 
     const secretStars = [
-      // Star 1: Far Top-Left Zone
-      { id: 1, x: Math.random() * (width * 0.22) + 30, y: Math.random() * (height * 0.25) + 50, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.28, minY: 50, maxY: height * 0.35 },
-      // Star 2: Far Top-Right Zone
-      { id: 2, x: Math.random() * (width * 0.22) + width * 0.72, y: Math.random() * (height * 0.25) + 50, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.72, maxX: width - 30, minY: 50, maxY: height * 0.35 },
-      // Star 3: Far Bottom-Left Zone (Clear of central mode cards!)
-      { id: 3, x: Math.random() * (width * 0.22) + 30, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.3, minY: bottomMinY, maxY: bottomMaxY },
-      // Star 4: Far Bottom-Right Zone (Clear of central mode cards!)
-      { id: 4, x: Math.random() * (width * 0.22) + width * 0.72, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.7, maxX: width - 30, minY: bottomMinY, maxY: bottomMaxY },
+      // Star 1: Top-Left Corner
+      { id: 1, x: marginX, y: marginY, radius: 5.5 },
+      // Star 2: Top-Right Corner
+      { id: 2, x: width - marginX, y: marginY, radius: 5.5 },
+      // Star 3: Bottom-Left Corner
+      { id: 3, x: marginX, y: height - marginY, radius: 5.5 },
+      // Star 4: Bottom-Right Corner
+      { id: 4, x: width - marginX, y: height - marginY, radius: 5.5 },
     ];
 
     const updatePointerPos = (clientX, clientY) => {
@@ -105,8 +104,8 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     const processTapAtCoordinates = (clickX, clickY) => {
       if (isLockedDown) return;
 
-      // 85px click detection radius on mobile for finger touch targets
-      const touchRadius = width < 768 ? 85 : 70;
+      // Generous 110px touch target radius for effortless tapping on mobile & desktop
+      const touchRadius = isMobile ? 110 : 90;
 
       secretStars.forEach((star) => {
         const dx = clickX - star.x;
@@ -119,26 +118,28 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
           if (targetSequence[nextIndex] === star.id) {
             tappedSequence.push(star.id);
 
-            for (let m = 0; m < 25; m++) {
+            // Instant Golden Lumos Wand Fireworks Burst
+            for (let m = 0; m < 30; m++) {
               const angle = Math.random() * Math.PI * 2;
-              const speed = Math.random() * 4 + 2;
+              const speed = Math.random() * 5 + 2;
               magicSpells.push({
                 x: star.x,
                 y: star.y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 life: 1.0,
-                decay: Math.random() * 0.02 + 0.015,
-                size: Math.random() * 4 + 2,
+                decay: Math.random() * 0.025 + 0.015,
+                size: Math.random() * 4.5 + 2,
                 color: config.accentColor || "#ffd700",
               });
             }
 
+            // Full Sequence Match!
             if (tappedSequence.length === targetSequence.length) {
               secretStars.forEach((s) => {
-                for (let m = 0; m < 35; m++) {
+                for (let m = 0; m < 40; m++) {
                   const angle = Math.random() * Math.PI * 2;
-                  const speed = Math.random() * 6 + 3;
+                  const speed = Math.random() * 7 + 3;
                   magicSpells.push({
                     x: s.x,
                     y: s.y,
@@ -146,7 +147,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
                     vy: Math.sin(angle) * speed,
                     life: 1.3,
                     decay: 0.015,
-                    size: Math.random() * 5 + 2,
+                    size: Math.random() * 6 + 2,
                     color: config.accentColor || "#ffd700",
                   });
                 }
@@ -158,12 +159,12 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
                 }
                 tappedSequence = [];
                 failedAttempts = 0;
-              }, 600);
+              }, 500);
             }
           } else {
             failedAttempts += 1;
             isSpellFracture = true;
-            setTimeout(() => { isSpellFracture = false; }, 400);
+            setTimeout(() => { isSpellFracture = false; }, 450);
 
             tappedSequence = [];
 
@@ -226,6 +227,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
+      // 1. Render Harry Potter Magic Wand Spell Particles
       for (let i = magicSpells.length - 1; i >= 0; i--) {
         const ms = magicSpells[i];
         ms.x += ms.vx;
@@ -243,11 +245,12 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         ctx.fillStyle = ms.color;
         ctx.globalAlpha = ms.life;
         ctx.shadowColor = ms.color;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 14;
         ctx.fill();
         ctx.restore();
       }
 
+      // 2. Render cursor spark trail
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
         s.x += s.vx;
@@ -269,14 +272,8 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         ctx.shadowBlur = 0;
       }
 
+      // 3. Update & render normal constellation particles + CONNECT TO CURSOR!
       const allNodes = [...particles, ...secretStars];
-
-      secretStars.forEach((star) => {
-        star.x += star.vx;
-        star.y += star.vy;
-        if (star.x < star.minX || star.x > star.maxX) star.vx *= -1;
-        if (star.y < star.minY || star.y > star.maxY) star.vy *= -1;
-      });
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -328,19 +325,30 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         }
       });
 
+      // 4. Render 4 DOCKED Secret Stars with Pulsing Gold Rings
       secretStars.forEach((star) => {
         const isTapped = tappedSequence.includes(star.id);
         ctx.save();
         ctx.beginPath();
-        ctx.arc(star.x, star.y, isTapped ? 7 : star.radius, 0, Math.PI * 2);
+        ctx.arc(star.x, star.y, isTapped ? 8 : star.radius, 0, Math.PI * 2);
         ctx.fillStyle = isTapped ? config.accentColor || "#ffd700" : accentColor;
         ctx.shadowColor = isTapped ? config.accentColor || "#ffd700" : accentColor;
-        ctx.shadowBlur = isTapped ? 24 : 8;
-        ctx.globalAlpha = isTapped ? 1.0 : 0.75;
+        ctx.shadowBlur = isTapped ? 26 : 10;
+        ctx.globalAlpha = isTapped ? 1.0 : 0.85;
         ctx.fill();
+
+        // Pulsing Gold Outer Ring for Clear Visibility
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, isTapped ? 14 : 10, 0, Math.PI * 2);
+        ctx.strokeStyle = isTapped ? config.accentColor || "#ffd700" : accentColor;
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = isTapped ? 0.9 : 0.4;
+        ctx.stroke();
+
         ctx.restore();
       });
 
+      // Draw multi-stroke spell rune laser line sequence
       if (tappedSequence.length > 1) {
         ctx.save();
         ctx.beginPath();
@@ -353,9 +361,9 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
           }
         }
         ctx.strokeStyle = isSpellFracture ? "#ff003c" : config.accentColor || "#ffd700";
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3;
         ctx.shadowColor = isSpellFracture ? "#ff003c" : config.accentColor || "#ffd700";
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 22;
         ctx.globalAlpha = 0.95;
         ctx.stroke();
         ctx.restore();
