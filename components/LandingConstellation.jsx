@@ -30,11 +30,11 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     const magicSpells = [];
     const tappedSecretStars = [];
 
-    // 3 Secret Constellation Stars — FLOATING & MOVING RANDOMLY like normal stars!
+    // 3 Secret Constellation Stars — Larger, distinct glowing magic stars!
     const secretStars = [
-      { id: 1, x: Math.random() * (width * 0.4), y: Math.random() * (height * 0.4) + 40, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, radius: 2.2 },
-      { id: 2, x: Math.random() * (width * 0.4) + width * 0.5, y: Math.random() * (height * 0.4) + 40, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, radius: 2.2 },
-      { id: 3, x: Math.random() * (width * 0.5) + width * 0.25, y: Math.random() * (height * 0.3) + height * 0.6, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, radius: 2.2 },
+      { id: 1, x: Math.random() * (width * 0.35) + 60, y: Math.random() * (height * 0.35) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5 },
+      { id: 2, x: Math.random() * (width * 0.35) + width * 0.55, y: Math.random() * (height * 0.35) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5 },
+      { id: 3, x: Math.random() * (width * 0.4) + width * 0.3, y: Math.random() * (height * 0.3) + height * 0.6, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5 },
     ];
 
     const handleMouseMove = (e) => {

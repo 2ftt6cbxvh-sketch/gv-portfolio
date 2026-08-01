@@ -28,10 +28,10 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
 
   const handleEnterAdmin = () => {
     setIsCastingSpell(true);
-    // 1.2s Harry Potter spell dissolution before redirecting to /admin
+    // 1.4s Harry Potter spell dissolution animation before redirecting to /admin
     setTimeout(() => {
       router.push("/admin");
-    }, 1200);
+    }, 1400);
   };
 
   if (!isOpen) return null;
@@ -41,7 +41,7 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 999999, // High z-index to ensure cursor and clicks work over canvas
+        zIndex: 999999,
         background: "rgba(3, 6, 12, 0.92)",
         backdropFilter: "blur(20px)",
         display: "flex",
@@ -52,34 +52,95 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
         animation: "fadeIn 0.3s ease-out",
       }}
     >
-      {/* Harry Potter "Mischief Managed" Golden Spell Dissolution Overlay */}
+      {/* Harry Potter "Mischief Managed" Solid Opaque Animated Spell Screen */}
       {isCastingSpell && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             inset: 0,
-            zIndex: 1000000,
-            background: "radial-gradient(circle at center, rgba(255,215,0,0.3) 0%, rgba(3,6,12,0.95) 80%)",
+            zIndex: 1000005,
+            background: "#030712", // Opaque solid background so popup text NEVER bleeds through!
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            animation: "pulse 0.6s infinite alternate",
+            padding: 24,
+            textAlign: "center",
+            boxSizing: "border-box",
+            overflow: "hidden",
           }}
         >
-          <div style={{ fontSize: 56, marginBottom: 16, filter: "drop-shadow(0 0 20px #ffd700)" }}>
+          {/* Swirling Golden Lumos Magic Ring Animation */}
+          <div
+            style={{
+              position: "absolute",
+              width: 280,
+              height: 280,
+              borderRadius: "50%",
+              border: `2px dashed ${accentColor}`,
+              boxShadow: `0 0 50px color-mix(in oklab, ${accentColor} 50%, transparent)`,
+              animation: "spin 3s linear infinite",
+              opacity: 0.6,
+            }}
+          />
+
+          <div
+            style={{
+              fontSize: 64,
+              marginBottom: 16,
+              filter: `drop-shadow(0 0 25px ${accentColor})`,
+              animation: "bounce 1.2s infinite",
+            }}
+          >
             🪄✨
           </div>
-          <h2 style={{ fontFamily: "var(--font-mono)", color: "#ffd700", letterSpacing: "0.16em", fontSize: "1.4rem", margin: "0 0 8px 0" }}>
+
+          <h2
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: accentColor,
+              letterSpacing: "0.18em",
+              fontSize: "1.6rem",
+              fontWeight: 800,
+              margin: "0 0 10px 0",
+              textShadow: `0 0 30px ${accentColor}`,
+            }}
+          >
             MISCHIEF MANAGED...
           </h2>
-          <p style={{ fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.8)", fontSize: "0.88rem" }}>
-            Unlocking Harry Potter Magic &amp; Admin Sanctum
+
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "#ffffff",
+              fontSize: "0.95rem",
+              margin: "0 0 16px 0",
+              opacity: 0.9,
+            }}
+          >
+            Alohomora Spell Activated :: Entering Admin Sanctum
           </p>
+
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: `color-mix(in oklab, ${accentColor} 15%, transparent)`,
+              border: `1px solid ${accentColor}`,
+              color: accentColor,
+              padding: "6px 16px",
+              borderRadius: 20,
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.78rem",
+            }}
+          >
+            <span>⚡ REDIRECTING TO /ADMIN...</span>
+          </div>
         </div>
       )}
 
-      {/* Main Secret Gateway Card */}
+      {/* Main Secret Gateway Popup Card */}
       <div
         style={{
           width: "100%",
@@ -92,8 +153,6 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
           boxShadow: `0 0 50px color-mix(in oklab, ${accentColor} 50%, transparent)`,
           position: "relative",
           pointerEvents: "auto",
-          transform: "scale(1)",
-          transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         }}
       >
         <button
@@ -119,7 +178,7 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
           ✕
         </button>
 
-        <div style={{ fontSize: 44, marginBottom: 12, animation: "bounce 2s infinite" }}>
+        <div style={{ fontSize: 44, marginBottom: 12 }}>
           🪄✨
         </div>
 
