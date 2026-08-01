@@ -81,14 +81,8 @@ export default function EditorMode({ data, features }) {
         </div>
       </section>
 
-      <section className="section wrap">
-        <EditorLUTMatrix onSelectLUT={(filterStr) => setLutFilter(filterStr)} accent={d.accent || "#a56ce8"} />
-      </section>
-
       {features?.flags?.video_reel?.enabled !== false && (
-        <div style={{ filter: lutFilter, transition: "filter 0.4s ease-in-out" }}>
-          <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} />
-        </div>
+        <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} accent={d.accent || "#a56ce8"} />
       )}
 
       {showProjects && d.projects.length > 0 && (
