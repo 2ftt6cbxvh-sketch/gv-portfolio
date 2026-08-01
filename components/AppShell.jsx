@@ -8,6 +8,7 @@ import AnalystMode from "./AnalystMode";
 import CursorGlow from "./CursorGlow";
 import SignatureIntro from "./SignatureIntro";
 import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
+import WarpTunnel3D from "./WarpTunnel3D";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -76,6 +77,7 @@ export default function AppShell({ data }) {
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       <div className="noise-veil" aria-hidden="true" />
       <CursorGlow />
+      <WarpTunnel3D />
 
       <nav className="nav" id="nav" ref={navRef} aria-label="Site">
         <GVLogo
