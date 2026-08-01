@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClose }) {
   const [secondsLeft, setSecondsLeft] = useState(lockdownSeconds);
+  const audioCtxRef = useRef(null);
 
   // 1. Live Countdown Timer
   useEffect(() => {
@@ -24,7 +25,7 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
     return () => clearInterval(timer);
   }, [isOpen, lockdownSeconds, onClose]);
 
-  // 2. High-Alert Piercing Emergency Security Siren (Web Audio API Dual-Oscillator Synthesis)
+  // 2. High-Alert Emergency Siren Synthesis with Mobile AudioContext Autoplay Unlock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -38,6 +39,12 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (AudioContextClass) {
         audioCtx = new AudioContextClass();
+        audioCtxRef.current = audioCtx;
+
+        // Auto Resume for Mobile Web Browsers
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
 
         // Master Gain Node - High Alert Loud Volume (0.18)
         gainNode = audioCtx.createGain();
@@ -47,7 +54,7 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
         // Primary Piercing Sawtooth Alarm Oscillator
         oscPrimary = audioCtx.createOscillator();
         oscPrimary.type = "sawtooth";
-        oscPrimary.frequency.setValueAtTime(820, audioCtx.currentTime); // High piercing alarm pitch
+        oscPrimary.frequency.setValueAtTime(820, audioCtx.currentTime);
         oscPrimary.connect(gainNode);
         oscPrimary.start();
 
@@ -58,7 +65,7 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
         oscSub.connect(gainNode);
         oscSub.start();
 
-        // Rapid 300ms High-Alert Two-Tone Siren Pitch Sweep (820Hz <-> 460Hz)
+        // Rapid 320ms High-Alert Two-Tone Siren Pitch Sweep (880Hz <-> 460Hz)
         let isHighTone = false;
         sirenInterval = setInterval(() => {
           if (audioCtx && oscPrimary && oscSub) {
@@ -68,6 +75,16 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
             oscSub.frequency.setTargetAtTime(isHighTone ? 440 : 230, now, 0.05);
           }
         }, 320);
+
+        // Mobile Gesture Unlock Listener (iOS Safari & Android Chrome autoplay policy fix)
+        const unlockAudioOnMobile = () => {
+          if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume();
+          }
+        };
+
+        window.addEventListener("touchstart", unlockAudioOnMobile, { passive: true });
+        window.addEventListener("click", unlockAudioOnMobile, { passive: true });
       }
     } catch (e) {}
 
@@ -85,10 +102,18 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
     };
   }, [isOpen]);
 
+  const handleModalTap = () => {
+    if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
+      onClick={handleModalTap}
+      onTouchStart={handleModalTap}
       style={{
         position: "fixed",
         inset: 0,
@@ -125,7 +150,7 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
         }
       ` }} />
 
-      {/* Cyber Security Warning Frame (Reference Neon Double Frame) */}
+      {/* Cyber Security Warning Frame */}
       <div
         style={{
           width: "100%",
@@ -167,6 +192,13 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
           <p style={{ margin: 0, fontSize: "0.78rem", color: "rgba(255, 255, 255, 0.88)", lineHeight: 1.55, fontFamily: "var(--font-mono)" }}>
             You are attempting to gain unauthorized entry into a restricted classified area of this system. Repeated unauthorized intrusion or cyber tampering is sternly prohibited and punishable under <strong>Section 66 (Hacking), Section 66B (Data Theft) &amp; Section 66F (Cyber Terrorism)</strong> of the <strong>Indian Information Technology (IT) Act, 2000</strong> &amp; relevant sections of the <strong>Bharatiya Nyaya Sanhita (BNS) / IPC</strong> with up to 10 years imprisonment.
           </p>
+        </div>
+
+        {/* Mobile Sound Unlock Indicator */}
+        <div style={{ marginBottom: 16 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.74rem", color: "#ff003c", opacity: 0.85 }}>
+            🔊 HIGH-ALERT SIREN ACTIVE (TAP SCREEN ON MOBILE TO UNLOCK AUDIO)
+          </span>
         </div>
 
         {/* Live Countdown Timer */}
