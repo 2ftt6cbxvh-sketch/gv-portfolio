@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-export default function CyberLockdownModal({ isOpen, lockdownSeconds = 30, onClose }) {
+export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClose }) {
   const [secondsLeft, setSecondsLeft] = useState(lockdownSeconds);
 
+  // 1. Live Countdown Timer
   useEffect(() => {
     if (!isOpen) return;
     setSecondsLeft(lockdownSeconds);
@@ -22,6 +23,53 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 30, onClo
 
     return () => clearInterval(timer);
   }, [isOpen, lockdownSeconds, onClose]);
+
+  // 2. Soft Atmospheric Cyber Warning Siren (Web Audio API)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let audioCtx = null;
+    let osc = null;
+    let gainNode = null;
+    let sirenInterval = null;
+
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+        osc = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(520, audioCtx.currentTime); // Atmospheric warning pitch
+
+        // Soft, comfortable volume level (0.04)
+        gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.start();
+
+        let isHigh = false;
+        sirenInterval = setInterval(() => {
+          if (audioCtx && osc) {
+            isHigh = !isHigh;
+            osc.frequency.setTargetAtTime(isHigh ? 720 : 520, audioCtx.currentTime, 0.12);
+          }
+        }, 650);
+      }
+    } catch (e) {}
+
+    return () => {
+      if (sirenInterval) clearInterval(sirenInterval);
+      if (osc) {
+        try { osc.stop(); } catch (e) {}
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch (e) {}
+      }
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
