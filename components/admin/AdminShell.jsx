@@ -37,6 +37,25 @@ export default function AdminShell({ email, children }) {
   const pathname = usePathname();
   return (
     <div className="admin-shell">
+      {/* Mobile Top Header with Logout Button */}
+      <div className="admin-mobile-header">
+        <div style={{ fontWeight: 700, fontSize: 14, color: "var(--a-text)" }}>
+          GV Admin
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link href="/" className="admin-btn admin-btn--sm" style={{ textDecoration: "none", fontSize: 12 }}>
+            Live Site
+          </Link>
+          <button
+            onClick={() => signOut({ callbackUrl: "/admin/login" })}
+            className="admin-btn admin-btn--sm admin-mobile-logout-btn"
+            style={{ background: "rgba(255, 107, 107, 0.15)", color: "#ff6b6b", borderColor: "rgba(255, 107, 107, 0.3)", fontSize: 12, fontWeight: 600 }}
+          >
+            🚪 Sign Out
+          </button>
+        </div>
+      </div>
+
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">GV Admin</div>
         {NAV.map((section) => (
