@@ -31,7 +31,11 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
   const handleEnterAdmin = () => {
     setIsCastingSpell(true);
     if (typeof window !== "undefined") {
-      sessionStorage.setItem("starPatternVerified", "true");
+      // Session Pattern Token expires after 3 minutes (180,000ms)
+      sessionStorage.setItem("starPatternVerified", JSON.stringify({
+        verified: true,
+        expiresAt: Date.now() + 3 * 60 * 1000,
+      }));
     }
 
     // 1.4s Harry Potter spell dissolution animation before redirecting to /admin with secret key

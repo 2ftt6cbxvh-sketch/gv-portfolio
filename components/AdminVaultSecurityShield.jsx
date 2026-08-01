@@ -9,11 +9,27 @@ export default function AdminVaultSecurityShield({ children }) {
   const [isAuthorized, setIsAuthorized] = useState(null);
 
   useEffect(() => {
-    // 1. Check if ?key= matches or if patternToken is verified in sessionStorage
     const keyParam = searchParams.get("key");
-    const isPatternVerified = typeof window !== "undefined" && sessionStorage.getItem("starPatternVerified") === "true";
+    let isPatternVerified = false;
 
-    // Secret Key matches 134214 or Pattern Handshake verified
+    if (typeof window !== "undefined") {
+      const rawToken = sessionStorage.getItem("starPatternVerified");
+      if (rawToken) {
+        try {
+          const parsed = JSON.parse(rawToken);
+          if (parsed.verified && parsed.expiresAt && Date.now() < parsed.expiresAt) {
+            isPatternVerified = true;
+          } else {
+            // Pattern Handshake Token has expired (after 3 minutes)!
+            sessionStorage.removeItem("starPatternVerified");
+          }
+        } catch (e) {
+          if (rawToken === "true") isPatternVerified = true;
+        }
+      }
+    }
+
+    // Valid if Secret URL Key matches "134214" OR valid unexpired 3-minute pattern token exists
     if (keyParam === "134214" || isPatternVerified) {
       setIsAuthorized(true);
     } else {
@@ -30,7 +46,7 @@ export default function AdminVaultSecurityShield({ children }) {
     );
   }
 
-  // Authentic 404 Page Not Found Screen for unauthorized direct address bar access!
+  // Authentic 404 Page Not Found Screen for unauthorized or expired direct address bar access!
   if (!isAuthorized) {
     return (
       <div
@@ -55,7 +71,7 @@ export default function AdminVaultSecurityShield({ children }) {
           This page could not be found.
         </h1>
         <p style={{ fontSize: "0.95rem", color: "rgba(255,255,255,0.6)", maxWidth: 420, lineHeight: 1.6, marginBottom: 28 }}>
-          The requested URL path does not exist on this server or requires classified authorization credentials.
+          The requested URL path does not exist on this server or your 3-minute pattern security handshake has expired.
         </p>
 
         <Link
