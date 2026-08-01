@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
   const router = useRouter();
+  const [isCastingSpell, setIsCastingSpell] = useState(false);
 
   let accentColor = "#ffd700";
   let titleText = "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED";
@@ -19,11 +20,19 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isCastingSpell) onClose();
     };
     if (isOpen) window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isCastingSpell]);
+
+  const handleEnterAdmin = () => {
+    setIsCastingSpell(true);
+    // 1.2s Harry Potter spell dissolution before redirecting to /admin
+    setTimeout(() => {
+      router.push("/admin");
+    }, 1200);
+  };
 
   if (!isOpen) return null;
 
@@ -32,27 +41,59 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 99999,
-        background: "rgba(3, 5, 8, 0.88)",
-        backdropFilter: "blur(18px)",
+        zIndex: 999999, // High z-index to ensure cursor and clicks work over canvas
+        background: "rgba(3, 6, 12, 0.92)",
+        backdropFilter: "blur(20px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: 20,
+        pointerEvents: "auto",
         animation: "fadeIn 0.3s ease-out",
       }}
     >
+      {/* Harry Potter "Mischief Managed" Golden Spell Dissolution Overlay */}
+      {isCastingSpell && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1000000,
+            background: "radial-gradient(circle at center, rgba(255,215,0,0.3) 0%, rgba(3,6,12,0.95) 80%)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            animation: "pulse 0.6s infinite alternate",
+          }}
+        >
+          <div style={{ fontSize: 56, marginBottom: 16, filter: "drop-shadow(0 0 20px #ffd700)" }}>
+            🪄✨
+          </div>
+          <h2 style={{ fontFamily: "var(--font-mono)", color: "#ffd700", letterSpacing: "0.16em", fontSize: "1.4rem", margin: "0 0 8px 0" }}>
+            MISCHIEF MANAGED...
+          </h2>
+          <p style={{ fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.8)", fontSize: "0.88rem" }}>
+            Unlocking Harry Potter Magic &amp; Admin Sanctum
+          </p>
+        </div>
+      )}
+
+      {/* Main Secret Gateway Card */}
       <div
         style={{
           width: "100%",
           maxWidth: 440,
           background: "#080c14",
-          border: `1.5px solid ${accentColor}`,
+          border: `2px solid ${accentColor}`,
           borderRadius: 16,
           padding: 28,
           textAlign: "center",
-          boxShadow: `0 0 40px color-mix(in oklab, ${accentColor} 40%, transparent)`,
+          boxShadow: `0 0 50px color-mix(in oklab, ${accentColor} 50%, transparent)`,
           position: "relative",
+          pointerEvents: "auto",
+          transform: "scale(1)",
+          transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         }}
       >
         <button
@@ -61,63 +102,76 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
             position: "absolute",
             top: 14,
             right: 14,
-            background: "transparent",
-            border: "none",
-            color: "rgba(255,255,255,0.5)",
-            fontSize: 20,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: "50%",
+            width: 32,
+            height: 32,
+            color: "rgba(255,255,255,0.8)",
+            fontSize: 16,
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s ease",
           }}
         >
           ✕
         </button>
 
-        <div style={{ fontSize: 44, marginBottom: 12, animation: "pulse 1.5s infinite" }}>
-          🔐
+        <div style={{ fontSize: 44, marginBottom: 12, animation: "bounce 2s infinite" }}>
+          🪄✨
         </div>
 
         <span
           style={{
-            fontSize: "0.72rem",
+            fontSize: "0.74rem",
             fontFamily: "var(--font-mono)",
             color: accentColor,
-            letterSpacing: "0.14em",
+            letterSpacing: "0.16em",
             textTransform: "uppercase",
             display: "block",
             marginBottom: 8,
+            fontWeight: 700,
           }}
         >
-          STAR PATTERN VERIFIED
+          ✨ ALOHOMORA! PATTERN VERIFIED ✨
         </span>
 
         <h3 style={{ margin: "0 0 12px 0", fontSize: "1.15rem", color: "#fff", fontWeight: 600 }}>
           {titleText}
         </h3>
 
-        <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.5, marginBottom: 24 }}>
-          You have successfully connected the secret 3-star constellation pattern. Access granted to administrative control.
+        <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.8)", lineHeight: 1.5, marginBottom: 24 }}>
+          You connected the secret 3-star constellation pattern! Harry Potter magic has unlocked administrative access.
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <button
-            onClick={() => {
-              onClose();
-              router.push("/admin");
-            }}
+            onClick={handleEnterAdmin}
             style={{
-              padding: "12px 20px",
+              padding: "14px 24px",
               background: accentColor,
               color: "#000",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 10,
               fontFamily: "var(--font-mono)",
-              fontWeight: 700,
-              fontSize: "0.88rem",
+              fontWeight: 800,
+              fontSize: "0.92rem",
               cursor: "pointer",
-              boxShadow: `0 0 20px color-mix(in oklab, ${accentColor} 60%, transparent)`,
-              transition: "all 0.2s ease",
+              boxShadow: `0 0 25px color-mix(in oklab, ${accentColor} 65%, transparent)`,
+              transition: "all 0.2s ease-in-out",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.03)";
+              e.currentTarget.style.boxShadow = `0 0 35px color-mix(in oklab, ${accentColor} 85%, transparent)`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow = `0 0 25px color-mix(in oklab, ${accentColor} 65%, transparent)`;
             }}
           >
-            🚀 ENTER ADMIN PANEL
+            🪄 ENTER ADMIN PANEL (ALOHOMORA)
           </button>
 
           <button
@@ -126,11 +180,12 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
               padding: "10px 20px",
               background: "transparent",
               color: "rgba(255,255,255,0.6)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.15)",
               borderRadius: 8,
               fontFamily: "var(--font-mono)",
               fontSize: "0.8rem",
               cursor: "pointer",
+              transition: "all 0.2s ease",
             }}
           >
             Close Gateway

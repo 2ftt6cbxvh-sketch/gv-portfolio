@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 
 /**
  * Interactive Particle Constellation Canvas with Cursor Spark Trail AND
- * Secret 3-Star Constellation Admin Gateway Unlock.
+ * Secret 3-Star Constellation Admin Gateway Unlock + Harry Potter Wand Spell Animation.
  */
 export default function LandingConstellation({ accentColor = "#00f0ff" }) {
   const canvasRef = useRef(null);
@@ -25,16 +25,15 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     };
     window.addEventListener("resize", handleResize);
 
-    // Mouse coordinates
     const mouse = { x: -1000, y: -1000 };
     const sparks = [];
+    const magicSpells = []; // Harry Potter Wand Spell particles
     const tappedSecretStars = [];
 
-    // 3 Secret Constellation Stars for Admin Pattern Unlock
     const secretStars = [
-      { id: 1, x: width * 0.18, y: height * 0.22, radius: 4 },
-      { id: 2, x: width * 0.82, y: height * 0.28, radius: 4 },
-      { id: 3, x: width * 0.50, y: height * 0.82, radius: 4 },
+      { id: 1, x: width * 0.18, y: height * 0.22, radius: 6 },
+      { id: 2, x: width * 0.82, y: height * 0.28, radius: 6 },
+      { id: 3, x: width * 0.50, y: height * 0.82, radius: 6 },
     ];
 
     const handleMouseMove = (e) => {
@@ -60,23 +59,56 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
 
-      // Check if user clicked near one of the secret stars
       secretStars.forEach((star) => {
         const dx = clickX - star.x;
         const dy = clickY - star.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 40 && !tappedSecretStars.includes(star.id)) {
+        if (dist < 45 && !tappedSecretStars.includes(star.id)) {
           tappedSecretStars.push(star.id);
 
-          // If all 3 stars are connected in triangle pattern
+          // Spawn Harry Potter Golden Wand Spell Burst at tapped star
+          for (let m = 0; m < 25; m++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 4 + 2;
+            magicSpells.push({
+              x: star.x,
+              y: star.y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              life: 1.0,
+              decay: Math.random() * 0.02 + 0.015,
+              size: Math.random() * 4 + 2,
+              color: "#ffd700",
+            });
+          }
+
+          // If 3 stars connected -> Alohomora Spell Unlock!
           if (tappedSecretStars.length === 3) {
+            // Explode magical lumos fireworks across all 3 stars
+            secretStars.forEach((s) => {
+              for (let m = 0; m < 30; m++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 3;
+                magicSpells.push({
+                  x: s.x,
+                  y: s.y,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  life: 1.2,
+                  decay: 0.015,
+                  size: Math.random() * 5 + 2,
+                  color: "#ffd700",
+                });
+              }
+            });
+
             setTimeout(() => {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("openAdminSecretGateway"));
               }
-              tappedSecretStars.length = 0; // Reset pattern
-            }, 400);
+              tappedSecretStars.length = 0;
+            }, 700);
           }
         }
       });
@@ -91,7 +123,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     canvas.addEventListener("click", handleClick);
     document.addEventListener("mouseleave", handleMouseLeave);
 
-    // Create background constellation particles
     const particleCount = Math.min(Math.floor((width * height) / 14000), 55);
     const particles = Array.from({ length: particleCount }, () => ({
       x: Math.random() * width,
@@ -105,7 +136,30 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Render cursor spark trail
+      // 1. Render Harry Potter Magic Wand Spell Particles
+      for (let i = magicSpells.length - 1; i >= 0; i--) {
+        const ms = magicSpells[i];
+        ms.x += ms.vx;
+        ms.y += ms.vy;
+        ms.life -= ms.decay;
+
+        if (ms.life <= 0) {
+          magicSpells.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ms.x, ms.y, ms.size * ms.life, 0, Math.PI * 2);
+        ctx.fillStyle = ms.color;
+        ctx.globalAlpha = ms.life;
+        ctx.shadowColor = ms.color;
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 2. Render cursor spark trail
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
         s.x += s.vx;
@@ -127,7 +181,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         ctx.shadowBlur = 0;
       }
 
-      // 2. Draw normal constellation particles & lines
+      // 3. Constellation particles & connections
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -161,21 +215,22 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         }
       }
 
-      // 3. Render 3 Secret Star Nodes & Gold Laser Triangle Lines
+      // 4. Render Secret Star Nodes & Gold Laser Triangle Lines
       secretStars.forEach((star) => {
         const isTapped = tappedSecretStars.includes(star.id);
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(star.x, star.y, isTapped ? 6 : 4, 0, Math.PI * 2);
+        ctx.arc(star.x, star.y, isTapped ? 8 : 5, 0, Math.PI * 2);
         ctx.fillStyle = isTapped ? "#ffd700" : accentColor;
-        ctx.globalAlpha = isTapped ? 1.0 : 0.6;
         ctx.shadowColor = isTapped ? "#ffd700" : accentColor;
-        ctx.shadowBlur = isTapped ? 18 : 8;
+        ctx.shadowBlur = isTapped ? 22 : 10;
+        ctx.globalAlpha = isTapped ? 1.0 : 0.7;
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.restore();
       });
 
-      // Draw Gold Laser Lines connecting tapped stars
       if (tappedSecretStars.length > 1) {
+        ctx.save();
         ctx.beginPath();
         const firstStar = secretStars.find((s) => s.id === tappedSecretStars[0]);
         ctx.moveTo(firstStar.x, firstStar.y);
@@ -190,12 +245,12 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         }
 
         ctx.strokeStyle = "#ffd700";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.shadowColor = "#ffd700";
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
         ctx.globalAlpha = 0.95;
         ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.restore();
       }
 
       animFrameId = requestAnimationFrame(draw);
