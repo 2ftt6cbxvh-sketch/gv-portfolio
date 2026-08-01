@@ -1753,11 +1753,24 @@ body.is-cinematic-mode .mode-view--editor .hero-mode--editor {
   opacity: 0.7;
 }
 
-/* ============ GLOBAL CUSTOM CURSOR ============ */
+/* Pass clicks through landing intro text to constellation canvas */
+.selector__intro, .selector__sub, .selector__eyebrow {
+  pointer-events: none !important;
+}
+
+/* ============ GLOBAL CUSTOM CURSOR (Main Site Only) ============ */
 @media (hover: hover) and (pointer: fine) {
-  body, button, a, input, select, textarea, [role="button"] {
+  #stage, #stage button, #stage a, #stage input, #stage select, #stage textarea, #stage [role="button"] {
     cursor: none !important;
   }
+}
+
+/* Force normal browser cursor in Admin Panel */
+body:has(.admin-layout), body:has(.admin-card), body:has(input[type="password"]), .admin-layout, .admin-card {
+  cursor: auto !important;
+}
+body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin-input {
+  cursor: pointer !important;
 }
 
 .cursor-dot {

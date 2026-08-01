@@ -104,7 +104,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         const dy = clickY - star.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 45 && !tappedSecretStars.includes(star.id)) {
+        if (dist < 70 && !tappedSecretStars.includes(star.id)) {
           tappedSecretStars.push(star.id);
 
           // Harry Potter Golden Wand Spell Burst
