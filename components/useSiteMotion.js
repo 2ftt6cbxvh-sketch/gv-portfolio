@@ -78,11 +78,6 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       const targetTheme = mode;
       const accent = MODE_ACCENTS[targetTheme] || "#00f0ff";
 
-      // Trigger 3D Iron Man Hyperspace Warp Tunnel Transition
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("triggerWarpTunnel", { detail: { color: accent } }));
-      }
-
       lenisRef.current?.stop();
 
       const clickedPortal = e?.currentTarget || document.querySelector(`.portal[data-target="${mode}"]`);
