@@ -16,7 +16,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     const defaults = {
       sequenceStr: "1,3,4,2,1,4",
       maxAttempts: 3,
-      lockdownSec: 30,
+      lockdownSec: 90,
       accentColor: "#ffd700",
     };
 

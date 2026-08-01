@@ -91,7 +91,7 @@ export default function FeaturesAdminPage() {
   const [gatewayConfig, setGatewayConfig] = useState({
     sequenceStr: "1,3,4,2,1,4",
     maxAttempts: "3",
-    lockdownSec: "30",
+    lockdownSec: "90",
     accentColor: "#ffd700",
     titleText: "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
   });
