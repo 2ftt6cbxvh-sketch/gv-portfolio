@@ -46,9 +46,11 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
           audioCtx.resume();
         }
 
-        // Master Gain Node - High Alert Loud Volume (0.18)
+        // Master Gain Node - Smooth 450ms Crescendo Ramp-In Envelope (No ear-blowing initial pop!)
         gainNode = audioCtx.createGain();
-        gainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        const now = audioCtx.currentTime;
+        gainNode.gain.setValueAtTime(0.001, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.15, now + 0.45);
         gainNode.connect(audioCtx.destination);
 
         // Primary Piercing Sawtooth Alarm Oscillator
