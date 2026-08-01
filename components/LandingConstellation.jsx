@@ -6,6 +6,7 @@ import { useEffect, useRef, useMemo } from "react";
  * Features:
  * - 4 Floating Secret Stars in Bounded Safe Outer Zones (NEVER under mode cards!)
  * - Multi-Stroke Sequence Verification (Default: 1 -> 3 -> 4 -> 2 -> 1 -> 4)
+ * - FULL MOBILE TOUCH & TAP SUPPORT (onTouchStart + onTouchMove)
  * - 3-Strike Failed Attempts Counter
  * - Full-Screen Cyber Security Lockdown Warning Modal with Indian IT Act Law
  */
@@ -81,10 +82,10 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       { id: 4, x: Math.random() * (width * 0.22) + width * 0.72, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.7, maxX: width - 30, minY: bottomMinY, maxY: bottomMaxY },
     ];
 
-    const handleMouseMove = (e) => {
+    const updatePointerPos = (clientX, clientY) => {
       const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      mouse.x = clientX - rect.left;
+      mouse.y = clientY - rect.top;
 
       for (let i = 0; i < 2; i++) {
         sparks.push({
@@ -99,19 +100,20 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       }
     };
 
-    const handleClick = (e) => {
+    const handleMouseMove = (e) => updatePointerPos(e.clientX, e.clientY);
+
+    const processTapAtCoordinates = (clickX, clickY) => {
       if (isLockedDown) return;
 
-      const rect = canvas.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const clickY = e.clientY - rect.top;
+      // 85px click detection radius on mobile for finger touch targets
+      const touchRadius = width < 768 ? 85 : 70;
 
       secretStars.forEach((star) => {
         const dx = clickX - star.x;
         const dy = clickY - star.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 70) {
+        if (dist < touchRadius) {
           const nextIndex = tappedSequence.length;
 
           if (targetSequence[nextIndex] === star.id) {
@@ -165,7 +167,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
 
             tappedSequence = [];
 
-            // 3-Strike Security Lockdown -> Dispatch Full-Screen Cyber Strobe Warning Modal
             if (failedAttempts >= (config.maxAttempts || 3)) {
               isLockedDown = true;
               if (typeof window !== "undefined") {
@@ -182,6 +183,25 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       });
     };
 
+    const handleClick = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      processTapAtCoordinates(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    const handleTouchStart = (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      const rect = canvas.getBoundingClientRect();
+      const touchX = e.touches[0].clientX - rect.left;
+      const touchY = e.touches[0].clientY - rect.top;
+      updatePointerPos(e.touches[0].clientX, e.touches[0].clientY);
+      processTapAtCoordinates(touchX, touchY);
+    };
+
+    const handleTouchMove = (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      updatePointerPos(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
     const handleMouseLeave = () => {
       mouse.x = -1000;
       mouse.y = -1000;
@@ -189,6 +209,8 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
 
     window.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("click", handleClick);
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: true });
     document.addEventListener("mouseleave", handleMouseLeave);
 
     const particleCount = Math.min(Math.floor((width * height) / 14000), 55);
@@ -350,6 +372,8 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("click", handleClick);
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [accentColor, config, targetSequence]);
@@ -364,6 +388,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         height: "100%",
         pointerEvents: "auto",
         zIndex: 0,
+        touchAction: "manipulation",
       }}
     />
   );
