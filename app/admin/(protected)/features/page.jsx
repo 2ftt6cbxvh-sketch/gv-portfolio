@@ -10,6 +10,7 @@ const REQUIRED_FLAGS = [
   { key: "hotkey_hints", name: "Landing Keyboard Shortcut Hints ([1], [2], [3])", defaultEnabled: true },
   { key: "analyst_ticker", name: "Analyst Mode Data Ticker Ribbon", defaultEnabled: true },
   { key: "analyst_ai_sandbox", name: "Analyst Mode AI Neural Net & 3D Hologram Cube Sandbox", defaultEnabled: true },
+  { key: "admin_secret_gateway", name: "Secret Star Constellation Pattern Admin Gateway", defaultEnabled: true },
   { key: "video_reel", name: "Editor Video Showreel Player", defaultEnabled: true },
 ];
 
@@ -85,6 +86,11 @@ export default function FeaturesAdminPage() {
     f5Sub: "AI & Data Science",
     f6Title: "POWER BI DASHBOARDS",
     f6Sub: "Live Analytics",
+  });
+
+  const [gatewayConfig, setGatewayConfig] = useState({
+    accentColor: "#ffd700",
+    titleText: "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
   });
 
   const [videoConfig, setVideoConfig] = useState({
@@ -451,6 +457,28 @@ export default function FeaturesAdminPage() {
       }
     } catch (e) {
       alert("Failed to save Analyst AI Sandbox settings.");
+    }
+    setSavingKey(null);
+  };
+
+  const handleSaveGatewayMetadata = async () => {
+    setSavingKey("admin_secret_gateway");
+    try {
+      const currentFlag = flags.find((f) => f.key === "admin_secret_gateway");
+      const res = await fetch("/api/admin/features", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "admin_secret_gateway",
+          enabled: currentFlag?.enabled !== false,
+          metadata: JSON.stringify(gatewayConfig),
+        }),
+      });
+      if (res.ok) {
+        alert("Secret Constellation Admin Gateway settings updated successfully! Changes are live on frontend.");
+      }
+    } catch (e) {
+      alert("Failed to save secret gateway settings.");
     }
     setSavingKey(null);
   };
@@ -865,6 +893,61 @@ export default function FeaturesAdminPage() {
             disabled={savingKey === "analyst_ai_sandbox"}
           >
             {savingKey === "analyst_ai_sandbox" ? "Saving..." : "Save AI Sandbox Settings"}
+          </button>
+        </div>
+      </div>
+
+      {/* 3.5. Secret Constellation Pattern Gateway Config */}
+      <div className="admin-card" style={{ marginBottom: 24 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 6 }}>🔐 Secret Constellation Pattern Admin Gateway</h3>
+        <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
+          Edit the secret 3-star constellation laser triangle color and gateway welcome text.
+        </p>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Laser Line Color
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="color"
+                  value={gatewayConfig.accentColor.startsWith("#") && gatewayConfig.accentColor.length === 7 ? gatewayConfig.accentColor : "#ffd700"}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, accentColor: e.target.value })}
+                  style={{ width: 40, height: 38, border: "1px solid var(--a-border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 2 }}
+                />
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={gatewayConfig.accentColor}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, accentColor: e.target.value })}
+                  placeholder="#ffd700"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Gateway Welcome Title
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={gatewayConfig.titleText}
+                onChange={(e) => setGatewayConfig({ ...gatewayConfig, titleText: e.target.value })}
+                placeholder="AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={handleSaveGatewayMetadata}
+            disabled={savingKey === "admin_secret_gateway"}
+          >
+            {savingKey === "admin_secret_gateway" ? "Saving..." : "Save Secret Gateway Settings"}
           </button>
         </div>
       </div>

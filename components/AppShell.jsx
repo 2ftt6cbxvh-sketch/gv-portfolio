@@ -8,6 +8,7 @@ import AnalystMode from "./AnalystMode";
 import CursorGlow from "./CursorGlow";
 import SignatureIntro from "./SignatureIntro";
 import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
+import AdminSecretGatewayModal from "./AdminSecretGatewayModal";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -21,9 +22,16 @@ export default function AppShell({ data }) {
   const navLogoEngineRef = useRef(null);
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
   const [showSignatureIntro, setShowSignatureIntro] = useState(true);
+  const [showAdminGateway, setShowAdminGateway] = useState(false);
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenGateway = () => setShowAdminGateway(true);
+    window.addEventListener("openAdminSecretGateway", handleOpenGateway);
+    return () => window.removeEventListener("openAdminSecretGateway", handleOpenGateway);
   }, []);
 
   useEffect(() => {
@@ -121,6 +129,12 @@ export default function AppShell({ data }) {
       {modeById.editor && <EditorMode data={modeById.editor} features={features} />}
       {modeById.analyst && <AnalystMode data={modeById.analyst} features={features} />}
       {modeById.developer && <DeveloperMode data={modeById.developer} features={features} />}
+      {/* Secret Admin Gateway Modal */}
+      <AdminSecretGatewayModal
+        isOpen={showAdminGateway}
+        onClose={() => setShowAdminGateway(false)}
+        metadata={features?.flags?.admin_secret_gateway?.metadata}
+      />
     </div>
   );
 }

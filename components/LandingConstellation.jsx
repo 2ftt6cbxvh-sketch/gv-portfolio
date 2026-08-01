@@ -2,9 +2,8 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Interactive Particle Constellation Canvas with Cursor Spark Trail.
- * Renders floating particles with dynamic line connections AND glowing spark
- * trail particles that emit from the user's cursor.
+ * Interactive Particle Constellation Canvas with Cursor Spark Trail AND
+ * Secret 3-Star Constellation Admin Gateway Unlock.
  */
 export default function LandingConstellation({ accentColor = "#00f0ff" }) {
   const canvasRef = useRef(null);
@@ -26,16 +25,23 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     };
     window.addEventListener("resize", handleResize);
 
-    // Mouse coordinates relative to canvas
-    const mouse = { x: -1000, y: -1000, radius: 180 };
+    // Mouse coordinates
+    const mouse = { x: -1000, y: -1000 };
     const sparks = [];
+    const tappedSecretStars = [];
+
+    // 3 Secret Constellation Stars for Admin Pattern Unlock
+    const secretStars = [
+      { id: 1, x: width * 0.18, y: height * 0.22, radius: 4 },
+      { id: 2, x: width * 0.82, y: height * 0.28, radius: 4 },
+      { id: 3, x: width * 0.50, y: height * 0.82, radius: 4 },
+    ];
 
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
 
-      // Spawn 2 spark particles per mouse move
       for (let i = 0; i < 2; i++) {
         sparks.push({
           x: mouse.x,
@@ -49,15 +55,43 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
       }
     };
 
+    const handleClick = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      // Check if user clicked near one of the secret stars
+      secretStars.forEach((star) => {
+        const dx = clickX - star.x;
+        const dy = clickY - star.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 40 && !tappedSecretStars.includes(star.id)) {
+          tappedSecretStars.push(star.id);
+
+          // If all 3 stars are connected in triangle pattern
+          if (tappedSecretStars.length === 3) {
+            setTimeout(() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("openAdminSecretGateway"));
+              }
+              tappedSecretStars.length = 0; // Reset pattern
+            }, 400);
+          }
+        }
+      });
+    };
+
     const handleMouseLeave = () => {
       mouse.x = -1000;
       mouse.y = -1000;
     };
 
     window.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("click", handleClick);
     document.addEventListener("mouseleave", handleMouseLeave);
 
-    // Create particle set
+    // Create background constellation particles
     const particleCount = Math.min(Math.floor((width * height) / 14000), 55);
     const particles = Array.from({ length: particleCount }, () => ({
       x: Math.random() * width,
@@ -71,7 +105,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Render and update spark trail particles
+      // 1. Render cursor spark trail
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
         s.x += s.vx;
@@ -93,7 +127,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         ctx.shadowBlur = 0;
       }
 
-      // Update and draw constellation particles
+      // 2. Draw normal constellation particles & lines
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -102,24 +136,12 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Mouse attraction / push effect
-        const dxMouse = mouse.x - p.x;
-        const dyMouse = mouse.y - p.y;
-        const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-        if (distMouse < mouse.radius) {
-          const force = (mouse.radius - distMouse) / mouse.radius;
-          p.x -= (dxMouse / distMouse) * force * 1.5;
-          p.y -= (dyMouse / distMouse) * force * 1.5;
-        }
-
-        // Draw particle node
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = accentColor;
         ctx.globalAlpha = p.alpha;
         ctx.fill();
 
-        // Connect with nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
@@ -137,44 +159,69 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
             ctx.stroke();
           }
         }
-
-        // Connect particle to mouse cursor if near
-        if (distMouse < mouse.radius) {
-          const mouseLineAlpha = (1 - distMouse / mouse.radius) * 0.5;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = accentColor;
-          ctx.globalAlpha = mouseLineAlpha;
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
       }
 
-      ctx.globalAlpha = 1;
+      // 3. Render 3 Secret Star Nodes & Gold Laser Triangle Lines
+      secretStars.forEach((star) => {
+        const isTapped = tappedSecretStars.includes(star.id);
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, isTapped ? 6 : 4, 0, Math.PI * 2);
+        ctx.fillStyle = isTapped ? "#ffd700" : accentColor;
+        ctx.globalAlpha = isTapped ? 1.0 : 0.6;
+        ctx.shadowColor = isTapped ? "#ffd700" : accentColor;
+        ctx.shadowBlur = isTapped ? 18 : 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Draw Gold Laser Lines connecting tapped stars
+      if (tappedSecretStars.length > 1) {
+        ctx.beginPath();
+        const firstStar = secretStars.find((s) => s.id === tappedSecretStars[0]);
+        ctx.moveTo(firstStar.x, firstStar.y);
+
+        for (let k = 1; k < tappedSecretStars.length; k++) {
+          const nextStar = secretStars.find((s) => s.id === tappedSecretStars[k]);
+          ctx.lineTo(nextStar.x, nextStar.y);
+        }
+
+        if (tappedSecretStars.length === 3) {
+          ctx.closePath();
+        }
+
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 2;
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 15;
+        ctx.globalAlpha = 0.95;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
       animFrameId = requestAnimationFrame(draw);
     };
 
     draw();
 
     return () => {
+      cancelAnimationFrame(animFrameId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("click", handleClick);
       document.removeEventListener("mouseleave", handleMouseLeave);
-      cancelAnimationFrame(animFrameId);
     };
   }, [accentColor]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="landing-constellation-canvas"
       style={{
         position: "absolute",
         inset: 0,
-        pointerEvents: "none",
+        width: "100%",
+        height: "100%",
+        pointerEvents: "auto",
         zIndex: 0,
-        opacity: 0.8,
       }}
     />
   );
