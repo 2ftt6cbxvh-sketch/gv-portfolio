@@ -196,13 +196,6 @@ export default function CyberLockdownModal({ isOpen, lockdownSeconds = 90, onClo
           </p>
         </div>
 
-        {/* Mobile Sound Unlock Indicator */}
-        <div style={{ marginBottom: 16 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.74rem", color: "#ff003c", opacity: 0.85 }}>
-            🔊 HIGH-ALERT SIREN ACTIVE (TAP SCREEN ON MOBILE TO UNLOCK AUDIO)
-          </span>
-        </div>
-
         {/* Live Countdown Timer */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(0, 136, 255, 0.15)", border: "1.5px solid #0088ff", padding: "8px 18px", borderRadius: 20, marginBottom: 24 }}>
           <span style={{ fontSize: 16 }}>⏱️</span>
