@@ -10,31 +10,58 @@ export default function AdminVaultSecurityShield({ children }) {
 
   useEffect(() => {
     const keyParam = searchParams.get("key");
-    let isPatternVerified = false;
 
-    if (typeof window !== "undefined") {
-      const rawToken = sessionStorage.getItem("starPatternVerified");
-      if (rawToken) {
-        try {
-          const parsed = JSON.parse(rawToken);
-          if (parsed.verified && parsed.expiresAt && Date.now() < parsed.expiresAt) {
-            isPatternVerified = true;
-          } else {
-            // Pattern Handshake Token has expired (after 3 minutes)!
-            sessionStorage.removeItem("starPatternVerified");
+    async function verifyCredentials() {
+      // 1. URL History Masking: Strip ?key= parameter from URL address bar immediately
+      if (keyParam && typeof window !== "undefined") {
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+
+      // 2. Check Client Session Storage or Verify via Server API
+      let isPatternVerified = false;
+
+      if (typeof window !== "undefined") {
+        const rawToken = sessionStorage.getItem("starPatternVerified");
+        if (rawToken) {
+          try {
+            const parsed = JSON.parse(rawToken);
+            if (parsed.verified && parsed.expiresAt && Date.now() < parsed.expiresAt) {
+              isPatternVerified = true;
+            } else {
+              sessionStorage.removeItem("starPatternVerified");
+            }
+          } catch (e) {
+            if (rawToken === "true") isPatternVerified = true;
           }
-        } catch (e) {
-          if (rawToken === "true") isPatternVerified = true;
         }
       }
-    }
 
-    // Valid if Secret URL Key matches "134214" OR valid unexpired 3-minute pattern token exists
-    if (keyParam === "134214" || isPatternVerified) {
-      setIsAuthorized(true);
-    } else {
+      if (isPatternVerified) {
+        setIsAuthorized(true);
+        return;
+      }
+
+      // 3. Verify keyParam against Server Endpoint
+      if (keyParam) {
+        try {
+          const res = await fetch("/api/public/verify-vault", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "key", payload: keyParam }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setIsAuthorized(true);
+            return;
+          }
+        } catch (e) {}
+      }
+
       setIsAuthorized(false);
     }
+
+    verifyCredentials();
   }, [searchParams]);
 
   // Loading state

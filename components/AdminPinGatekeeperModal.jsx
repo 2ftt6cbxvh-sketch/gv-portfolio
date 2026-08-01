@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 
-export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail, expectedPin = "134214" }) {
+export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [pinInput, setPinInput] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -15,28 +16,50 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail, exp
     }
   }, [isOpen]);
 
-  const handleKeyPress = (digit) => {
-    if (pinInput.length < 6) {
+  const handleKeyPress = async (digit) => {
+    if (pinInput.length < 6 && !isVerifying) {
       const nextPin = pinInput + digit;
       setPinInput(nextPin);
       setErrorMsg("");
 
-      if (nextPin.length === expectedPin.length) {
-        if (nextPin === expectedPin) {
-          // PIN Match!
-          setTimeout(() => {
-            onSuccess();
-          }, 300);
-        } else {
-          // PIN Mismatch!
-          const remaining = attemptsLeft - 1;
-          setAttemptsLeft(remaining);
-          setErrorMsg(`INVALID SECURITY PIN. ${remaining} ATTEMPTS REMAINING.`);
-          setPinInput("");
+      if (nextPin.length === 6) {
+        setIsVerifying(true);
+        try {
+          // Server-Side PIN Verification API Call
+          const res = await fetch("/api/public/verify-vault", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "pin", payload: nextPin }),
+          });
 
-          if (remaining <= 0) {
+          const data = await res.json();
+          setIsVerifying(false);
+
+          if (res.status === 429) {
+            setErrorMsg(data.error || "RATE LIMIT EXCEEDED. LOCKDOWN ACTIVATED.");
             onFail(); // Trigger 90s Cyber Lockdown Strobe Modal & Siren
+            return;
           }
+
+          if (data.success) {
+            // PIN Match!
+            setTimeout(() => {
+              onSuccess();
+            }, 250);
+          } else {
+            // PIN Mismatch!
+            const remaining = attemptsLeft - 1;
+            setAttemptsLeft(remaining);
+            setErrorMsg(`INVALID SECURITY PIN. ${remaining} ATTEMPTS REMAINING.`);
+            setPinInput("");
+
+            if (remaining <= 0) {
+              onFail(); // Trigger 90s Cyber Lockdown Strobe Modal & Siren
+            }
+          }
+        } catch (e) {
+          setIsVerifying(false);
+          setErrorMsg("SERVER VERIFICATION ERROR.");
         }
       }
     }
@@ -120,6 +143,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail, exp
             <button
               key={num}
               onClick={() => handleKeyPress(num)}
+              disabled={isVerifying}
               style={{
                 padding: "14px 0",
                 background: "rgba(255,255,255,0.05)",
@@ -140,6 +164,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail, exp
           ))}
           <button
             onClick={handleClear}
+            disabled={isVerifying}
             style={{
               padding: "14px 0",
               background: "rgba(255, 0, 60, 0.15)",
@@ -156,6 +181,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail, exp
           </button>
           <button
             onClick={() => handleKeyPress("0")}
+            disabled={isVerifying}
             style={{
               padding: "14px 0",
               background: "rgba(255,255,255,0.05)",
