@@ -2,8 +2,8 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Interactive Particle Constellation Canvas with Cursor Spark Trail AND
- * Secret 3-Star Constellation Admin Gateway Unlock + Harry Potter Wand Spell Animation.
+ * Interactive Particle Constellation Canvas with Cursor Line Connections + Spark Trail
+ * AND Moving 3-Star Constellation Admin Gateway Unlock + Harry Potter Wand Spell Animation.
  */
 export default function LandingConstellation({ accentColor = "#00f0ff" }) {
   const canvasRef = useRef(null);
@@ -27,13 +27,14 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
 
     const mouse = { x: -1000, y: -1000 };
     const sparks = [];
-    const magicSpells = []; // Harry Potter Wand Spell particles
+    const magicSpells = [];
     const tappedSecretStars = [];
 
+    // 3 Secret Constellation Stars — FLOATING & MOVING RANDOMLY like normal stars!
     const secretStars = [
-      { id: 1, x: width * 0.18, y: height * 0.22, radius: 6 },
-      { id: 2, x: width * 0.82, y: height * 0.28, radius: 6 },
-      { id: 3, x: width * 0.50, y: height * 0.82, radius: 6 },
+      { id: 1, x: Math.random() * (width * 0.4), y: Math.random() * (height * 0.4) + 40, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, radius: 2.2 },
+      { id: 2, x: Math.random() * (width * 0.4) + width * 0.5, y: Math.random() * (height * 0.4) + 40, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, radius: 2.2 },
+      { id: 3, x: Math.random() * (width * 0.5) + width * 0.25, y: Math.random() * (height * 0.3) + height * 0.6, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, radius: 2.2 },
     ];
 
     const handleMouseMove = (e) => {
@@ -67,7 +68,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         if (dist < 45 && !tappedSecretStars.includes(star.id)) {
           tappedSecretStars.push(star.id);
 
-          // Spawn Harry Potter Golden Wand Spell Burst at tapped star
+          // Harry Potter Golden Wand Spell Burst
           for (let m = 0; m < 25; m++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 4 + 2;
@@ -83,9 +84,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
             });
           }
 
-          // If 3 stars connected -> Alohomora Spell Unlock!
           if (tappedSecretStars.length === 3) {
-            // Explode magical lumos fireworks across all 3 stars
             secretStars.forEach((s) => {
               for (let m = 0; m < 30; m++) {
                 const angle = Math.random() * Math.PI * 2;
@@ -181,7 +180,17 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         ctx.shadowBlur = 0;
       }
 
-      // 3. Constellation particles & connections
+      // 3. Update & render normal constellation particles + CONNECT TO CURSOR!
+      const allNodes = [...particles, ...secretStars];
+
+      // Update positions of secret moving stars
+      secretStars.forEach((star) => {
+        star.x += star.vx;
+        star.y += star.vy;
+        if (star.x < 10 || star.x > width - 10) star.vx *= -1;
+        if (star.y < 10 || star.y > height - 10) star.vy *= -1;
+      });
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -196,6 +205,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         ctx.globalAlpha = p.alpha;
         ctx.fill();
 
+        // Connect particles to each other
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
@@ -215,20 +225,39 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         }
       }
 
-      // 4. Render Secret Star Nodes & Gold Laser Triangle Lines
+      // CONNECT ALL PARTICLES & SECRET STARS TO CURSOR!
+      allNodes.forEach((node) => {
+        const dx = mouse.x - node.x;
+        const dy = mouse.y - node.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 170) {
+          const lineAlpha = (1 - dist / 170) * 0.45;
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = accentColor;
+          ctx.globalAlpha = lineAlpha;
+          ctx.lineWidth = 1.0;
+          ctx.stroke();
+        }
+      });
+
+      // 4. Render Secret Moving Stars (looks identical to normal floating stars)
       secretStars.forEach((star) => {
         const isTapped = tappedSecretStars.includes(star.id);
         ctx.save();
         ctx.beginPath();
-        ctx.arc(star.x, star.y, isTapped ? 8 : 5, 0, Math.PI * 2);
+        ctx.arc(star.x, star.y, isTapped ? 6 : star.radius, 0, Math.PI * 2);
         ctx.fillStyle = isTapped ? "#ffd700" : accentColor;
         ctx.shadowColor = isTapped ? "#ffd700" : accentColor;
-        ctx.shadowBlur = isTapped ? 22 : 10;
-        ctx.globalAlpha = isTapped ? 1.0 : 0.7;
+        ctx.shadowBlur = isTapped ? 22 : 6;
+        ctx.globalAlpha = isTapped ? 1.0 : 0.6;
         ctx.fill();
         ctx.restore();
       });
 
+      // Connect tapped moving stars with gold laser line
       if (tappedSecretStars.length > 1) {
         ctx.save();
         ctx.beginPath();
