@@ -89,7 +89,7 @@ export default function FeaturesAdminPage() {
   });
 
   const [gatewayConfig, setGatewayConfig] = useState({
-    sequenceStr: "1,2,3,4",
+    sequenceStr: "1,3,4,2,1,4",
     maxAttempts: "3",
     lockdownSec: "30",
     accentColor: "#ffd700",
