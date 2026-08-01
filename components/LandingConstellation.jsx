@@ -4,6 +4,9 @@ import { useEffect, useRef } from "react";
 /**
  * Interactive Particle Constellation Canvas with Cursor Line Connections + Spark Trail
  * AND Moving 3-Star Constellation Admin Gateway Unlock + Harry Potter Wand Spell Animation.
+ *
+ * Secret Stars floating motion is bounded to outer screen zones so stars NEVER
+ * drift behind the central mode selector cards!
  */
 export default function LandingConstellation({ accentColor = "#00f0ff" }) {
   const canvasRef = useRef(null);
@@ -30,11 +33,47 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     const magicSpells = [];
     const tappedSecretStars = [];
 
-    // 3 Secret Constellation Stars — Larger, distinct glowing magic stars!
+    // 3 Secret Constellation Stars with Bounded Safe Floating Zones (Outside Central Mode Cards)
     const secretStars = [
-      { id: 1, x: Math.random() * (width * 0.35) + 60, y: Math.random() * (height * 0.35) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5 },
-      { id: 2, x: Math.random() * (width * 0.35) + width * 0.55, y: Math.random() * (height * 0.35) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5 },
-      { id: 3, x: Math.random() * (width * 0.4) + width * 0.3, y: Math.random() * (height * 0.3) + height * 0.6, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5 },
+      // Star 1: Top-Left Zone
+      {
+        id: 1,
+        x: Math.random() * (width * 0.25) + 40,
+        y: Math.random() * (height * 0.28) + 60,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: 4.5,
+        minX: 30,
+        maxX: width * 0.32,
+        minY: 50,
+        maxY: height * 0.38,
+      },
+      // Star 2: Top-Right Zone
+      {
+        id: 2,
+        x: Math.random() * (width * 0.25) + width * 0.68,
+        y: Math.random() * (height * 0.28) + 60,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: 4.5,
+        minX: width * 0.68,
+        maxX: width - 30,
+        minY: 50,
+        maxY: height * 0.38,
+      },
+      // Star 3: Bottom Zone (Below Mode Cards)
+      {
+        id: 3,
+        x: Math.random() * (width * 0.4) + width * 0.3,
+        y: Math.random() * (height * 0.18) + height * 0.76,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: 4.5,
+        minX: width * 0.2,
+        maxX: width * 0.8,
+        minY: height * 0.74,
+        maxY: height - 40,
+      },
     ];
 
     const handleMouseMove = (e) => {
@@ -183,12 +222,14 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
       // 3. Update & render normal constellation particles + CONNECT TO CURSOR!
       const allNodes = [...particles, ...secretStars];
 
-      // Update positions of secret moving stars
+      // Update positions of secret stars within their Bounded Safe Zones
       secretStars.forEach((star) => {
         star.x += star.vx;
         star.y += star.vy;
-        if (star.x < 10 || star.x > width - 10) star.vx *= -1;
-        if (star.y < 10 || star.y > height - 10) star.vy *= -1;
+
+        // Bounce physics inside dedicated safe floating zone (never behind mode cards!)
+        if (star.x < star.minX || star.x > star.maxX) star.vx *= -1;
+        if (star.y < star.minY || star.y > star.maxY) star.vy *= -1;
       });
 
       for (let i = 0; i < particles.length; i++) {
@@ -205,7 +246,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         ctx.globalAlpha = p.alpha;
         ctx.fill();
 
-        // Connect particles to each other
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
@@ -243,16 +283,16 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         }
       });
 
-      // 4. Render Secret Moving Stars (looks identical to normal floating stars)
+      // 4. Render Secret Moving Stars
       secretStars.forEach((star) => {
         const isTapped = tappedSecretStars.includes(star.id);
         ctx.save();
         ctx.beginPath();
-        ctx.arc(star.x, star.y, isTapped ? 6 : star.radius, 0, Math.PI * 2);
+        ctx.arc(star.x, star.y, isTapped ? 7 : star.radius, 0, Math.PI * 2);
         ctx.fillStyle = isTapped ? "#ffd700" : accentColor;
         ctx.shadowColor = isTapped ? "#ffd700" : accentColor;
-        ctx.shadowBlur = isTapped ? 22 : 6;
-        ctx.globalAlpha = isTapped ? 1.0 : 0.6;
+        ctx.shadowBlur = isTapped ? 24 : 8;
+        ctx.globalAlpha = isTapped ? 1.0 : 0.75;
         ctx.fill();
         ctx.restore();
       });
