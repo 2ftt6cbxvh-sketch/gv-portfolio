@@ -9,6 +9,7 @@ import CursorGlow from "./CursorGlow";
 import SignatureIntro from "./SignatureIntro";
 import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
 import AdminSecretGatewayModal from "./AdminSecretGatewayModal";
+import CyberLockdownModal from "./CyberLockdownModal";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -23,6 +24,8 @@ export default function AppShell({ data }) {
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
   const [showSignatureIntro, setShowSignatureIntro] = useState(true);
   const [showAdminGateway, setShowAdminGateway] = useState(false);
+  const [isLockdownOpen, setIsLockdownOpen] = useState(false);
+  const [lockdownSec, setLockdownSec] = useState(30);
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
@@ -30,8 +33,16 @@ export default function AppShell({ data }) {
 
   useEffect(() => {
     const handleOpenGateway = () => setShowAdminGateway(true);
+    const handleLockdown = (e) => {
+      if (e.detail?.seconds) setLockdownSec(e.detail.seconds);
+      setIsLockdownOpen(true);
+    };
     window.addEventListener("openAdminSecretGateway", handleOpenGateway);
-    return () => window.removeEventListener("openAdminSecretGateway", handleOpenGateway);
+    window.addEventListener("triggerCyberLockdown", handleLockdown);
+    return () => {
+      window.removeEventListener("openAdminSecretGateway", handleOpenGateway);
+      window.removeEventListener("triggerCyberLockdown", handleLockdown);
+    };
   }, []);
 
   useEffect(() => {
@@ -134,6 +145,13 @@ export default function AppShell({ data }) {
         isOpen={showAdminGateway}
         onClose={() => setShowAdminGateway(false)}
         metadata={features?.flags?.admin_secret_gateway?.metadata}
+      />
+
+      {/* Cyber Security Warning Lockdown Modal */}
+      <CyberLockdownModal
+        isOpen={isLockdownOpen}
+        lockdownSeconds={lockdownSec}
+        onClose={() => setIsLockdownOpen(false)}
       />
     </div>
   );

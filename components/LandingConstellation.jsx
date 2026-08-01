@@ -1,14 +1,13 @@
 "use client";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
 
 /**
  * 4-Star Multi-Stroke Harry Potter Spell Rune Constellation Canvas
  * Features:
- * - 4 Floating Secret Stars in Bounded Safe Outer Zones (Star 1, 2, 3, 4)
+ * - 4 Floating Secret Stars in Bounded Safe Outer Zones (NEVER under mode cards!)
  * - Multi-Stroke Sequence Verification (Default: 1 -> 3 -> 4 -> 2 -> 1 -> 4)
  * - 3-Strike Failed Attempts Counter
- * - 30-Second Silent Security Lockdown
- * - Full Admin Panel Customization
+ * - Full-Screen Cyber Security Lockdown Warning Modal with Indian IT Act Law
  */
 export default function LandingConstellation({ accentColor = "#00f0ff", metadata }) {
   const canvasRef = useRef(null);
@@ -67,16 +66,19 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     let lockdownTimer = null;
     let isSpellFracture = false;
 
-    // 4 Secret Constellation Stars in Outer Safe Floating Zones
+    // 4 Secret Constellation Stars — Bounded to Far Outer Zones (NEVER behind mode cards!)
+    const bottomMinY = Math.max(height - 140, height * 0.78);
+    const bottomMaxY = height - 35;
+
     const secretStars = [
-      // Star 1: Top-Left Zone
-      { id: 1, x: Math.random() * (width * 0.25) + 40, y: Math.random() * (height * 0.28) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.32, minY: 50, maxY: height * 0.38 },
-      // Star 2: Top-Right Zone
-      { id: 2, x: Math.random() * (width * 0.25) + width * 0.68, y: Math.random() * (height * 0.28) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.68, maxX: width - 30, minY: 50, maxY: height * 0.38 },
-      // Star 3: Bottom-Left Zone
-      { id: 3, x: Math.random() * (width * 0.25) + 40, y: Math.random() * (height * 0.2) + height * 0.72, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.4, minY: height * 0.72, maxY: height - 40 },
-      // Star 4: Bottom-Right Zone
-      { id: 4, x: Math.random() * (width * 0.25) + width * 0.68, y: Math.random() * (height * 0.2) + height * 0.72, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.6, maxX: width - 30, minY: height * 0.72, maxY: height - 40 },
+      // Star 1: Far Top-Left Zone
+      { id: 1, x: Math.random() * (width * 0.22) + 30, y: Math.random() * (height * 0.25) + 50, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.28, minY: 50, maxY: height * 0.35 },
+      // Star 2: Far Top-Right Zone
+      { id: 2, x: Math.random() * (width * 0.22) + width * 0.72, y: Math.random() * (height * 0.25) + 50, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.72, maxX: width - 30, minY: 50, maxY: height * 0.35 },
+      // Star 3: Far Bottom-Left Zone (Clear of central mode cards!)
+      { id: 3, x: Math.random() * (width * 0.22) + 30, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.3, minY: bottomMinY, maxY: bottomMaxY },
+      // Star 4: Far Bottom-Right Zone (Clear of central mode cards!)
+      { id: 4, x: Math.random() * (width * 0.22) + width * 0.72, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.7, maxX: width - 30, minY: bottomMinY, maxY: bottomMaxY },
     ];
 
     const handleMouseMove = (e) => {
@@ -98,7 +100,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     };
 
     const handleClick = (e) => {
-      if (isLockedDown) return; // Silent Security Lockdown blocks all pattern triggers
+      if (isLockedDown) return;
 
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
@@ -112,11 +114,9 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         if (dist < 70) {
           const nextIndex = tappedSequence.length;
 
-          // Check if clicked star matches the next step in target sequence
           if (targetSequence[nextIndex] === star.id) {
             tappedSequence.push(star.id);
 
-            // Spawn Lumos Wand Sparkles
             for (let m = 0; m < 25; m++) {
               const angle = Math.random() * Math.PI * 2;
               const speed = Math.random() * 4 + 2;
@@ -132,7 +132,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
               });
             }
 
-            // Full Sequence Match!
             if (tappedSequence.length === targetSequence.length) {
               secretStars.forEach((s) => {
                 for (let m = 0; m < 35; m++) {
@@ -160,16 +159,19 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
               }, 600);
             }
           } else {
-            // Sequence Break / Mismatch!
             failedAttempts += 1;
             isSpellFracture = true;
             setTimeout(() => { isSpellFracture = false; }, 400);
 
-            tappedSequence = []; // Reset current sequence attempt
+            tappedSequence = [];
 
-            // 3-Strike Security Lockdown
+            // 3-Strike Security Lockdown -> Dispatch Full-Screen Cyber Strobe Warning Modal
             if (failedAttempts >= (config.maxAttempts || 3)) {
               isLockedDown = true;
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("triggerCyberLockdown", { detail: { seconds: config.lockdownSec || 30 } }));
+              }
+
               lockdownTimer = setTimeout(() => {
                 isLockedDown = false;
                 failedAttempts = 0;
@@ -202,7 +204,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Render Harry Potter Magic Wand Spell Particles
       for (let i = magicSpells.length - 1; i >= 0; i--) {
         const ms = magicSpells[i];
         ms.x += ms.vx;
@@ -225,7 +226,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         ctx.restore();
       }
 
-      // 2. Render cursor spark trail
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
         s.x += s.vx;
@@ -247,7 +247,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         ctx.shadowBlur = 0;
       }
 
-      // 3. Update & render normal constellation particles + CONNECT TO CURSOR!
       const allNodes = [...particles, ...secretStars];
 
       secretStars.forEach((star) => {
@@ -290,7 +289,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         }
       }
 
-      // Connect particles & stars to cursor
       allNodes.forEach((node) => {
         const dx = mouse.x - node.x;
         const dy = mouse.y - node.y;
@@ -308,7 +306,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         }
       });
 
-      // 4. Render 4 Secret Stars
       secretStars.forEach((star) => {
         const isTapped = tappedSequence.includes(star.id);
         ctx.save();
@@ -322,7 +319,6 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         ctx.restore();
       });
 
-      // Draw multi-stroke spell rune laser line sequence
       if (tappedSequence.length > 1) {
         ctx.save();
         ctx.beginPath();
@@ -334,9 +330,9 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
             if (nextStar) ctx.lineTo(nextStar.x, nextStar.y);
           }
         }
-        ctx.strokeStyle = isSpellFracture ? "#ff4b4b" : config.accentColor || "#ffd700";
+        ctx.strokeStyle = isSpellFracture ? "#ff003c" : config.accentColor || "#ffd700";
         ctx.lineWidth = 2.5;
-        ctx.shadowColor = isSpellFracture ? "#ff4b4b" : config.accentColor || "#ffd700";
+        ctx.shadowColor = isSpellFracture ? "#ff003c" : config.accentColor || "#ffd700";
         ctx.shadowBlur = 20;
         ctx.globalAlpha = 0.95;
         ctx.stroke();
