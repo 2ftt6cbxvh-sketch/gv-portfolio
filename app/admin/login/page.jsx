@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AdminPinGatekeeperModal from "@/components/AdminPinGatekeeperModal";
+import CyberLockdownModal from "@/components/CyberLockdownModal";
 import "../admin.css";
 
 export default function AdminLoginPage() {
@@ -10,6 +12,8 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isPinGatekeeperOpen, setIsPinGatekeeperOpen] = useState(true);
+  const [isLockdownOpen, setIsLockdownOpen] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -31,9 +35,30 @@ export default function AdminLoginPage() {
 
   return (
     <div className="admin">
-      <div className="admin-login-wrap">
+      {/* 6-Digit Cyber Security Holographic Keypad Gatekeeper Modal */}
+      <AdminPinGatekeeperModal
+        isOpen={isPinGatekeeperOpen}
+        onSuccess={() => setIsPinGatekeeperOpen(false)}
+        onFail={() => {
+          setIsPinGatekeeperOpen(false);
+          setIsLockdownOpen(true);
+        }}
+        expectedPin="134214"
+      />
+
+      {/* Cyber Security Warning Lockdown Modal */}
+      <CyberLockdownModal
+        isOpen={isLockdownOpen}
+        lockdownSeconds={90}
+        onClose={() => {
+          setIsLockdownOpen(false);
+          router.push("/");
+        }}
+      />
+
+      <div className="admin-login-wrap" style={{ filter: isPinGatekeeperOpen ? "blur(12px)" : "none", transition: "filter 0.3s ease" }}>
         <div className="admin-login-card">
-          <h1 className="admin-login-title">GV Admin</h1>
+          <h1 className="admin-login-title">GV Admin Vault</h1>
           <p className="admin-login-sub">Sign in to manage portfolio content.</p>
           {error && <div className="admin-error">{error}</div>}
           <form onSubmit={handleSubmit}>
@@ -61,8 +86,13 @@ export default function AdminLoginPage() {
                 required
               />
             </div>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
-              {loading ? "Signing in..." : "Sign in"}
+            <button
+              type="submit"
+              className="admin-btn admin-btn--primary"
+              style={{ width: "100%", marginTop: 8 }}
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
         </div>

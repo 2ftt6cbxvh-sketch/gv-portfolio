@@ -90,6 +90,8 @@ export default function FeaturesAdminPage() {
 
   const [gatewayConfig, setGatewayConfig] = useState({
     sequenceStr: "1,3,4,2,1,4",
+    adminSecretKey: "134214",
+    pinCode: "134214",
     maxAttempts: "3",
     lockdownSec: "90",
     accentColor: "#ffd700",
@@ -908,6 +910,34 @@ export default function FeaturesAdminPage() {
         </p>
 
         <div style={{ display: "grid", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Secret URL Key (/admin?key=134214)
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={gatewayConfig.adminSecretKey}
+                onChange={(e) => setGatewayConfig({ ...gatewayConfig, adminSecretKey: e.target.value })}
+                placeholder="134214"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Cyber Keypad 6-Digit PIN
+              </label>
+              <input
+                type="text"
+                className="admin-input"
+                value={gatewayConfig.pinCode}
+                onChange={(e) => setGatewayConfig({ ...gatewayConfig, pinCode: e.target.value })}
+                placeholder="134214"
+              />
+            </div>
+          </div>
+
           <div>
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
               Secret 4-Star Spell Rune Tap Sequence (Comma Separated Star IDs: 1, 2, 3, 4)

@@ -9,12 +9,14 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
 
   let accentColor = "#ffd700";
   let titleText = "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED";
+  let adminSecretKey = "134214";
 
   if (metadata) {
     try {
       const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
       if (parsed.accentColor) accentColor = parsed.accentColor;
       if (parsed.titleText) titleText = parsed.titleText;
+      if (parsed.adminSecretKey) adminSecretKey = parsed.adminSecretKey;
     } catch (e) {}
   }
 
@@ -28,9 +30,13 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
 
   const handleEnterAdmin = () => {
     setIsCastingSpell(true);
-    // 1.4s Harry Potter spell dissolution animation before redirecting to /admin
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("starPatternVerified", "true");
+    }
+
+    // 1.4s Harry Potter spell dissolution animation before redirecting to /admin with secret key
     setTimeout(() => {
-      router.push("/admin");
+      router.push(`/admin?key=${adminSecretKey}`);
     }, 1400);
   };
 
@@ -59,7 +65,7 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
             position: "fixed",
             inset: 0,
             zIndex: 1000005,
-            background: "#030712", // Opaque solid background so popup text NEVER bleeds through!
+            background: "#030712",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -70,7 +76,6 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
             overflow: "hidden",
           }}
         >
-          {/* Swirling Golden Lumos Magic Ring Animation */}
           <div
             style={{
               position: "absolute",
@@ -135,7 +140,7 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
               fontSize: "0.78rem",
             }}
           >
-            <span>⚡ REDIRECTING TO /ADMIN...</span>
+            <span>⚡ REDIRECTING TO /ADMIN VAULT...</span>
           </div>
         </div>
       )}
@@ -202,7 +207,7 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
         </h3>
 
         <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.8)", lineHeight: 1.5, marginBottom: 24 }}>
-          You connected the secret 3-star constellation pattern! Harry Potter magic has unlocked administrative access.
+          You connected the secret 4-star spell rune pattern! Harry Potter magic has unlocked administrative access.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
