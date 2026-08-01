@@ -1,15 +1,45 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
 /**
- * Interactive Particle Constellation Canvas with Cursor Line Connections + Spark Trail
- * AND Moving 3-Star Constellation Admin Gateway Unlock + Harry Potter Wand Spell Animation.
- *
- * Secret Stars floating motion is bounded to outer screen zones so stars NEVER
- * drift behind the central mode selector cards!
+ * 4-Star Multi-Stroke Harry Potter Spell Rune Constellation Canvas
+ * Features:
+ * - 4 Floating Secret Stars in Bounded Safe Outer Zones (Star 1, 2, 3, 4)
+ * - Multi-Stroke Sequence Verification (Default: 1 -> 3 -> 4 -> 2 -> 1 -> 4)
+ * - 3-Strike Failed Attempts Counter
+ * - 30-Second Silent Security Lockdown
+ * - Full Admin Panel Customization
  */
-export default function LandingConstellation({ accentColor = "#00f0ff" }) {
+export default function LandingConstellation({ accentColor = "#00f0ff", metadata }) {
   const canvasRef = useRef(null);
+
+  // Parse Config from Admin Panel
+  const config = useMemo(() => {
+    const defaults = {
+      sequenceStr: "1,3,4,2,1,4",
+      maxAttempts: 3,
+      lockdownSec: 30,
+      accentColor: "#ffd700",
+    };
+
+    if (typeof metadata === "string" && metadata.trim() !== "") {
+      try {
+        return { ...defaults, ...JSON.parse(metadata) };
+      } catch (e) {
+        return defaults;
+      }
+    } else if (typeof metadata === "object" && metadata !== null) {
+      return { ...defaults, ...metadata };
+    }
+    return defaults;
+  }, [metadata]);
+
+  const targetSequence = useMemo(() => {
+    return config.sequenceStr
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n) && n >= 1 && n <= 4);
+  }, [config.sequenceStr]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -31,49 +61,22 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     const mouse = { x: -1000, y: -1000 };
     const sparks = [];
     const magicSpells = [];
-    const tappedSecretStars = [];
+    let tappedSequence = [];
+    let failedAttempts = 0;
+    let isLockedDown = false;
+    let lockdownTimer = null;
+    let isSpellFracture = false;
 
-    // 3 Secret Constellation Stars with Bounded Safe Floating Zones (Outside Central Mode Cards)
+    // 4 Secret Constellation Stars in Outer Safe Floating Zones
     const secretStars = [
       // Star 1: Top-Left Zone
-      {
-        id: 1,
-        x: Math.random() * (width * 0.25) + 40,
-        y: Math.random() * (height * 0.28) + 60,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: 4.5,
-        minX: 30,
-        maxX: width * 0.32,
-        minY: 50,
-        maxY: height * 0.38,
-      },
+      { id: 1, x: Math.random() * (width * 0.25) + 40, y: Math.random() * (height * 0.28) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.32, minY: 50, maxY: height * 0.38 },
       // Star 2: Top-Right Zone
-      {
-        id: 2,
-        x: Math.random() * (width * 0.25) + width * 0.68,
-        y: Math.random() * (height * 0.28) + 60,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: 4.5,
-        minX: width * 0.68,
-        maxX: width - 30,
-        minY: 50,
-        maxY: height * 0.38,
-      },
-      // Star 3: Bottom Zone (Below Mode Cards)
-      {
-        id: 3,
-        x: Math.random() * (width * 0.4) + width * 0.3,
-        y: Math.random() * (height * 0.18) + height * 0.76,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: 4.5,
-        minX: width * 0.2,
-        maxX: width * 0.8,
-        minY: height * 0.74,
-        maxY: height - 40,
-      },
+      { id: 2, x: Math.random() * (width * 0.25) + width * 0.68, y: Math.random() * (height * 0.28) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.68, maxX: width - 30, minY: 50, maxY: height * 0.38 },
+      // Star 3: Bottom-Left Zone
+      { id: 3, x: Math.random() * (width * 0.25) + 40, y: Math.random() * (height * 0.2) + height * 0.72, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: 30, maxX: width * 0.4, minY: height * 0.72, maxY: height - 40 },
+      // Star 4: Bottom-Right Zone
+      { id: 4, x: Math.random() * (width * 0.25) + width * 0.68, y: Math.random() * (height * 0.2) + height * 0.72, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, radius: 4.5, minX: width * 0.6, maxX: width - 30, minY: height * 0.72, maxY: height - 40 },
     ];
 
     const handleMouseMove = (e) => {
@@ -95,6 +98,8 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
     };
 
     const handleClick = (e) => {
+      if (isLockedDown) return; // Silent Security Lockdown blocks all pattern triggers
+
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
@@ -104,49 +109,72 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         const dy = clickY - star.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 70 && !tappedSecretStars.includes(star.id)) {
-          tappedSecretStars.push(star.id);
+        if (dist < 70) {
+          const nextIndex = tappedSequence.length;
 
-          // Harry Potter Golden Wand Spell Burst
-          for (let m = 0; m < 25; m++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 4 + 2;
-            magicSpells.push({
-              x: star.x,
-              y: star.y,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed,
-              life: 1.0,
-              decay: Math.random() * 0.02 + 0.015,
-              size: Math.random() * 4 + 2,
-              color: "#ffd700",
-            });
-          }
+          // Check if clicked star matches the next step in target sequence
+          if (targetSequence[nextIndex] === star.id) {
+            tappedSequence.push(star.id);
 
-          if (tappedSecretStars.length === 3) {
-            secretStars.forEach((s) => {
-              for (let m = 0; m < 30; m++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 6 + 3;
-                magicSpells.push({
-                  x: s.x,
-                  y: s.y,
-                  vx: Math.cos(angle) * speed,
-                  vy: Math.sin(angle) * speed,
-                  life: 1.2,
-                  decay: 0.015,
-                  size: Math.random() * 5 + 2,
-                  color: "#ffd700",
-                });
-              }
-            });
+            // Spawn Lumos Wand Sparkles
+            for (let m = 0; m < 25; m++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = Math.random() * 4 + 2;
+              magicSpells.push({
+                x: star.x,
+                y: star.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                decay: Math.random() * 0.02 + 0.015,
+                size: Math.random() * 4 + 2,
+                color: config.accentColor || "#ffd700",
+              });
+            }
 
-            setTimeout(() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("openAdminSecretGateway"));
-              }
-              tappedSecretStars.length = 0;
-            }, 700);
+            // Full Sequence Match!
+            if (tappedSequence.length === targetSequence.length) {
+              secretStars.forEach((s) => {
+                for (let m = 0; m < 35; m++) {
+                  const angle = Math.random() * Math.PI * 2;
+                  const speed = Math.random() * 6 + 3;
+                  magicSpells.push({
+                    x: s.x,
+                    y: s.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.3,
+                    decay: 0.015,
+                    size: Math.random() * 5 + 2,
+                    color: config.accentColor || "#ffd700",
+                  });
+                }
+              });
+
+              setTimeout(() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("openAdminSecretGateway"));
+                }
+                tappedSequence = [];
+                failedAttempts = 0;
+              }, 600);
+            }
+          } else {
+            // Sequence Break / Mismatch!
+            failedAttempts += 1;
+            isSpellFracture = true;
+            setTimeout(() => { isSpellFracture = false; }, 400);
+
+            tappedSequence = []; // Reset current sequence attempt
+
+            // 3-Strike Security Lockdown
+            if (failedAttempts >= (config.maxAttempts || 3)) {
+              isLockedDown = true;
+              lockdownTimer = setTimeout(() => {
+                isLockedDown = false;
+                failedAttempts = 0;
+              }, (config.lockdownSec || 30) * 1000);
+            }
           }
         }
       });
@@ -222,12 +250,9 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
       // 3. Update & render normal constellation particles + CONNECT TO CURSOR!
       const allNodes = [...particles, ...secretStars];
 
-      // Update positions of secret stars within their Bounded Safe Zones
       secretStars.forEach((star) => {
         star.x += star.vx;
         star.y += star.vy;
-
-        // Bounce physics inside dedicated safe floating zone (never behind mode cards!)
         if (star.x < star.minX || star.x > star.maxX) star.vx *= -1;
         if (star.y < star.minY || star.y > star.maxY) star.vy *= -1;
       });
@@ -265,7 +290,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         }
       }
 
-      // CONNECT ALL PARTICLES & SECRET STARS TO CURSOR!
+      // Connect particles & stars to cursor
       allNodes.forEach((node) => {
         const dx = mouse.x - node.x;
         const dy = mouse.y - node.y;
@@ -283,39 +308,35 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
         }
       });
 
-      // 4. Render Secret Moving Stars
+      // 4. Render 4 Secret Stars
       secretStars.forEach((star) => {
-        const isTapped = tappedSecretStars.includes(star.id);
+        const isTapped = tappedSequence.includes(star.id);
         ctx.save();
         ctx.beginPath();
         ctx.arc(star.x, star.y, isTapped ? 7 : star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = isTapped ? "#ffd700" : accentColor;
-        ctx.shadowColor = isTapped ? "#ffd700" : accentColor;
+        ctx.fillStyle = isTapped ? config.accentColor || "#ffd700" : accentColor;
+        ctx.shadowColor = isTapped ? config.accentColor || "#ffd700" : accentColor;
         ctx.shadowBlur = isTapped ? 24 : 8;
         ctx.globalAlpha = isTapped ? 1.0 : 0.75;
         ctx.fill();
         ctx.restore();
       });
 
-      // Connect tapped moving stars with gold laser line
-      if (tappedSecretStars.length > 1) {
+      // Draw multi-stroke spell rune laser line sequence
+      if (tappedSequence.length > 1) {
         ctx.save();
         ctx.beginPath();
-        const firstStar = secretStars.find((s) => s.id === tappedSecretStars[0]);
-        ctx.moveTo(firstStar.x, firstStar.y);
-
-        for (let k = 1; k < tappedSecretStars.length; k++) {
-          const nextStar = secretStars.find((s) => s.id === tappedSecretStars[k]);
-          ctx.lineTo(nextStar.x, nextStar.y);
+        const startStar = secretStars.find((s) => s.id === tappedSequence[0]);
+        if (startStar) {
+          ctx.moveTo(startStar.x, startStar.y);
+          for (let k = 1; k < tappedSequence.length; k++) {
+            const nextStar = secretStars.find((s) => s.id === tappedSequence[k]);
+            if (nextStar) ctx.lineTo(nextStar.x, nextStar.y);
+          }
         }
-
-        if (tappedSecretStars.length === 3) {
-          ctx.closePath();
-        }
-
-        ctx.strokeStyle = "#ffd700";
+        ctx.strokeStyle = isSpellFracture ? "#ff4b4b" : config.accentColor || "#ffd700";
         ctx.lineWidth = 2.5;
-        ctx.shadowColor = "#ffd700";
+        ctx.shadowColor = isSpellFracture ? "#ff4b4b" : config.accentColor || "#ffd700";
         ctx.shadowBlur = 20;
         ctx.globalAlpha = 0.95;
         ctx.stroke();
@@ -329,12 +350,13 @@ export default function LandingConstellation({ accentColor = "#00f0ff" }) {
 
     return () => {
       cancelAnimationFrame(animFrameId);
+      if (lockdownTimer) clearTimeout(lockdownTimer);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("click", handleClick);
       document.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [accentColor]);
+  }, [accentColor, config, targetSequence]);
 
   return (
     <canvas

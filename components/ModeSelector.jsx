@@ -245,7 +245,7 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
     <main className="selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
       {/* Interactive Canvas Constellation background (Controlled by Admin toggle) */}
       {constellationFlag?.enabled !== false && (
-        <LandingConstellation accentColor={constellationAccent} />
+        <LandingConstellation accentColor={constellationAccent} metadata={features?.flags?.admin_secret_gateway?.metadata} />
       )}
 
       <div className="selector__intro reveal" style={{ opacity: 0, position: "relative", zIndex: 2 }}>

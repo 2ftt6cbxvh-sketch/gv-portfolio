@@ -89,6 +89,9 @@ export default function FeaturesAdminPage() {
   });
 
   const [gatewayConfig, setGatewayConfig] = useState({
+    sequenceStr: "1,3,4,2,1,4",
+    maxAttempts: "3",
+    lockdownSec: "30",
     accentColor: "#ffd700",
     titleText: "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
   });
@@ -905,7 +908,49 @@ export default function FeaturesAdminPage() {
         </p>
 
         <div style={{ display: "grid", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Secret 4-Star Spell Rune Tap Sequence (Comma Separated Star IDs: 1, 2, 3, 4)
+            </label>
+            <input
+              type="text"
+              className="admin-input"
+              value={gatewayConfig.sequenceStr}
+              onChange={(e) => setGatewayConfig({ ...gatewayConfig, sequenceStr: e.target.value })}
+              placeholder="e.g. 1,3,4,2,1,4"
+            />
+            <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
+              Star 1 = Top-Left, Star 2 = Top-Right, Star 3 = Bottom-Left, Star 4 = Bottom-Right. Default: 1,3,4,2,1,4
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Max Strike Attempts
+              </label>
+              <input
+                type="number"
+                className="admin-input"
+                value={gatewayConfig.maxAttempts}
+                onChange={(e) => setGatewayConfig({ ...gatewayConfig, maxAttempts: e.target.value })}
+                placeholder="3"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                Lockdown (Sec)
+              </label>
+              <input
+                type="number"
+                className="admin-input"
+                value={gatewayConfig.lockdownSec}
+                onChange={(e) => setGatewayConfig({ ...gatewayConfig, lockdownSec: e.target.value })}
+                placeholder="30"
+              />
+            </div>
+
             <div>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
                 Laser Line Color
@@ -926,19 +971,19 @@ export default function FeaturesAdminPage() {
                 />
               </div>
             </div>
+          </div>
 
-            <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                Gateway Welcome Title
-              </label>
-              <input
-                type="text"
-                className="admin-input"
-                value={gatewayConfig.titleText}
-                onChange={(e) => setGatewayConfig({ ...gatewayConfig, titleText: e.target.value })}
-                placeholder="AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED"
-              />
-            </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              Gateway Welcome Title
+            </label>
+            <input
+              type="text"
+              className="admin-input"
+              value={gatewayConfig.titleText}
+              onChange={(e) => setGatewayConfig({ ...gatewayConfig, titleText: e.target.value })}
+              placeholder="AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED"
+            />
           </div>
 
           <button
