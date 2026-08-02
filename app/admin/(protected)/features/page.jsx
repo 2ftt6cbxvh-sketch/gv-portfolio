@@ -1008,7 +1008,7 @@ export default function FeaturesAdminPage() {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
+            <div style={{ display: "flex", gap: 20, marginTop: 12, alignItems: "center", flexWrap: "wrap" }}>
               <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
                 <input
                   type="checkbox"
@@ -1017,6 +1017,28 @@ export default function FeaturesAdminPage() {
                 />
                 <span>Enable Real-Time Telegram Intrusion Push Alerts</span>
               </label>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/public/verify-vault", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ type: "test_telegram_alert" }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) alert("🧪 Test Telegram Alert sent! Check your Telegram phone app now.");
+                    else alert("Failed to send test alert: " + (data.error || "Check Bot Token & Chat ID"));
+                  } catch (e) {
+                    alert("Error dispatching test alert.");
+                  }
+                }}
+                className="admin-btn admin-btn--sm"
+                style={{ background: "rgba(0, 240, 255, 0.15)", color: "#00f0ff", borderColor: "rgba(0, 240, 255, 0.3)", fontSize: 12 }}
+              >
+                🧪 Send Test Telegram Alert
+              </button>
 
               <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
                 <input

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { sendSecurityAlert } from "@/lib/securityAlerts";
 
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
@@ -28,55 +29,6 @@ function checkRateLimit(ip) {
   return record.count <= 5;
 }
 
-// Telegram Real-Time Security Alert Webhook Dispatcher
-async function sendTelegramAlert(botToken, chatId, message) {
-  if (!botToken || !chatId) return;
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: "Markdown",
-      }),
-    });
-  } catch (e) {}
-}
-
-// Helper to Persist Security Audit Log into Database (PostgreSQL)
-async function recordDatabaseSecurityLog(event) {
-  try {
-    const flag = await prisma.featureFlag.findUnique({
-      where: { key: "security_audit_logs" },
-    });
-
-    let currentLogs = [];
-    if (flag?.metadata) {
-      try {
-        currentLogs = JSON.parse(flag.metadata);
-      } catch (e) {}
-    }
-
-    currentLogs.unshift(event);
-    if (currentLogs.length > 100) {
-      currentLogs = currentLogs.slice(0, 100);
-    }
-
-    await prisma.featureFlag.upsert({
-      where: { key: "security_audit_logs" },
-      update: { metadata: JSON.stringify(currentLogs) },
-      create: {
-        key: "security_audit_logs",
-        name: "Security Audit Logs",
-        enabled: true,
-        metadata: JSON.stringify(currentLogs),
-      },
-    });
-  } catch (e) {}
-}
-
 export async function POST(req) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
@@ -102,10 +54,24 @@ export async function POST(req) {
         if (parsed.adminSecretKey) config.adminSecretKey = parsed.adminSecretKey;
         if (parsed.pinCode) config.pinCode = parsed.pinCode;
         if (parsed.sequenceStr) config.sequenceStr = parsed.sequenceStr;
-        if (parsed.telegramBotToken) config.telegramBotToken = parsed.telegramBotToken;
-        if (parsed.telegramChatId) config.telegramChatId = parsed.telegramChatId;
+        if (parsed.telegramBotToken) config.telegramBotToken = String(parsed.telegramBotToken).trim();
+        if (parsed.telegramChatId) config.telegramChatId = String(parsed.telegramChatId).trim();
         if (typeof parsed.enableAlerts === "boolean") config.enableAlerts = parsed.enableAlerts;
       } catch (e) {}
+    }
+
+    const body = await req.json();
+    const { type, payload } = body;
+
+    // Test Alert Handler
+    if (type === "test_telegram_alert") {
+      await sendSecurityAlert({
+        type: "TEST_TELEGRAM_NOTIFICATION",
+        details: "🧪 Test Security Notification from GV Admin Panel",
+        ip,
+        userAgent,
+      });
+      return NextResponse.json({ success: true, message: "Test alert dispatched to Telegram!" });
     }
 
     // Handle Unauthorized Direct URL Access Alert (/admin)
@@ -121,71 +87,33 @@ export async function POST(req) {
 
     // Handle Instant Pattern Mismatch Alert (1st wrong star tap)
     if (type === "pattern_mismatch") {
-      const alertMsg = `⚠️ *SECURITY ALERT // WRONG STAR PATTERN TAPPED*\n\n` +
-        `*Event*: Visitor tapped incorrect star pattern sequence\n` +
-        `*IP Address*: \`${ip}\`\n` +
-        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
-        `*Status*: Spell Sequence Reset`;
-
-      if (config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
-        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
-      }
-
-      await recordDatabaseSecurityLog({
-        id: Date.now(),
+      await sendSecurityAlert({
         type: "STAR_PATTERN_MISMATCH",
+        details: "Visitor tapped incorrect star pattern sequence",
         ip,
         userAgent,
-        timestamp: new Date().toISOString(),
-        status: "FAILED",
       });
-
       return NextResponse.json({ success: true, logged: true });
     }
 
     // Handle Instant Lockdown Alert (When Warning Page is Triggered)
     if (type === "lockdown_triggered") {
-      const alertMsg = `🚨 *CRITICAL LOCKDOWN ACTIVATED*\n\n` +
-        `*Event*: 90s Cyber Strobe Warning Modal & Siren Triggered\n` +
-        `*IP Address*: \`${ip}\`\n` +
-        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
-        `*Status*: 90s Siren & Strobe Modal Active on Visitor Device`;
-
-      if (config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
-        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
-      }
-
-      await recordDatabaseSecurityLog({
-        id: Date.now(),
+      await sendSecurityAlert({
         type: "LOCKDOWN_PAGE_TRIGGERED",
+        details: "90s Cyber Strobe Warning Modal & Siren Triggered",
         ip,
         userAgent,
-        timestamp: new Date().toISOString(),
-        status: "LOCKDOWN",
       });
-
       return NextResponse.json({ success: true, logged: true });
     }
 
     // Rate Limit Check for Authentication API
     if (!checkRateLimit(ip)) {
-      const alertMsg = `🚨 *SECURITY ALERT // RATE LIMIT EXCEEDED*\n\n` +
-        `*IP Address*: \`${ip}\`\n` +
-        `*Device*: \`${userAgent.slice(0, 40)}\`\n` +
-        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
-        `*Status*: 90s Cyber Strobe Lockdown Triggered`;
-
-      if (config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
-        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
-      }
-
-      await recordDatabaseSecurityLog({
-        id: Date.now(),
+      await sendSecurityAlert({
         type: "RATE_LIMIT_EXCEEDED",
+        details: "IP address sent > 5 auth requests in 5 minutes",
         ip,
         userAgent,
-        timestamp: new Date().toISOString(),
-        status: "BLOCKED",
       });
 
       return NextResponse.json(
@@ -213,24 +141,14 @@ export async function POST(req) {
       isValid = payloadHash === targetSeqHash;
     }
 
-    await recordDatabaseSecurityLog({
-      id: Date.now(),
-      type: `${type.toUpperCase()}_ATTEMPT`,
-      ip,
-      userAgent,
-      timestamp: new Date().toISOString(),
-      status: isValid ? "SUCCESS" : "FAILED",
-    });
-
     if (!isValid) {
-      if (type === "pin" && config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
-        const alertMsg = `🚨 *SECURITY INTRUSION WARNING*\n\n` +
-          `*Type*: Failed 6-Digit PIN Attempt\n` +
-          `*IP Address*: \`${ip}\`\n` +
-          `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
-          `*Status*: Strike Counter Incremented`;
-
-        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
+      if (type === "pin") {
+        await sendSecurityAlert({
+          type: "FAILED_PIN_ATTEMPT",
+          details: "Failed 6-digit keypad PIN attempt",
+          ip,
+          userAgent,
+        });
       }
 
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
