@@ -89,7 +89,7 @@ export default function FeaturesAdminPage() {
   });
 
   const [gatewayConfig, setGatewayConfig] = useState({
-    sequenceStr: "1,3,4,2,1,4",
+    sequenceStr: "1,2,3,4,1,3",
     adminSecretKey: "134214",
     pinCode: "134214",
     maxAttempts: "3",
@@ -245,7 +245,7 @@ export default function FeaturesAdminPage() {
             try {
               const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
               setGatewayConfig({
-                sequenceStr: parsed.sequenceStr || "1,3,4,2,1,4",
+                sequenceStr: parsed.sequenceStr || "1,2,3,4,1,3",
                 adminSecretKey: parsed.adminSecretKey || "134214",
                 pinCode: parsed.pinCode || "134214",
                 maxAttempts: String(parsed.maxAttempts || "3"),
@@ -971,10 +971,10 @@ export default function FeaturesAdminPage() {
               className="admin-input"
               value={gatewayConfig.sequenceStr}
               onChange={(e) => setGatewayConfig({ ...gatewayConfig, sequenceStr: e.target.value })}
-              placeholder="e.g. 1,3,4,2,1,4"
+              placeholder="e.g. 1,2,3,4,1,3"
             />
             <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
-              Star 1 = Top-Left, Star 2 = Top-Right, Star 3 = Bottom-Left, Star 4 = Bottom-Right. Default: 1,3,4,2,1,4
+              Star 1 = Top-Left, Star 2 = Top-Right, Star 3 = Bottom-Left, Star 4 = Bottom-Right. Default: 1,2,3,4,1,3
             </span>
           </div>
 
