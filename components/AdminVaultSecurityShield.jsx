@@ -58,6 +58,15 @@ export default function AdminVaultSecurityShield({ children }) {
         } catch (e) {}
       }
 
+      // Dispatch Telegram Alert for Unauthorized Direct URL Access Attempt!
+      try {
+        fetch("/api/public/verify-vault", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "unauthorized_url", payload: window.location.href }),
+        });
+      } catch (e) {}
+
       setIsAuthorized(false);
     }
 

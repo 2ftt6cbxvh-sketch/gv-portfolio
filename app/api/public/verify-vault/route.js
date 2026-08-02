@@ -108,8 +108,16 @@ export async function POST(req) {
       } catch (e) {}
     }
 
-    const body = await req.json();
-    const { type, payload } = body;
+    // Handle Unauthorized Direct URL Access Alert (/admin)
+    if (type === "unauthorized_url") {
+      await sendSecurityAlert({
+        type: "UNAUTHORIZED_URL_ACCESS",
+        details: `Direct access attempt to restricted path: ${payload || "/admin"}`,
+        ip,
+        userAgent,
+      });
+      return NextResponse.json({ success: true, logged: true });
+    }
 
     // Handle Instant Pattern Mismatch Alert (1st wrong star tap)
     if (type === "pattern_mismatch") {
