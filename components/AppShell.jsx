@@ -58,7 +58,7 @@ export default function AppShell({ data }) {
     };
 
     checkKillswitch();
-    const interval = setInterval(checkKillswitch, 3000);
+    const interval = setInterval(checkKillswitch, 1500);
 
     // Add timestamp to prevent browser or CDN from caching stale feature flags
     fetch(`/api/public/features?t=${Date.now()}`, { cache: "no-store" })

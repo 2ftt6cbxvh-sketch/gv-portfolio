@@ -11,7 +11,7 @@ export async function POST(req) {
     }
 
     const chatId = String(message.chat?.id || "");
-    const text = (message.text || "").trim();
+    const rawText = (message.text || "").trim().toUpperCase();
 
     // Fetch Telegram Config from DB
     const gatewayFlag = await prisma.featureFlag.findUnique({
@@ -22,8 +22,8 @@ export async function POST(req) {
     if (gatewayFlag?.metadata) {
       try {
         const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
-        if (parsed.telegramChatId) config.telegramChatId = String(parsed.telegramChatId);
-        if (parsed.telegramBotToken) config.telegramBotToken = String(parsed.telegramBotToken);
+        if (parsed.telegramChatId) config.telegramChatId = String(parsed.telegramChatId).trim();
+        if (parsed.telegramBotToken) config.telegramBotToken = String(parsed.telegramBotToken).trim();
       } catch (e) {}
     }
 
@@ -34,7 +34,23 @@ export async function POST(req) {
 
     let replyText = "";
 
-    if (text.toUpperCase().includes("/KILLSWITCH ON") || text.toUpperCase() === "KILLSWITCH ON") {
+    // Check OFF / DEACTIVATE / RESTORE commands first (prevents quote reply collision!)
+    if (rawText.includes("OFF") || rawText.includes("DISABLE") || rawText.includes("RESTORE")) {
+      await prisma.featureFlag.upsert({
+        where: { key: "emergency_killswitch" },
+        update: { enabled: false },
+        create: {
+          key: "emergency_killswitch",
+          name: "Emergency Killswitch 503",
+          enabled: false,
+        },
+      });
+
+      replyText = `✅ *EMERGENCY KILL-SWITCH DEACTIVATED!*\n\n` +
+        `*Status*: 🟢 SITE IS NOW LIVE & ONLINE\n` +
+        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n\n` +
+        `*System*: Normal operation restored across all global edges.`;
+    } else if (rawText.includes("ON") || rawText.includes("ENABLE") || rawText.includes("SHUTDOWN")) {
       await prisma.featureFlag.upsert({
         where: { key: "emergency_killswitch" },
         update: { enabled: true },
@@ -48,23 +64,8 @@ export async function POST(req) {
       replyText = `🚨 *EMERGENCY KILL-SWITCH ACTIVATED!*\n\n` +
         `*Status*: 🔴 SITE IS NOW SHUT DOWN (HTTP 503 Cyber Defense Mode Active)\n` +
         `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n\n` +
-        `*To Restore*: Reply \`/killswitch OFF\``;
-    } else if (text.toUpperCase().includes("/KILLSWITCH OFF") || text.toUpperCase() === "KILLSWITCH OFF") {
-      await prisma.featureFlag.upsert({
-        where: { key: "emergency_killswitch" },
-        update: { enabled: false },
-        create: {
-          key: "emergency_killswitch",
-          name: "Emergency Killswitch 503",
-          enabled: false,
-        },
-      });
-
-      replyText = `✅ *EMERGENCY KILL-SWITCH DEACTIVATED!*\n\n` +
-        `*Status*: 🟢 SITE IS LIVE & ONLINE\n` +
-        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n\n` +
-        `*System*: Normal operation restored.`;
-    } else if (text.startsWith("/status") || text.startsWith("/start") || text.startsWith("/help")) {
+        `*To Restore*: Send \`/killswitch OFF\` or \`OFF\``;
+    } else if (rawText.startsWith("/STATUS") || rawText.startsWith("/START") || rawText.startsWith("/HELP")) {
       const ksFlag = await prisma.featureFlag.findUnique({
         where: { key: "emergency_killswitch" },
       });
