@@ -26,28 +26,36 @@ export default function CyberVaultSecuritySettingsPage() {
     fetch(`/api/public/features?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.flags) {
-          setFlags(data.flags);
-          const flagMap = new Map(data.flags.map((f) => [f.key, f]));
-          const gatewayFlag = flagMap.get("admin_secret_gateway");
-          if (gatewayFlag && gatewayFlag.metadata) {
-            try {
-              const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
-              setGatewayConfig({
-                sequenceStr: parsed.sequenceStr || "1,2,3,4,1,3",
-                adminSecretKey: parsed.adminSecretKey || "134214",
-                pinCode: parsed.pinCode || "134214",
-                maxAttempts: String(parsed.maxAttempts || "3"),
-                lockdownSec: String(parsed.lockdownSec || "90"),
-                accentColor: parsed.accentColor || "#ffd700",
-                titleText: parsed.titleText || "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
-                telegramBotToken: parsed.telegramBotToken || "",
-                telegramChatId: parsed.telegramChatId || "",
-                enableAlerts: typeof parsed.enableAlerts === "boolean" ? parsed.enableAlerts : true,
-                enableLumosWand: typeof parsed.enableLumosWand === "boolean" ? parsed.enableLumosWand : true,
-              });
-            } catch (e) {}
+        let flagList = [];
+        if (Array.isArray(data)) {
+          flagList = data;
+        } else if (data && data.flags) {
+          if (Array.isArray(data.flags)) {
+            flagList = data.flags;
+          } else if (typeof data.flags === "object") {
+            flagList = Object.entries(data.flags).map(([key, val]) => ({ key, ...val }));
           }
+        }
+        setFlags(flagList);
+
+        const gatewayFlag = flagList.find((f) => f.key === "admin_secret_gateway");
+        if (gatewayFlag && gatewayFlag.metadata) {
+          try {
+            const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
+            setGatewayConfig({
+              sequenceStr: parsed.sequenceStr || "1,2,3,4,1,3",
+              adminSecretKey: parsed.adminSecretKey || "134214",
+              pinCode: parsed.pinCode || "134214",
+              maxAttempts: String(parsed.maxAttempts || "3"),
+              lockdownSec: String(parsed.lockdownSec || "90"),
+              accentColor: parsed.accentColor || "#00f0ff",
+              titleText: parsed.titleText || "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
+              telegramBotToken: parsed.telegramBotToken || "",
+              telegramChatId: parsed.telegramChatId || "",
+              enableAlerts: typeof parsed.enableAlerts === "boolean" ? parsed.enableAlerts : true,
+              enableLumosWand: typeof parsed.enableLumosWand === "boolean" ? parsed.enableLumosWand : true,
+            });
+          } catch (e) {}
         }
         setLoading(false);
       })
@@ -57,7 +65,8 @@ export default function CyberVaultSecuritySettingsPage() {
   const handleSaveSecuritySettings = async () => {
     setSaving(true);
     try {
-      const currentFlag = flags.find((f) => f.key === "admin_secret_gateway");
+      const isArr = Array.isArray(flags);
+      const currentFlag = isArr ? flags.find((f) => f.key === "admin_secret_gateway") : null;
       const res = await fetch("/api/admin/features", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
