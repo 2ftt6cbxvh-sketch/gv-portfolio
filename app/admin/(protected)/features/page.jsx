@@ -1027,6 +1027,16 @@ export default function FeaturesAdminPage() {
                 <span>Enable Interactive "Lumos" Magic Wand Cursor Trail</span>
               </label>
             </div>
+
+            {/* Manual Emergency Killswitch Control Info */}
+            <div style={{ background: "rgba(255, 0, 60, 0.1)", border: "1px solid rgba(255, 0, 60, 0.4)", borderRadius: 8, padding: 12, marginTop: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b", marginBottom: 4 }}>
+                🔴 TELEGRAM 1-TAP REMOTE KILL-SWITCH ACTIVE
+              </div>
+              <p style={{ fontSize: 12, color: "var(--a-muted)", margin: 0 }}>
+                Reply <code style={{ color: "#ff6b6b" }}>/killswitch ON</code> to your Telegram bot anytime to instantly shutdown public site access (HTTP 503 Cyber Defense Mode). Reply <code style={{ color: "#4ade80" }}>/killswitch OFF</code> to restore.
+              </p>
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: 12 }}>

@@ -10,6 +10,7 @@ import SignatureIntro from "./SignatureIntro";
 import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
 import AdminSecretGatewayModal from "./AdminSecretGatewayModal";
 import CyberLockdownModal from "./CyberLockdownModal";
+import EmergencyKillswitchOverlay from "./EmergencyKillswitchOverlay";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -26,6 +27,7 @@ export default function AppShell({ data }) {
   const [showAdminGateway, setShowAdminGateway] = useState(false);
   const [isLockdownOpen, setIsLockdownOpen] = useState(false);
   const [lockdownSec, setLockdownSec] = useState(30);
+  const [isKillswitchActive, setIsKillswitchActive] = useState(false);
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
@@ -46,6 +48,13 @@ export default function AppShell({ data }) {
   }, []);
 
   useEffect(() => {
+    fetch(`/api/public/killswitch-status?t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.active) setIsKillswitchActive(true);
+      })
+      .catch(() => {});
+
     // Add timestamp to prevent browser or CDN from caching stale feature flags
     fetch(`/api/public/features?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.json())
@@ -147,11 +156,14 @@ export default function AppShell({ data }) {
         metadata={features?.flags?.admin_secret_gateway?.metadata}
       />
 
-      {/* Cyber Security Warning Lockdown Modal */}
+      {/* Emergency Cyber Defense Killswitch 503 Overlay */}
+      {isKillswitchActive && <EmergencyKillswitchOverlay />}
+
+      {/* Cyber Lockdown Statutory Legal Warning Modal */}
       <CyberLockdownModal
         isOpen={isLockdownOpen}
-        lockdownSeconds={lockdownSec}
         onClose={() => setIsLockdownOpen(false)}
+        seconds={lockdownSec}
       />
     </div>
   );
