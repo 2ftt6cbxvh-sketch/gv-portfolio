@@ -80,50 +80,34 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
 
-        // Try authenticating existing Passkey using platform authenticator (TouchID/FaceID)
-        try {
-          const credential = await navigator.credentials.get({
-            publicKey: {
-              challenge: challenge.buffer,
-              timeout: 60000,
+        // Directly invoke macOS / iOS Native TouchID / FaceID Prompt
+        const newCred = await navigator.credentials.create({
+          publicKey: {
+            challenge: challenge.buffer,
+            rp: { name: "GV Cyber Vault", id: window.location.hostname },
+            user: {
+              id: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
+              name: "admin@ganeshvarma.in",
+              displayName: "GV Admin Vault Owner",
+            },
+            pubKeyCredParams: [
+              { alg: -7, type: "public-key" },
+              { alg: -257, type: "public-key" },
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform", // Direct TouchID / FaceID (No QR codes / USB keys!)
               userVerification: "required",
-              rpId: window.location.hostname,
             },
-          });
+            timeout: 60000,
+          },
+        });
 
-          setIsVerifying(false);
-          if (credential) {
-            onSuccess(); // Verified!
-            return;
-          }
-        } catch (getErr) {
-          // If no Passkey exists yet for ganeshvarma.in, automatically enroll native TouchID/FaceID Passkey!
-          setErrorMsg("ENROLLING NEW TOUCHID / FACEID PASSKEY...");
+        setIsVerifying(false);
 
-          const newCred = await navigator.credentials.create({
-            publicKey: {
-              challenge: challenge.buffer,
-              rp: { name: "GV Cyber Vault", id: window.location.hostname },
-              user: {
-                id: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
-                name: "admin@ganeshvarma.in",
-                displayName: "GV Admin Vault Owner",
-              },
-              pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-              authenticatorSelection: {
-                authenticatorAttachment: "platform", // Direct TouchID / FaceID (No QR codes / USB keys!)
-                userVerification: "required",
-              },
-              timeout: 60000,
-            },
-          });
-
-          setIsVerifying(false);
-
-          if (newCred) {
-            onSuccess(); // TouchID / FaceID Passkey Enrolled & Verified!
-            return;
-          }
+        if (newCred) {
+          onSuccess(); // Hardware Biometric TouchID / FaceID Verified!
+        } else {
+          setErrorMsg("TOUCHID / FACEID VERIFICATION FAILED.");
         }
       } catch (e) {
         setIsVerifying(false);
