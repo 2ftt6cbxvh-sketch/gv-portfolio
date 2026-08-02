@@ -75,43 +75,52 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
         }
 
         setIsVerifying(true);
-        setErrorMsg("SCANNING TOUCHID / FACEID...");
+        setErrorMsg("VERIFYING REGISTERED TOUCHID PASSKEY...");
+
+        // Fetch registered admin Passkey ID from public features API
+        let registeredCredId = null;
+        try {
+          const featRes = await fetch("/api/public/features");
+          const featData = await featRes.json();
+          const gatewayObj = featData.flags?.admin_secret_gateway;
+
+          if (gatewayObj?.metadata) {
+            const meta = typeof gatewayObj.metadata === "string" ? JSON.parse(gatewayObj.metadata) : gatewayObj.metadata;
+            if (meta.allowedPasskeyCredentialId) {
+              registeredCredId = meta.allowedPasskeyCredentialId;
+            }
+          }
+        } catch (e) {}
 
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
 
-        // Directly invoke macOS / iOS Native TouchID / FaceID Prompt
-        const newCred = await navigator.credentials.create({
-          publicKey: {
-            challenge: challenge.buffer,
-            rp: { name: "GV Cyber Vault", id: window.location.hostname },
-            user: {
-              id: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
-              name: "admin@ganeshvarma.in",
-              displayName: "GV Admin Vault Owner",
-            },
-            pubKeyCredParams: [
-              { alg: -7, type: "public-key" },
-              { alg: -257, type: "public-key" },
-            ],
-            authenticatorSelection: {
-              authenticatorAttachment: "platform", // Direct TouchID / FaceID (No QR codes / USB keys!)
+        if (registeredCredId) {
+          // Verify against Ganesh Varma's Official Registered Mac Passkey!
+          const rawId = Uint8Array.from(atob(registeredCredId), (c) => c.charCodeAt(0));
+
+          const credential = await navigator.credentials.get({
+            publicKey: {
+              challenge: challenge.buffer,
+              allowCredentials: [{ id: rawId.buffer, type: "public-key" }],
               userVerification: "required",
+              timeout: 60000,
             },
-            timeout: 60000,
-          },
-        });
+          });
 
-        setIsVerifying(false);
-
-        if (newCred) {
-          onSuccess(); // Hardware Biometric TouchID / FaceID Verified!
+          setIsVerifying(false);
+          if (credential) {
+            onSuccess(); // Official Admin Mac Hardware Verified!
+            return;
+          }
         } else {
-          setErrorMsg("TOUCHID / FACEID VERIFICATION FAILED.");
+          // If no Passkey registered in DB yet, instruct admin to register inside /admin/security-settings
+          setIsVerifying(false);
+          setErrorMsg("NO TOUCHID PASSKEY REGISTERED IN DB YET. REGISTER DEVICE IN ADMIN PANEL OR USE 6-DIGIT PIN.");
         }
       } catch (e) {
         setIsVerifying(false);
-        setErrorMsg("TOUCHID / FACEID SCAN CANCELLED. ENTER 6-DIGIT PIN.");
+        setErrorMsg("TOUCHID SCAN REJECTED OR NOT REGISTERED FOR THIS VAULT. USE 6-DIGIT PIN.");
       }
     } else {
       setErrorMsg("WEBAUTHN NOT SUPPORTED ON THIS BROWSER.");

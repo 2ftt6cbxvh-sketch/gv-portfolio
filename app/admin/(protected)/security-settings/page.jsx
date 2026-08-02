@@ -139,6 +139,58 @@ export default function CyberVaultSecuritySettingsPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={async () => {
+              if (typeof window !== "undefined" && navigator.credentials) {
+                try {
+                  const challenge = new Uint8Array(32);
+                  window.crypto.getRandomValues(challenge);
+
+                  const credential = await navigator.credentials.create({
+                    publicKey: {
+                      challenge: challenge.buffer,
+                      rp: { name: "GV Cyber Vault", id: window.location.hostname },
+                      user: {
+                        id: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
+                        name: "admin@ganeshvarma.in",
+                        displayName: "Ganesh Varma (GV Vault Owner)",
+                      },
+                      pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                      authenticatorSelection: {
+                        authenticatorAttachment: "platform",
+                        userVerification: "required",
+                      },
+                      timeout: 60000,
+                    },
+                  });
+
+                  if (credential && credential.rawId) {
+                    const base64Id = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+                    const updatedConfig = { ...gatewayConfig, allowedPasskeyCredentialId: base64Id };
+                    setGatewayConfig(updatedConfig);
+
+                    await fetch("/api/admin/features", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        key: "admin_secret_gateway",
+                        enabled: true,
+                        metadata: JSON.stringify(updatedConfig),
+                      }),
+                    });
+
+                    alert("✅ Success! Your Mac's Touch ID Hardware is now EXCLUSIVELY registered to this Cyber Vault in PostgreSQL! Other devices will be strictly blocked.");
+                  }
+                } catch (e) {
+                  alert("⚠️ Registration cancelled or error: " + e.message);
+                }
+              }
+            }}
+            className="admin-btn"
+            style={{ background: "rgba(255, 215, 0, 0.15)", color: "#ffd700", borderColor: "rgba(255, 215, 0, 0.4)" }}
+          >
+            🛡️ Register This Mac's Touch ID Hardware
+          </button>
           <button onClick={handleRegisterWebhook} className="admin-btn" style={{ background: "rgba(0, 240, 255, 0.15)", color: "#00f0ff", borderColor: "rgba(0, 240, 255, 0.3)" }}>
             🔗 Bind Telegram Webhook
           </button>
