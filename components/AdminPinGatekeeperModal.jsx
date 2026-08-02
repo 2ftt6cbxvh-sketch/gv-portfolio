@@ -70,68 +70,64 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
       try {
         const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
         if (!available) {
-          setErrorMsg("BIOMETRIC HARDWARE NOT AVAILABLE. USE 6-DIGIT PIN.");
+          setErrorMsg("TOUCHID / FACEID HARDWARE NOT AVAILABLE. USE 6-DIGIT PIN.");
           return;
         }
 
         setIsVerifying(true);
         setErrorMsg("SCANNING TOUCHID / FACEID...");
 
-        // Generate 32-byte cryptographic challenge
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
 
-        // Invoke Native OS Biometric Prompt (TouchID / FaceID / Windows Hello / YubiKey)
-        const credential = await navigator.credentials.get({
-          publicKey: {
-            challenge: challenge.buffer,
-            timeout: 60000,
-            userVerification: "required",
-            rpId: window.location.hostname,
-          },
-        });
+        // Try authenticating existing Passkey using platform authenticator (TouchID/FaceID)
+        try {
+          const credential = await navigator.credentials.get({
+            publicKey: {
+              challenge: challenge.buffer,
+              timeout: 60000,
+              userVerification: "required",
+              rpId: window.location.hostname,
+            },
+          });
 
-        setIsVerifying(false);
+          setIsVerifying(false);
+          if (credential) {
+            onSuccess(); // Verified!
+            return;
+          }
+        } catch (getErr) {
+          // If no Passkey exists yet for ganeshvarma.in, automatically enroll native TouchID/FaceID Passkey!
+          setErrorMsg("ENROLLING NEW TOUCHID / FACEID PASSKEY...");
 
-        if (credential) {
-          onSuccess(); // Hardware Biometric Verified Successfully!
-        } else {
-          setErrorMsg("BIOMETRIC AUTHENTICATION FAILED.");
+          const newCred = await navigator.credentials.create({
+            publicKey: {
+              challenge: challenge.buffer,
+              rp: { name: "GV Cyber Vault", id: window.location.hostname },
+              user: {
+                id: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
+                name: "admin@ganeshvarma.in",
+                displayName: "GV Admin Vault Owner",
+              },
+              pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+              authenticatorSelection: {
+                authenticatorAttachment: "platform", // Direct TouchID / FaceID (No QR codes / USB keys!)
+                userVerification: "required",
+              },
+              timeout: 60000,
+            },
+          });
+
+          setIsVerifying(false);
+
+          if (newCred) {
+            onSuccess(); // TouchID / FaceID Passkey Enrolled & Verified!
+            return;
+          }
         }
       } catch (e) {
         setIsVerifying(false);
-        // Handle user cancellation or fallback
-        if (e.name === "NotAllowedError" || e.name === "AbortError") {
-          setErrorMsg("BIOMETRIC SCAN CANCELLED. ENTER 6-DIGIT PIN.");
-        } else {
-          // If no credential enrolled yet, attempt WebAuthn creation prompt
-          try {
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
-
-            const newCred = await navigator.credentials.create({
-              publicKey: {
-                challenge: challenge.buffer,
-                rp: { name: "GV Cyber Vault", id: window.location.hostname },
-                user: {
-                  id: Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]),
-                  name: "admin@ganeshvarma.in",
-                  displayName: "GV Admin Vault Owner",
-                },
-                pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-                authenticatorSelection: { userVerification: "required" },
-                timeout: 60000,
-              },
-            });
-
-            if (newCred) {
-              onSuccess();
-              return;
-            }
-          } catch (createErr) {}
-
-          setErrorMsg("BIOMETRIC SCAN CANCELLED. ENTER 6-DIGIT PIN.");
-        }
+        setErrorMsg("TOUCHID / FACEID SCAN CANCELLED. ENTER 6-DIGIT PIN.");
       }
     } else {
       setErrorMsg("WEBAUTHN NOT SUPPORTED ON THIS BROWSER.");
