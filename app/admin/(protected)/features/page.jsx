@@ -91,7 +91,7 @@ export default function FeaturesAdminPage() {
   const [gatewayConfig, setGatewayConfig] = useState({
     sequenceStr: "1,2,3,4,1,3",
     adminSecretKey: "134214",
-    pinCode: "134214",
+    pinCode: "180296",
     maxAttempts: "3",
     lockdownSec: "90",
     accentColor: "#ffd700",

@@ -41,7 +41,7 @@ export async function POST(req) {
 
     let config = {
       adminSecretKey: "134214",
-      pinCode: "134214",
+      pinCode: "180296",
       sequenceStr: "1,2,3,4,1,3",
       telegramBotToken: "",
       telegramChatId: "",
