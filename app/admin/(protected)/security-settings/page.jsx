@@ -197,8 +197,11 @@ export default function CyberVaultSecuritySettingsPage() {
               className="admin-input"
               value={gatewayConfig.pinCode}
               onChange={(e) => setGatewayConfig({ ...gatewayConfig, pinCode: e.target.value })}
-              placeholder="134214"
+              placeholder="180296"
             />
+            <span style={{ fontSize: 11, color: "var(--a-muted)", marginTop: 4, display: "block" }}>
+              Admin-Controlled PIN Code (Saved directly into PostgreSQL database).
+            </span>
           </div>
         </div>
       </div>
