@@ -68,6 +68,8 @@ export default function CyberVaultSecuritySettingsPage() {
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         // Auto-Register Telegram Webhook API
         if (gatewayConfig.telegramBotToken) {
@@ -75,12 +77,12 @@ export default function CyberVaultSecuritySettingsPage() {
             await fetch("/api/admin/setup-telegram-webhook", { method: "POST" });
           } catch (e) {}
         }
-        alert("🛡️ Security Vault & Telegram Webhook registered successfully!");
+        alert("🛡️ Security Vault Settings & Telegram Webhook saved successfully!");
       } else {
-        alert("Failed to save security settings.");
+        alert("Failed to save security settings: " + (data.error || "Unknown server error"));
       }
     } catch (e) {
-      alert("Error saving security settings.");
+      alert("Error saving security settings: " + e.message);
     }
     setSaving(false);
   };
