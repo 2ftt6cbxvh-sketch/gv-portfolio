@@ -9,14 +9,12 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
 
   let accentColor = "#ffd700";
   let titleText = "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED";
-  let adminSecretKey = "134214";
 
   if (metadata) {
     try {
       const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
       if (parsed.accentColor) accentColor = parsed.accentColor;
       if (parsed.titleText) titleText = parsed.titleText;
-      if (parsed.adminSecretKey) adminSecretKey = parsed.adminSecretKey;
     } catch (e) {}
   }
 
@@ -28,20 +26,33 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, isCastingSpell]);
 
-  const handleEnterAdmin = () => {
+  const handleEnterAdmin = async () => {
     setIsCastingSpell(true);
     if (typeof window !== "undefined") {
-      // Session Pattern Token expires after 3 minutes (180,000ms)
       sessionStorage.setItem("starPatternVerified", JSON.stringify({
         verified: true,
         expiresAt: Date.now() + 3 * 60 * 1000,
       }));
     }
 
-    // 1.4s Harry Potter spell dissolution animation before redirecting to /admin with secret key
-    setTimeout(() => {
-      router.push(`/admin?key=${adminSecretKey}`);
-    }, 1400);
+    try {
+      // Verify pattern server-side to retrieve secure redirect URL key
+      const res = await fetch("/api/public/verify-vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "pattern", payload: "1,3,4,2,1,4" }),
+      });
+      const data = await res.json();
+      const targetKey = data.secretKey || "";
+
+      setTimeout(() => {
+        router.push(`/admin?key=${targetKey}`);
+      }, 1400);
+    } catch (e) {
+      setTimeout(() => {
+        router.push("/admin");
+      }, 1400);
+    }
   };
 
   if (!isOpen) return null;
