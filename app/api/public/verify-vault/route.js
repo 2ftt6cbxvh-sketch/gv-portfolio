@@ -9,7 +9,7 @@ function sha256(text) {
 
 const DEFAULT_KEY_HASH = sha256("134214");
 const DEFAULT_PIN_HASH = sha256("134214");
-const DEFAULT_SEQ_HASH = sha256("1,3,4,2,1,4");
+const DEFAULT_SEQ_HASH = sha256("1,2,3,4,1,3");
 
 const ipRateLimits = new Map();
 
@@ -42,7 +42,7 @@ export async function POST(req) {
     let config = {
       adminSecretKey: "134214",
       pinCode: "134214",
-      sequenceStr: "1,3,4,2,1,4",
+      sequenceStr: "1,2,3,4,1,3",
       telegramBotToken: "",
       telegramChatId: "",
       enableAlerts: true,

@@ -6,6 +6,13 @@ import { signOut } from "next-auth/react";
 const NAV = [
   { group: "Overview", links: [{ href: "/admin", label: "Dashboard" }] },
   {
+    group: "Security & Cyber Vault",
+    links: [
+      { href: "/admin/security", label: "📊 Audit & Threat Telemetry" },
+      { href: "/admin/security-settings", label: "🛡️ Vault & Telegram Alerts" },
+    ],
+  },
+  {
     group: "Content",
     links: [
       { href: "/admin/modes", label: "Modes & Hero copy" },
@@ -20,7 +27,6 @@ const NAV = [
   {
     group: "Site",
     links: [
-      { href: "/admin/security", label: "📊 Security Audit & Logs" },
       { href: "/admin/settings", label: "Contact & Social" },
       { href: "/admin/features", label: "Creative Features & Toggles" },
       { href: "/admin/journey", label: "Academic Journey Map" },
