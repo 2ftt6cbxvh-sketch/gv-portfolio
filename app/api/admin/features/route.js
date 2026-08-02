@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+
+function sha256(text) {
+  return crypto.createHash("sha256").update(String(text)).digest("hex");
+}
 
 export async function GET() {
   try {
@@ -25,17 +30,36 @@ export async function PATCH(request) {
     const { key, enabled, metadata } = body;
     if (!key) return NextResponse.json({ error: "Key required" }, { status: 400 });
 
+    let processedMetadata = metadata;
+
+    if (key === "admin_secret_gateway" && metadata) {
+      try {
+        const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
+        const metaObj = { ...parsed };
+
+        if (parsed.pinCode) {
+          metaObj.pinHash = sha256(parsed.pinCode);
+        }
+        if (parsed.adminSecretKey) {
+          metaObj.secretKeyHash = sha256(parsed.adminSecretKey);
+        }
+        processedMetadata = JSON.stringify(metaObj);
+      } catch (e) {}
+    }
+
+    const finalMetadataStr = typeof processedMetadata === "object" ? JSON.stringify(processedMetadata) : String(processedMetadata || "");
+
     const updated = await prisma.featureFlag.upsert({
       where: { key },
       update: {
         ...(enabled !== undefined ? { enabled } : {}),
-        ...(metadata !== undefined ? { metadata: typeof metadata === "object" ? JSON.stringify(metadata) : String(metadata) } : {}),
+        ...(metadata !== undefined ? { metadata: finalMetadataStr } : {}),
       },
       create: {
         key,
         name: key.replace(/_/g, " ").toUpperCase(),
         enabled: enabled !== undefined ? enabled : true,
-        metadata: metadata ? (typeof metadata === "object" ? JSON.stringify(metadata) : String(metadata)) : "",
+        metadata: finalMetadataStr,
       },
     });
 

@@ -7,8 +7,8 @@ function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
 
+const DEFAULT_PIN_HASH = sha256("180296");
 const DEFAULT_KEY_HASH = sha256("134214");
-const DEFAULT_PIN_HASH = sha256("134214");
 const DEFAULT_SEQ_HASH = sha256("1,2,3,4,1,3");
 
 const ipRateLimits = new Map();
@@ -39,26 +39,28 @@ export async function POST(req) {
       where: { key: "admin_secret_gateway" },
     });
 
-    let config = {
-      adminSecretKey: "134214",
-      pinCode: "180296",
-      sequenceStr: "1,2,3,4,1,3",
-      telegramBotToken: "",
-      telegramChatId: "",
-      enableAlerts: true,
+    let configHashes = {
+      pinHash: DEFAULT_PIN_HASH,
+      keyHash: DEFAULT_KEY_HASH,
+      seqHash: DEFAULT_SEQ_HASH,
+      rawSecretKey: "134214",
     };
 
     if (flag?.metadata) {
       try {
         const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
-        if (parsed.adminSecretKey) config.adminSecretKey = parsed.adminSecretKey;
-        if (parsed.pinCode) config.pinCode = parsed.pinCode;
-        if (parsed.sequenceStr && !parsed.sequenceStr.includes("1,3,4,2,1,4")) {
-          config.sequenceStr = parsed.sequenceStr;
+        if (parsed.pinHash) configHashes.pinHash = parsed.pinHash;
+        else if (parsed.pinCode) configHashes.pinHash = sha256(parsed.pinCode);
+
+        if (parsed.secretKeyHash) configHashes.keyHash = parsed.secretKeyHash;
+        else if (parsed.adminSecretKey) {
+          configHashes.keyHash = sha256(parsed.adminSecretKey);
+          configHashes.rawSecretKey = parsed.adminSecretKey;
         }
-        if (parsed.telegramBotToken) config.telegramBotToken = String(parsed.telegramBotToken).trim();
-        if (parsed.telegramChatId) config.telegramChatId = String(parsed.telegramChatId).trim();
-        if (typeof parsed.enableAlerts === "boolean") config.enableAlerts = parsed.enableAlerts;
+
+        if (parsed.sequenceStr && !parsed.sequenceStr.includes("1,3,4,2,1,4")) {
+          configHashes.seqHash = sha256(parsed.sequenceStr);
+        }
       } catch (e) {}
     }
 
@@ -73,21 +75,10 @@ export async function POST(req) {
         ip,
         userAgent,
       });
-      return NextResponse.json({ success: true, message: "Test alert dispatched to Telegram!" });
+      return NextResponse.json({ success: true, message: "Test alert dispatched" });
     }
 
-    // Handle Unauthorized Direct URL Access Alert (/admin)
-    if (type === "unauthorized_url") {
-      await sendSecurityAlert({
-        type: "UNAUTHORIZED_URL_ACCESS",
-        details: `Direct access attempt to restricted path: ${payload || "/admin"}`,
-        ip,
-        userAgent,
-      });
-      return NextResponse.json({ success: true, logged: true });
-    }
-
-    // Handle Instant Pattern Mismatch Alert (1st wrong star tap)
+    // Pattern Mismatch Alert Handler
     if (type === "pattern_mismatch") {
       await sendSecurityAlert({
         type: "STAR_PATTERN_MISMATCH",
@@ -98,7 +89,7 @@ export async function POST(req) {
       return NextResponse.json({ success: true, logged: true });
     }
 
-    // Handle Instant Lockdown Alert (When Warning Page is Triggered)
+    // Instant Lockdown Alert Handler
     if (type === "lockdown_triggered") {
       await sendSecurityAlert({
         type: "LOCKDOWN_PAGE_TRIGGERED",
@@ -109,7 +100,7 @@ export async function POST(req) {
       return NextResponse.json({ success: true, logged: true });
     }
 
-    // Rate Limit Check for Authentication API
+    // Rate Limit Check
     if (!checkRateLimit(ip)) {
       await sendSecurityAlert({
         type: "RATE_LIMIT_EXCEEDED",
@@ -128,19 +119,15 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: "Missing payload" }, { status: 400 });
     }
 
-    let targetKeyHash = sha256(config.adminSecretKey);
-    let targetPinHash = sha256(config.pinCode);
-    let targetSeqHash = sha256(config.sequenceStr);
-
     const payloadHash = sha256(payload);
     let isValid = false;
 
     if (type === "key") {
-      isValid = payloadHash === targetKeyHash;
+      isValid = payloadHash === configHashes.keyHash;
     } else if (type === "pin") {
-      isValid = payloadHash === targetPinHash;
+      isValid = payloadHash === configHashes.pinHash;
     } else if (type === "pattern") {
-      isValid = payloadHash === targetSeqHash;
+      isValid = payloadHash === configHashes.seqHash;
     }
 
     if (!isValid) {
@@ -158,20 +145,22 @@ export async function POST(req) {
 
     const expiresAt = Date.now() + 3 * 60 * 1000;
     const tokenData = JSON.stringify({ verified: true, expiresAt });
-    const token = Buffer.from(tokenData).toString("base64");
 
-    const response = NextResponse.json({ success: true, expiresAt, secretKey: config.adminSecretKey });
+    const response = NextResponse.json({
+      success: true,
+      secretKey: configHashes.rawSecretKey,
+      token: sha256(tokenData),
+    });
 
-    response.cookies.set("starPatternVerified", token, {
+    response.cookies.set("starPatternVerified", sha256(tokenData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 180,
-      path: "/",
     });
 
     return response;
-  } catch (err) {
+  } catch (error) {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
 }
