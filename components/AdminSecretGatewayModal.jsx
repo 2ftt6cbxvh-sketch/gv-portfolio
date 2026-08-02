@@ -41,7 +41,9 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
       if (metadata) {
         try {
           const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-          if (parsed.sequenceStr) patternPayload = parsed.sequenceStr;
+          if (parsed.sequenceStr && !parsed.sequenceStr.includes("1,3,4,2,1,4")) {
+            patternPayload = parsed.sequenceStr;
+          }
         } catch (e) {}
       }
 

@@ -114,8 +114,13 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       else if (!isTop && isLeft) tappedStarId = 3;
       else tappedStarId = 4;
 
-      // Dynamic sequence check (Default: 1,2,3,4,1,3)
-      const targetSeq = (config.sequenceStr || "1,2,3,4,1,3")
+      // Parse target sequence (Default: 1,2,3,4,1,3)
+      let seqInput = config.sequenceStr;
+      if (!seqInput || seqInput.includes("1,3,4,2,1,4")) {
+        seqInput = "1,2,3,4,1,3";
+      }
+
+      const targetSeq = seqInput
         .split(",")
         .map((s) => parseInt(s.trim(), 10))
         .filter((n) => !isNaN(n) && n >= 1 && n <= 4);

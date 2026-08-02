@@ -53,7 +53,9 @@ export async function POST(req) {
         const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
         if (parsed.adminSecretKey) config.adminSecretKey = parsed.adminSecretKey;
         if (parsed.pinCode) config.pinCode = parsed.pinCode;
-        if (parsed.sequenceStr) config.sequenceStr = parsed.sequenceStr;
+        if (parsed.sequenceStr && !parsed.sequenceStr.includes("1,3,4,2,1,4")) {
+          config.sequenceStr = parsed.sequenceStr;
+        }
         if (parsed.telegramBotToken) config.telegramBotToken = String(parsed.telegramBotToken).trim();
         if (parsed.telegramChatId) config.telegramChatId = String(parsed.telegramChatId).trim();
         if (typeof parsed.enableAlerts === "boolean") config.enableAlerts = parsed.enableAlerts;
