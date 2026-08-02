@@ -163,18 +163,35 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
             isSpellFracture = true;
             setTimeout(() => { isSpellFracture = false; }, 450);
 
+            // Instant Telegram Alert on 1st wrong star tap!
+            try {
+              fetch("/api/public/verify-vault", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: "pattern_mismatch" }),
+              });
+            } catch (e) {}
+
             tappedSequence = [];
 
             if (failedAttempts >= (config.maxAttempts || 3)) {
               isLockedDown = true;
+              try {
+                fetch("/api/public/verify-vault", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ type: "lockdown_triggered" }),
+                });
+              } catch (e) {}
+
               if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("triggerCyberLockdown", { detail: { seconds: config.lockdownSec || 30 } }));
+                window.dispatchEvent(new CustomEvent("triggerCyberLockdown", { detail: { seconds: config.lockdownSec || 90 } }));
               }
 
               lockdownTimer = setTimeout(() => {
                 isLockedDown = false;
                 failedAttempts = 0;
-              }, (config.lockdownSec || 30) * 1000);
+              }, (config.lockdownSec || 90) * 1000);
             }
           }
         }

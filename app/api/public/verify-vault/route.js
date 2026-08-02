@@ -78,7 +78,58 @@ export async function POST(req) {
       } catch (e) {}
     }
 
-    // Rate Limit Check
+    const body = await req.json();
+    const { type, payload } = body;
+
+    // Handle Instant Pattern Mismatch Alert (1st wrong star tap)
+    if (type === "pattern_mismatch") {
+      const alertMsg = `⚠️ *SECURITY ALERT // WRONG STAR PATTERN TAPPED*\n\n` +
+        `*Event*: Visitor tapped incorrect star pattern sequence\n` +
+        `*IP Address*: \`${ip}\`\n` +
+        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
+        `*Status*: Spell Sequence Reset`;
+
+      if (config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
+        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
+      }
+
+      global.__securityAuditLogs.unshift({
+        id: Date.now(),
+        type: "STAR_PATTERN_MISMATCH",
+        ip,
+        userAgent,
+        timestamp: new Date().toISOString(),
+        status: "FAILED",
+      });
+
+      return NextResponse.json({ success: true, logged: true });
+    }
+
+    // Handle Instant Lockdown Alert (When Warning Page is Triggered)
+    if (type === "lockdown_triggered") {
+      const alertMsg = `🚨 *CRITICAL LOCKDOWN ACTIVATED*\n\n` +
+        `*Event*: 90s Cyber Strobe Warning Modal & Siren Triggered\n` +
+        `*IP Address*: \`${ip}\`\n` +
+        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
+        `*Status*: 90s Siren & Strobe Modal Active on Visitor Device`;
+
+      if (config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
+        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
+      }
+
+      global.__securityAuditLogs.unshift({
+        id: Date.now(),
+        type: "LOCKDOWN_PAGE_TRIGGERED",
+        ip,
+        userAgent,
+        timestamp: new Date().toISOString(),
+        status: "LOCKDOWN",
+      });
+
+      return NextResponse.json({ success: true, logged: true });
+    }
+
+    // Rate Limit Check for Authentication API
     if (!checkRateLimit(ip)) {
       const alertMsg = `🚨 *SECURITY ALERT // RATE LIMIT EXCEEDED*\n\n` +
         `*IP Address*: \`${ip}\`\n` +
@@ -105,9 +156,6 @@ export async function POST(req) {
       );
     }
 
-    const body = await req.json();
-    const { type, payload } = body;
-
     if (!payload) {
       return NextResponse.json({ success: false, error: "Missing payload" }, { status: 400 });
     }
@@ -127,7 +175,6 @@ export async function POST(req) {
       isValid = payloadHash === targetSeqHash;
     }
 
-    // Log Telemetry
     global.__securityAuditLogs.unshift({
       id: Date.now(),
       type: `${type.toUpperCase()}_ATTEMPT`,
@@ -142,7 +189,6 @@ export async function POST(req) {
     }
 
     if (!isValid) {
-      // Trigger Telegram Alert on Failed PIN Strike
       if (type === "pin" && config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
         const alertMsg = `🚨 *SECURITY INTRUSION WARNING*\n\n` +
           `*Type*: Failed 6-Digit PIN Attempt\n` +
@@ -156,19 +202,17 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
     }
 
-    // Generate Encrypted 3-Minute Session Token
     const expiresAt = Date.now() + 3 * 60 * 1000;
     const tokenData = JSON.stringify({ verified: true, expiresAt });
     const token = Buffer.from(tokenData).toString("base64");
 
     const response = NextResponse.json({ success: true, expiresAt, secretKey: config.adminSecretKey });
 
-    // Set HttpOnly SameSite=Strict Cookie
     response.cookies.set("starPatternVerified", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 180, // 3 minutes
+      maxAge: 180,
       path: "/",
     });
 
