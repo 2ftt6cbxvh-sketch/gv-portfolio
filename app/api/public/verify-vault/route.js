@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
-global.__securityAuditLogs = global.__securityAuditLogs || [];
-
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
@@ -43,6 +41,38 @@ async function sendTelegramAlert(botToken, chatId, message) {
         text: message,
         parse_mode: "Markdown",
       }),
+    });
+  } catch (e) {}
+}
+
+// Helper to Persist Security Audit Log into Database (PostgreSQL)
+async function recordDatabaseSecurityLog(event) {
+  try {
+    const flag = await prisma.featureFlag.findUnique({
+      where: { key: "security_audit_logs" },
+    });
+
+    let currentLogs = [];
+    if (flag?.metadata) {
+      try {
+        currentLogs = JSON.parse(flag.metadata);
+      } catch (e) {}
+    }
+
+    currentLogs.unshift(event);
+    if (currentLogs.length > 100) {
+      currentLogs = currentLogs.slice(0, 100);
+    }
+
+    await prisma.featureFlag.upsert({
+      where: { key: "security_audit_logs" },
+      update: { metadata: JSON.stringify(currentLogs) },
+      create: {
+        key: "security_audit_logs",
+        name: "Security Audit Logs",
+        enabled: true,
+        metadata: JSON.stringify(currentLogs),
+      },
     });
   } catch (e) {}
 }
@@ -93,7 +123,7 @@ export async function POST(req) {
         await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
       }
 
-      global.__securityAuditLogs.unshift({
+      await recordDatabaseSecurityLog({
         id: Date.now(),
         type: "STAR_PATTERN_MISMATCH",
         ip,
@@ -117,7 +147,7 @@ export async function POST(req) {
         await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
       }
 
-      global.__securityAuditLogs.unshift({
+      await recordDatabaseSecurityLog({
         id: Date.now(),
         type: "LOCKDOWN_PAGE_TRIGGERED",
         ip,
@@ -141,7 +171,7 @@ export async function POST(req) {
         await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
       }
 
-      global.__securityAuditLogs.unshift({
+      await recordDatabaseSecurityLog({
         id: Date.now(),
         type: "RATE_LIMIT_EXCEEDED",
         ip,
@@ -175,7 +205,7 @@ export async function POST(req) {
       isValid = payloadHash === targetSeqHash;
     }
 
-    global.__securityAuditLogs.unshift({
+    await recordDatabaseSecurityLog({
       id: Date.now(),
       type: `${type.toUpperCase()}_ATTEMPT`,
       ip,
@@ -183,10 +213,6 @@ export async function POST(req) {
       timestamp: new Date().toISOString(),
       status: isValid ? "SUCCESS" : "FAILED",
     });
-
-    if (global.__securityAuditLogs.length > 50) {
-      global.__securityAuditLogs.pop();
-    }
 
     if (!isValid) {
       if (type === "pin" && config.enableAlerts && config.telegramBotToken && config.telegramChatId) {

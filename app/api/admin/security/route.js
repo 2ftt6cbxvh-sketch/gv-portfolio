@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
-// In-Memory Security Telemetry Log Store
-global.__securityAuditLogs = global.__securityAuditLogs || [];
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req) {
   try {
@@ -12,7 +10,17 @@ export async function GET(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const logs = global.__securityAuditLogs || [];
+    const flag = await prisma.featureFlag.findUnique({
+      where: { key: "security_audit_logs" },
+    });
+
+    let logs = [];
+    if (flag?.metadata) {
+      try {
+        logs = JSON.parse(flag.metadata);
+      } catch (e) {}
+    }
+
     return NextResponse.json({ success: true, logs });
   } catch (err) {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });

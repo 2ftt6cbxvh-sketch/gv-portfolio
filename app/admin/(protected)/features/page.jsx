@@ -240,6 +240,26 @@ export default function FeaturesAdminPage() {
             } catch (e) {}
           }
 
+          const gatewayFlag = flagMap.get("admin_secret_gateway");
+          if (gatewayFlag && gatewayFlag.metadata) {
+            try {
+              const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
+              setGatewayConfig({
+                sequenceStr: parsed.sequenceStr || "1,3,4,2,1,4",
+                adminSecretKey: parsed.adminSecretKey || "134214",
+                pinCode: parsed.pinCode || "134214",
+                maxAttempts: String(parsed.maxAttempts || "3"),
+                lockdownSec: String(parsed.lockdownSec || "90"),
+                accentColor: parsed.accentColor || "#ffd700",
+                titleText: parsed.titleText || "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
+                telegramBotToken: parsed.telegramBotToken || "",
+                telegramChatId: parsed.telegramChatId || "",
+                enableAlerts: typeof parsed.enableAlerts === "boolean" ? parsed.enableAlerts : true,
+                enableLumosWand: typeof parsed.enableLumosWand === "boolean" ? parsed.enableLumosWand : true,
+              });
+            } catch (e) {}
+          }
+
           const videoFlag = flagMap.get("video_reel");
           if (videoFlag && videoFlag.metadata) {
             try {
