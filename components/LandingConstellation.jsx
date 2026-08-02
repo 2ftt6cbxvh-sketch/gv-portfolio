@@ -18,7 +18,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       sequenceStr: "1,2,3,4,1,3",
       maxAttempts: 3,
       lockdownSec: 90,
-      accentColor: "#ffd700",
+      accentColor: "#00f0ff",
     };
 
     if (typeof metadata === "string" && metadata.trim() !== "") {
@@ -158,7 +158,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
             life: 1.0,
             decay: Math.random() * 0.025 + 0.015,
             size: Math.random() * 4.5 + 2,
-            color: config.accentColor || "#ffd700",
+            color: config.accentColor || "#00f0ff",
           });
         }
 
@@ -176,7 +176,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
                 life: 1.3,
                 decay: 0.015,
                 size: Math.random() * 6 + 2,
-                color: config.accentColor || "#ffd700",
+                color: config.accentColor || "#00f0ff",
               });
             }
           });
@@ -305,7 +305,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         if (star.x <= star.minX || star.x >= star.maxX) star.vx *= -1;
         if (star.y <= star.minY || star.y >= star.maxY) star.vy *= -1;
 
-        const starColor = isSpellFracture ? "#ff003c" : (config.accentColor || "#ffd700");
+        const starColor = isSpellFracture ? "#ff003c" : (config.accentColor || "#00f0ff");
         const pulseRadius = star.radius + Math.sin(pulseTime * 2 + star.id) * 2.5;
 
         // Outer Pulsing Aura Ring
