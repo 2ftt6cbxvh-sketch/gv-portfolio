@@ -48,12 +48,17 @@ export default function AppShell({ data }) {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/public/killswitch-status?t=${Date.now()}`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((d) => {
-        if (d.active) setIsKillswitchActive(true);
-      })
-      .catch(() => {});
+    const checkKillswitch = () => {
+      fetch(`/api/public/killswitch-status?t=${Date.now()}`, { cache: "no-store" })
+        .then((res) => res.json())
+        .then((d) => {
+          setIsKillswitchActive(!!d.active);
+        })
+        .catch(() => {});
+    };
+
+    checkKillswitch();
+    const interval = setInterval(checkKillswitch, 3000);
 
     // Add timestamp to prevent browser or CDN from caching stale feature flags
     fetch(`/api/public/features?t=${Date.now()}`, { cache: "no-store" })
@@ -62,6 +67,8 @@ export default function AppShell({ data }) {
         if (resData && resData.flags) setFeatures(resData);
       })
       .catch(() => {});
+
+    return () => clearInterval(interval);
   }, []);
 
   useSiteMotion({
