@@ -6,9 +6,9 @@ import { useEffect, useRef, useMemo } from "react";
  * Features:
  * - 65 Floating Ambient Constellation Particles connected by real-time vector lines (d < 160px)
  * - 4 Glowing Magic Corner Anchor Stars (Cyan/Blue #00f0ff matching background particles)
- * - Rock-Solid Quadrant Tap Detection: Top-Left (1), Top-Right (2), Bottom-Left (3), Bottom-Right (4)
+ * - 250ms Touch Debouncing to eliminate duplicate synthetic click/touchstart collisions on Mobile/Trackpads
+ * - 100% Reliable Quadrant Tap Detection: Top-Left (1), Top-Right (2), Bottom-Left (3), Bottom-Right (4)
  * - Default 6-Stroke Spell Sequence: 1 -> 2 -> 3 -> 4 -> 1 -> 3 (Top-Left -> Top-Right -> Bottom-Left -> Bottom-Right -> Top-Left -> Bottom-Left)
- * - 100% Reliable on all Mobile & Desktop screen sizes (Zero pixel-hunting!)
  */
 export default function LandingConstellation({ accentColor = "#00f0ff", metadata }) {
   const canvasRef = useRef(null);
@@ -59,6 +59,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     let lockdownTimer = null;
     let isSpellFracture = false;
     let pulseTime = 0;
+    let lastTapTimestamp = 0;
 
     // 1. 65 Ambient Constellation Particles (Background Stars & Vector Lines)
     const particleCount = width < 768 ? 40 : 65;
@@ -98,32 +99,20 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     const processTapAtCoordinates = (clickX, clickY) => {
       if (isLockedDown) return;
 
+      const now = Date.now();
+      if (now - lastTapTimestamp < 250) return; // Prevent double-triggering from touchstart + synthetic click!
+      lastTapTimestamp = now;
+
       // Determine Star ID from Screen Quadrants
       // Star 1 = Top-Left, Star 2 = Top-Right, Star 3 = Bottom-Left, Star 4 = Bottom-Right
       const isLeft = clickX < width / 2;
       const isTop = clickY < height / 2;
 
       let tappedStarId = 0;
-      let targetX = clickX;
-      let targetY = clickY;
-
-      if (isTop && isLeft) {
-        tappedStarId = 1;
-        targetX = Math.max(60, width * 0.15);
-        targetY = Math.max(60, height * 0.15);
-      } else if (isTop && !isLeft) {
-        tappedStarId = 2;
-        targetX = Math.min(width - 60, width * 0.85);
-        targetY = Math.max(60, height * 0.15);
-      } else if (!isTop && isLeft) {
-        tappedStarId = 3;
-        targetX = Math.max(60, width * 0.15);
-        targetY = Math.min(height - 60, height * 0.85);
-      } else {
-        tappedStarId = 4;
-        targetX = Math.min(width - 60, width * 0.85);
-        targetY = Math.min(height - 60, height * 0.85);
-      }
+      if (isTop && isLeft) tappedStarId = 1;
+      else if (isTop && !isLeft) tappedStarId = 2;
+      else if (!isTop && isLeft) tappedStarId = 3;
+      else tappedStarId = 4;
 
       // Dynamic sequence check (Default: 1,2,3,4,1,3)
       const targetSeq = (config.sequenceStr || "1,2,3,4,1,3")
@@ -139,7 +128,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       if (targetSeq[nextIndex] === tappedStarId) {
         tappedSequence.push(tappedStarId);
 
-        // Spell Burst Fireworks on Tapped Quadrant Center
+        // Spell Burst Fireworks on Tapped Location
         for (let m = 0; m < 40; m++) {
           const angle = Math.random() * Math.PI * 2;
           const speed = Math.random() * 6 + 2;
