@@ -37,10 +37,18 @@ export default function AdminSecretGatewayModal({ isOpen, onClose, metadata }) {
 
     try {
       // Verify pattern server-side to retrieve secure redirect URL key
+      let patternPayload = "1,2,3,4,1,3";
+      if (metadata) {
+        try {
+          const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
+          if (parsed.sequenceStr) patternPayload = parsed.sequenceStr;
+        } catch (e) {}
+      }
+
       const res = await fetch("/api/public/verify-vault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "pattern", payload: "1,3,4,2,1,4" }),
+        body: JSON.stringify({ type: "pattern", payload: patternPayload }),
       });
       const data = await res.json();
       const targetKey = data.secretKey || "";
