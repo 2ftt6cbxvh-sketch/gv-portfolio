@@ -69,7 +69,13 @@ export default function CyberVaultSecuritySettingsPage() {
       });
 
       if (res.ok) {
-        alert("🛡️ Security Vault & Telegram Push Alert settings saved successfully!");
+        // Auto-Register Telegram Webhook API
+        if (gatewayConfig.telegramBotToken) {
+          try {
+            await fetch("/api/admin/setup-telegram-webhook", { method: "POST" });
+          } catch (e) {}
+        }
+        alert("🛡️ Security Vault & Telegram Webhook registered successfully!");
       } else {
         alert("Failed to save security settings.");
       }
@@ -77,6 +83,20 @@ export default function CyberVaultSecuritySettingsPage() {
       alert("Error saving security settings.");
     }
     setSaving(false);
+  };
+
+  const handleRegisterWebhook = async () => {
+    try {
+      const res = await fetch("/api/admin/setup-telegram-webhook", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        alert("🔗 TELEGRAM WEBHOOK REGISTERED SUCCESSFULLY!\n\nYou can now reply /killswitch ON to your Telegram bot to take down the site remotely.");
+      } else {
+        alert("Failed to register Telegram Webhook: " + (data.error || "Check Bot Token"));
+      }
+    } catch (e) {
+      alert("Error registering Webhook.");
+    }
   };
 
   const handleSendTestAlert = async () => {
@@ -107,7 +127,10 @@ export default function CyberVaultSecuritySettingsPage() {
             Full control over 4-Star Spell Rune tap sequence, Secret URL Keys, 6-Digit Keypad PIN, Telegram Alerts, and Remote Killswitch.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button onClick={handleRegisterWebhook} className="admin-btn" style={{ background: "rgba(0, 240, 255, 0.15)", color: "#00f0ff", borderColor: "rgba(0, 240, 255, 0.3)" }}>
+            🔗 Bind Telegram Webhook
+          </button>
           <button onClick={handleSendTestAlert} className="admin-btn">
             🧪 Send Test Telegram Alert
           </button>
