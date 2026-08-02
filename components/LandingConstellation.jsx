@@ -2,18 +2,18 @@
 import { useEffect, useRef, useMemo } from "react";
 
 /**
- * Rich Cinematic WebGL/Canvas Constellation & 4-Quadrant Harry Potter Spell Rune Canvas
+ * Harry Potter Spell Rune Constellation Canvas (v6.6.0)
  * Features:
- * - High zIndex (zIndex: 100) overlay so magic fireworks burst OVER mode cards and entire screen!
- * - Real-Time Glowing Magic Rune Lines connecting tapped secret stars as you draw the spell
- * - Vivid Red Line & Fracture Glow (#ff003c) when a wrong star is clicked!
+ * - 4 Randomly Floating Glowing Magic Stars (Golden Yellow #ffd700, smooth vector motion physics)
+ * - Layered Behind Mode Cards & Text (zIndex: 1)
+ * - Real-Time Animated Golden Rune Lines (#ffd700) connecting stars as you draw the spell
+ * - Vivid Red Line & Fracture Glow (#ff003c) when a wrong pattern/star is clicked!
  * - 65 Floating Ambient Constellation Particles connected by real-time vector lines (d < 160px)
- * - 4 Glowing Magic Corner Anchor Stars (Cyan/Blue #00f0ff matching background particles)
  * - 250ms Touch Debouncing to eliminate duplicate synthetic click/touchstart collisions on Mobile/Trackpads
  * - 100% Reliable Quadrant Tap Detection: Top-Left (1), Top-Right (2), Bottom-Left (3), Bottom-Right (4)
  * - Default 6-Stroke Spell Sequence: 1 -> 2 -> 3 -> 4 -> 1 -> 3 (Top-Left -> Top-Right -> Bottom-Left -> Bottom-Right -> Top-Left -> Bottom-Left)
  */
-export default function LandingConstellation({ accentColor = "#00f0ff", metadata }) {
+export default function LandingConstellation({ accentColor = "#ffd700", metadata }) {
   const canvasRef = useRef(null);
 
   const config = useMemo(() => {
@@ -21,7 +21,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       sequenceStr: "1,2,3,4,1,3",
       maxAttempts: 3,
       lockdownSec: 90,
-      accentColor: "#00f0ff",
+      accentColor: "#ffd700",
     };
 
     if (typeof metadata === "string" && metadata.trim() !== "") {
@@ -65,6 +65,10 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     let pulseTime = 0;
     let lastTapTimestamp = 0;
 
+    // Line Animation State (Smooth Lerp Interpolation)
+    let animLineProgress = 0;
+    let linePoints = [];
+
     // 1. 65 Ambient Constellation Particles (Background Stars & Vector Lines)
     const particleCount = width < 768 ? 40 : 65;
     const particles = [];
@@ -79,6 +83,17 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         alpha: Math.random() * 0.55 + 0.25,
       });
     }
+
+    // 2. 4 Randomly Floating Secret Magic Stars in Outer Safe Floating Zones
+    const bottomMinY = Math.max(height - 150, height * 0.76);
+    const bottomMaxY = height - 40;
+
+    const secretStarsMap = {
+      1: { id: 1, x: Math.random() * (width * 0.22) + 40, y: Math.random() * (height * 0.25) + 60, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: 35, maxX: width * 0.3, minY: 50, maxY: height * 0.38 },
+      2: { id: 2, x: Math.random() * (width * 0.22) + width * 0.7, y: Math.random() * (height * 0.25) + 60, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: width * 0.7, maxX: width - 35, minY: 50, maxY: height * 0.38 },
+      3: { id: 3, x: Math.random() * (width * 0.22) + 40, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: 35, maxX: width * 0.32, minY: bottomMinY, maxY: bottomMaxY },
+      4: { id: 4, x: Math.random() * (width * 0.22) + width * 0.7, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: width * 0.68, maxX: width - 35, minY: bottomMinY, maxY: bottomMaxY },
+    };
 
     const updatePointerPos = (clientX, clientY) => {
       const rect = canvas.getBoundingClientRect();
@@ -136,26 +151,31 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
       // Check step match
       if (targetSeq[nextIndex] === tappedStarId) {
         tappedSequence.push(tappedStarId);
+        animLineProgress = 0; // Trigger line drawing animation!
 
-        // Spell Burst Fireworks on Tapped Location
+        const starObj = secretStarsMap[tappedStarId];
+        const spawnX = starObj ? starObj.x : clickX;
+        const spawnY = starObj ? starObj.y : clickY;
+
+        // Golden Spell Burst Fireworks on Tapped Star Location
         for (let m = 0; m < 45; m++) {
           const angle = Math.random() * Math.PI * 2;
           const speed = Math.random() * 7 + 2.5;
           magicSpells.push({
-            x: clickX,
-            y: clickY,
+            x: spawnX,
+            y: spawnY,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             life: 1.0,
             decay: Math.random() * 0.025 + 0.015,
             size: Math.random() * 5 + 2.5,
-            color: config.accentColor || "#00f0ff",
+            color: "#ffd700",
           });
         }
 
         // Full sequence completed!
         if (tappedSequence.length === targetSeq.length) {
-          for (let m = 0; m < 80; m++) {
+          for (let m = 0; m < 85; m++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 11 + 4;
             magicSpells.push({
@@ -166,7 +186,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
               life: 1.5,
               decay: 0.01,
               size: Math.random() * 7.5 + 3,
-              color: config.accentColor || "#00f0ff",
+              color: "#ffd700",
             });
           }
 
@@ -184,13 +204,17 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         isSpellFracture = true;
         fractureSequence = [...tappedSequence, tappedStarId];
 
+        const starObj = secretStarsMap[tappedStarId];
+        const spawnX = starObj ? starObj.x : clickX;
+        const spawnY = starObj ? starObj.y : clickY;
+
         // Red spell fracture burst particles
-        for (let m = 0; m < 35; m++) {
+        for (let m = 0; m < 40; m++) {
           const angle = Math.random() * Math.PI * 2;
           const speed = Math.random() * 7 + 2;
           magicSpells.push({
-            x: clickX,
-            y: clickY,
+            x: spawnX,
+            y: spawnY,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             life: 1.0,
@@ -259,6 +283,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
       pulseTime += 0.035;
+      if (animLineProgress < 1.0) animLineProgress += 0.08;
 
       // 1. Draw 65 Ambient Constellation Particles & Vector Lines
       for (let i = 0; i < particles.length; i++) {
@@ -307,46 +332,60 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         }
       }
 
-      // 2. Corner Anchor Stars Coordinates Map
-      const cornerStarsMap = {
-        1: { id: 1, x: Math.max(60, width * 0.12), y: Math.max(60, height * 0.15) },
-        2: { id: 2, x: Math.min(width - 60, width * 0.88), y: Math.max(60, height * 0.15) },
-        3: { id: 3, x: Math.max(60, width * 0.12), y: Math.min(height - 60, height * 0.85) },
-        4: { id: 4, x: Math.min(width - 60, width * 0.88), y: Math.min(height - 60, height * 0.85) },
-      };
+      // 2. Update Randomly Floating Secret Magic Stars Velocity Motion
+      Object.values(secretStarsMap).forEach((star) => {
+        star.x += star.vx;
+        star.y += star.vy;
 
-      // 3. Draw Connecting Magic Spell Rune Lines Between Tapped Stars!
+        if (star.x <= star.minX || star.x >= star.maxX) star.vx *= -1;
+        if (star.y <= star.minY || star.y >= star.maxY) star.vy *= -1;
+      });
+
+      // 3. Draw Animated Connecting Magic Spell Rune Lines Between Tapped Stars!
       const activeLineSeq = isSpellFracture ? fractureSequence : tappedSequence;
 
       if (activeLineSeq.length > 1) {
         ctx.save();
         ctx.beginPath();
 
-        const startStar = cornerStarsMap[activeLineSeq[0]];
+        const startStar = secretStarsMap[activeLineSeq[0]];
         if (startStar) ctx.moveTo(startStar.x, startStar.y);
 
         for (let k = 1; k < activeLineSeq.length; k++) {
-          const nextStar = cornerStarsMap[activeLineSeq[k]];
-          if (nextStar) ctx.lineTo(nextStar.x, nextStar.y);
+          const prevStar = secretStarsMap[activeLineSeq[k - 1]];
+          const nextStar = secretStarsMap[activeLineSeq[k]];
+
+          if (prevStar && nextStar) {
+            if (k === activeLineSeq.length - 1 && animLineProgress < 1.0) {
+              // Smooth animated drawing lerp for the latest line segment!
+              const currentX = prevStar.x + (nextStar.x - prevStar.x) * Math.min(1.0, animLineProgress);
+              const currentY = prevStar.y + (nextStar.y - prevStar.y) * Math.min(1.0, animLineProgress);
+              ctx.lineTo(currentX, currentY);
+            } else {
+              ctx.lineTo(nextStar.x, nextStar.y);
+            }
+          }
         }
 
-        ctx.strokeStyle = isSpellFracture ? "#ff003c" : "#00f0ff";
-        ctx.shadowColor = isSpellFracture ? "#ff003c" : "#00f0ff";
-        ctx.shadowBlur = isSpellFracture ? 24 : 18;
-        ctx.lineWidth = isSpellFracture ? 3.5 : 2.5;
+        // Golden Yellow (#ffd700) when drawing correctly, Vivid Red (#ff003c) on wrong pattern mismatch!
+        const lineColor = isSpellFracture ? "#ff003c" : "#ffd700";
+        ctx.strokeStyle = lineColor;
+        ctx.shadowColor = lineColor;
+        ctx.shadowBlur = isSpellFracture ? 26 : 20;
+        ctx.lineWidth = isSpellFracture ? 3.8 : 2.8;
         ctx.stroke();
         ctx.restore();
       }
 
-      // 4. Draw 4 Corner Anchor Stars (Cyan/Blue #00f0ff, Pulsing Aura)
-      Object.values(cornerStarsMap).forEach((star) => {
-        const starColor = isSpellFracture ? "#ff003c" : (config.accentColor || "#00f0ff");
+      // 4. Draw 4 Randomly Floating Magic Secret Stars (Golden Yellow #ffd700, Pulsing Aura, Original Style)
+      Object.values(secretStarsMap).forEach((star) => {
+        const starColor = isSpellFracture ? "#ff003c" : "#ffd700";
         const pulseRadius = 8.5 + Math.sin(pulseTime * 2 + star.id) * 2.5;
 
         ctx.save();
         ctx.beginPath();
         ctx.arc(star.x, star.y, pulseRadius + 6, 0, Math.PI * 2);
-        ctx.strokeStyle = isSpellFracture ? "rgba(255, 0, 60, 0.5)" : "rgba(0, 240, 255, 0.4)";
+        ctx.strokeStyle = isSpellFracture ? "rgba(255, 0, 60, 0.5)" : "rgba(255, 215, 0, 0.4)";
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
@@ -426,7 +465,7 @@ export default function LandingConstellation({ accentColor = "#00f0ff", metadata
         width: "100%",
         height: "100%",
         pointerEvents: "auto",
-        zIndex: 100,
+        zIndex: 1,
       }}
     />
   );
