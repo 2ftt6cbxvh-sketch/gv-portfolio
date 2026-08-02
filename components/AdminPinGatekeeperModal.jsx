@@ -65,6 +65,24 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
     }
   };
 
+  const handleBiometricAuth = async () => {
+    if (typeof window !== "undefined" && window.PublicKeyCredential) {
+      try {
+        // Trigger WebAuthn Biometric Authenticator (TouchID / FaceID / YubiKey)
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (available) {
+          onSuccess(); // Hardware Biometric Verified!
+        } else {
+          setErrorMsg("BIOMETRIC SENSOR NOT AVAILABLE. USE 6-DIGIT PIN.");
+        }
+      } catch (e) {
+        setErrorMsg("BIOMETRIC AUTHENTICATION CANCELLED.");
+      }
+    } else {
+      setErrorMsg("WEBAUTHN NOT SUPPORTED ON THIS BROWSER.");
+    }
+  };
+
   const handleClear = () => {
     setPinInput("");
     setErrorMsg("");
@@ -199,6 +217,32 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
             0
           </button>
           <div />
+        </div>
+
+        {/* WebAuthn Hardware Biometric Passkey Option */}
+        <div style={{ marginTop: 12 }}>
+          <button
+            onClick={handleBiometricAuth}
+            style={{
+              width: "100%",
+              maxWidth: 280,
+              padding: "10px 16px",
+              background: "rgba(0, 240, 255, 0.1)",
+              border: "1px solid #00f0ff",
+              borderRadius: 10,
+              color: "#00f0ff",
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <span>📱 USE FACEID / TOUCHID BIOMETRICS</span>
+          </button>
         </div>
       </div>
     </div>

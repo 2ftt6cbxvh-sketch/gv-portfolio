@@ -96,6 +96,10 @@ export default function FeaturesAdminPage() {
     lockdownSec: "90",
     accentColor: "#ffd700",
     titleText: "AUTHENTICATED // SECRET ADMIN GATEWAY UNLOCKED",
+    telegramBotToken: "",
+    telegramChatId: "",
+    enableAlerts: true,
+    enableLumosWand: true,
   });
 
   const [videoConfig, setVideoConfig] = useState({
@@ -952,6 +956,57 @@ export default function FeaturesAdminPage() {
             <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
               Star 1 = Top-Left, Star 2 = Top-Right, Star 3 = Bottom-Left, Star 4 = Bottom-Right. Default: 1,3,4,2,1,4
             </span>
+          </div>
+
+          <div style={{ borderTop: "1px solid var(--a-border)", paddingTop: 14, marginTop: 4 }}>
+            <h4 style={{ margin: "0 0 10px 0", fontSize: 13, color: "#5fa8ff" }}>📱 Real-Time Telegram Intrusion Push Alerts (100% Free)</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                  Telegram Bot Token (@BotFather)
+                </label>
+                <input
+                  type="password"
+                  className="admin-input"
+                  value={gatewayConfig.telegramBotToken}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, telegramBotToken: e.target.value })}
+                  placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQ"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                  Telegram Chat ID (@userinfobot)
+                </label>
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={gatewayConfig.telegramChatId}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, telegramChatId: e.target.value })}
+                  placeholder="e.g. 987654321"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={gatewayConfig.enableAlerts}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, enableAlerts: e.target.checked })}
+                />
+                <span>Enable Real-Time Telegram Intrusion Push Alerts</span>
+              </label>
+
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={gatewayConfig.enableLumosWand}
+                  onChange={(e) => setGatewayConfig({ ...gatewayConfig, enableLumosWand: e.target.checked })}
+                />
+                <span>Enable Interactive "Lumos" Magic Wand Cursor Trail</span>
+              </label>
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: 12 }}>

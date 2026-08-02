@@ -2,17 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
-// Helper function to calculate SHA-256 hash
+global.__securityAuditLogs = global.__securityAuditLogs || [];
+
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
 
-// Pre-computed SHA-256 Hashes for Defaults (Raw strings NEVER exposed to client JS!)
-const DEFAULT_KEY_HASH = sha256("134214");      // 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
-const DEFAULT_PIN_HASH = sha256("134214");      // 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
-const DEFAULT_SEQ_HASH = sha256("1,3,4,2,1,4"); // e305f639088ff50ec721a998c764ee71110757ee92a7e7bfb7b3ee42a59a72df
+const DEFAULT_KEY_HASH = sha256("134214");
+const DEFAULT_PIN_HASH = sha256("134214");
+const DEFAULT_SEQ_HASH = sha256("1,3,4,2,1,4");
 
-// In-Memory IP Rate Limiter (Max 5 attempts per 5 minutes per IP)
 const ipRateLimits = new Map();
 
 function checkRateLimit(ip) {
@@ -31,11 +30,75 @@ function checkRateLimit(ip) {
   return record.count <= 5;
 }
 
+// Telegram Real-Time Security Alert Webhook Dispatcher
+async function sendTelegramAlert(botToken, chatId, message) {
+  if (!botToken || !chatId) return;
+  try {
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "Markdown",
+      }),
+    });
+  } catch (e) {}
+}
+
 export async function POST(req) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    const userAgent = req.headers.get("user-agent") || "Unknown Device";
 
+    // Fetch feature flag config from DB
+    const flag = await prisma.featureFlag.findUnique({
+      where: { key: "admin_secret_gateway" },
+    });
+
+    let config = {
+      adminSecretKey: "134214",
+      pinCode: "134214",
+      sequenceStr: "1,3,4,2,1,4",
+      telegramBotToken: "",
+      telegramChatId: "",
+      enableAlerts: true,
+    };
+
+    if (flag?.metadata) {
+      try {
+        const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
+        if (parsed.adminSecretKey) config.adminSecretKey = parsed.adminSecretKey;
+        if (parsed.pinCode) config.pinCode = parsed.pinCode;
+        if (parsed.sequenceStr) config.sequenceStr = parsed.sequenceStr;
+        if (parsed.telegramBotToken) config.telegramBotToken = parsed.telegramBotToken;
+        if (parsed.telegramChatId) config.telegramChatId = parsed.telegramChatId;
+        if (typeof parsed.enableAlerts === "boolean") config.enableAlerts = parsed.enableAlerts;
+      } catch (e) {}
+    }
+
+    // Rate Limit Check
     if (!checkRateLimit(ip)) {
+      const alertMsg = `🚨 *SECURITY ALERT // RATE LIMIT EXCEEDED*\n\n` +
+        `*IP Address*: \`${ip}\`\n` +
+        `*Device*: \`${userAgent.slice(0, 40)}\`\n` +
+        `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
+        `*Status*: 90s Cyber Strobe Lockdown Triggered`;
+
+      if (config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
+        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
+      }
+
+      global.__securityAuditLogs.unshift({
+        id: Date.now(),
+        type: "RATE_LIMIT_EXCEEDED",
+        ip,
+        userAgent,
+        timestamp: new Date().toISOString(),
+        status: "BLOCKED",
+      });
+
       return NextResponse.json(
         { error: "Rate limit exceeded. Too many attempts. Try again in 5 minutes." },
         { status: 429 }
@@ -49,29 +112,10 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: "Missing payload" }, { status: 400 });
     }
 
-    // Fetch feature flag config from DB
-    const flag = await prisma.featureFlag.findUnique({
-      where: { key: "admin_secret_gateway" },
-    });
+    let targetKeyHash = sha256(config.adminSecretKey);
+    let targetPinHash = sha256(config.pinCode);
+    let targetSeqHash = sha256(config.sequenceStr);
 
-    let targetKeyHash = DEFAULT_KEY_HASH;
-    let targetPinHash = DEFAULT_PIN_HASH;
-    let targetSeqHash = DEFAULT_SEQ_HASH;
-    let actualAdminSecretKey = "134214";
-
-    if (flag?.metadata) {
-      try {
-        const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
-        if (parsed.adminSecretKey) {
-          targetKeyHash = sha256(parsed.adminSecretKey);
-          actualAdminSecretKey = parsed.adminSecretKey;
-        }
-        if (parsed.pinCode) targetPinHash = sha256(parsed.pinCode);
-        if (parsed.sequenceStr) targetSeqHash = sha256(parsed.sequenceStr);
-      } catch (e) {}
-    }
-
-    // SHA-256 Hash Comparison
     const payloadHash = sha256(payload);
     let isValid = false;
 
@@ -83,7 +127,32 @@ export async function POST(req) {
       isValid = payloadHash === targetSeqHash;
     }
 
+    // Log Telemetry
+    global.__securityAuditLogs.unshift({
+      id: Date.now(),
+      type: `${type.toUpperCase()}_ATTEMPT`,
+      ip,
+      userAgent,
+      timestamp: new Date().toISOString(),
+      status: isValid ? "SUCCESS" : "FAILED",
+    });
+
+    if (global.__securityAuditLogs.length > 50) {
+      global.__securityAuditLogs.pop();
+    }
+
     if (!isValid) {
+      // Trigger Telegram Alert on Failed PIN Strike
+      if (type === "pin" && config.enableAlerts && config.telegramBotToken && config.telegramChatId) {
+        const alertMsg = `🚨 *SECURITY INTRUSION WARNING*\n\n` +
+          `*Type*: Failed 6-Digit PIN Attempt\n` +
+          `*IP Address*: \`${ip}\`\n` +
+          `*Time*: \`${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n` +
+          `*Status*: Strike Counter Incremented`;
+
+        await sendTelegramAlert(config.telegramBotToken, config.telegramChatId, alertMsg);
+      }
+
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
     }
 
@@ -92,7 +161,7 @@ export async function POST(req) {
     const tokenData = JSON.stringify({ verified: true, expiresAt });
     const token = Buffer.from(tokenData).toString("base64");
 
-    const response = NextResponse.json({ success: true, expiresAt, secretKey: actualAdminSecretKey });
+    const response = NextResponse.json({ success: true, expiresAt, secretKey: config.adminSecretKey });
 
     // Set HttpOnly SameSite=Strict Cookie
     response.cookies.set("starPatternVerified", token, {

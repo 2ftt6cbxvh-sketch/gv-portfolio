@@ -20,6 +20,7 @@ const NAV = [
   {
     group: "Site",
     links: [
+      { href: "/admin/security", label: "📊 Security Audit & Logs" },
       { href: "/admin/settings", label: "Contact & Social" },
       { href: "/admin/features", label: "Creative Features & Toggles" },
       { href: "/admin/journey", label: "Academic Journey Map" },
