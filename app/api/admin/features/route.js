@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
@@ -38,7 +39,8 @@ export async function PATCH(request) {
         const metaObj = { ...parsed };
 
         if (parsed.pinCode) {
-          metaObj.pinHash = sha256(parsed.pinCode);
+          // OWASP Compliant bcrypt Hashing with Cost Factor 12
+          metaObj.pinHash = await bcrypt.hash(String(parsed.pinCode), 12);
         }
         if (parsed.adminSecretKey) {
           metaObj.secretKeyHash = sha256(parsed.adminSecretKey);

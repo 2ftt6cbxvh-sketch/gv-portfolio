@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { sendSecurityAlert } from "@/lib/securityAlerts";
 import { verifyTOTP } from "@/lib/totp";
 
@@ -8,7 +9,7 @@ function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
 
-const DEFAULT_PIN_HASH = sha256("180296");
+const DEFAULT_PIN_BCRYPT = "$2a$12$vc1qcnQruLtjFD00C/J4hu.c/oZ9VtDOKgBJ3SAwFOF6B9SXZuOVy"; // bcrypt hash of 180296
 const DEFAULT_KEY_HASH = sha256("134214");
 const DEFAULT_SEQ_HASH = sha256("1,2,3,4,1,3");
 
@@ -41,7 +42,7 @@ export async function POST(req) {
     });
 
     let configHashes = {
-      pinHash: DEFAULT_PIN_HASH,
+      pinHash: DEFAULT_PIN_BCRYPT,
       keyHash: DEFAULT_KEY_HASH,
       seqHash: DEFAULT_SEQ_HASH,
       rawSecretKey: "134214",
@@ -53,7 +54,7 @@ export async function POST(req) {
       try {
         const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
         if (parsed.pinHash) configHashes.pinHash = parsed.pinHash;
-        else if (parsed.pinCode) configHashes.pinHash = sha256(parsed.pinCode);
+        else if (parsed.pinCode) configHashes.pinHash = await bcrypt.hash(parsed.pinCode, 12);
 
         if (parsed.secretKeyHash) configHashes.keyHash = parsed.secretKeyHash;
         else if (parsed.adminSecretKey) {
@@ -142,7 +143,12 @@ export async function POST(req) {
     if (type === "key") {
       isValid = payloadHash === configHashes.keyHash;
     } else if (type === "pin") {
-      isValid = payloadHash === configHashes.pinHash;
+      // Check bcrypt hash (or fallback sha256 for migration)
+      if (configHashes.pinHash.startsWith("$2a$") || configHashes.pinHash.startsWith("$2b$")) {
+        isValid = await bcrypt.compare(String(payload), configHashes.pinHash);
+      } else {
+        isValid = payloadHash === configHashes.pinHash;
+      }
     } else if (type === "pattern") {
       isValid = payloadHash === configHashes.seqHash;
     } else if (type === "totp") {
