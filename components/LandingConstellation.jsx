@@ -122,16 +122,19 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
       if (now - lastTapTimestamp < 250) return; // Prevent double-triggering from touchstart + synthetic click!
       lastTapTimestamp = now;
 
-      // Determine Star ID from Screen Quadrants
-      // Star 1 = Top-Left, Star 2 = Top-Right, Star 3 = Bottom-Left, Star 4 = Bottom-Right
-      const isLeft = clickX < width / 2;
-      const isTop = clickY < height / 2;
-
+      // Precise Star Hit Testing (38px Touch Radius directly around floating magic star center)
       let tappedStarId = 0;
-      if (isTop && isLeft) tappedStarId = 1;
-      else if (isTop && !isLeft) tappedStarId = 2;
-      else if (!isTop && isLeft) tappedStarId = 3;
-      else tappedStarId = 4;
+      Object.values(secretStarsMap).forEach((star) => {
+        const dx = clickX - star.x;
+        const dy = clickY - star.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= 38) {
+          tappedStarId = star.id;
+        }
+      });
+
+      // Ignore tap completely if tap was NOT directly on a magic star!
+      if (tappedStarId === 0) return;
 
       // Dynamic sequence check (Default: 1,2,3,4,1,3)
       let seqInput = config.sequenceStr;
