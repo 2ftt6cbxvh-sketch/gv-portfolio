@@ -6,6 +6,7 @@ import argon2 from "argon2";
 import { sendSecurityAlert } from "@/lib/securityAlerts";
 import { verifyTOTP } from "@/lib/totp";
 import { check24HourRateLimit } from "@/lib/rateLimit";
+import { isVpnOrProxy } from "@/lib/vpnCheck";
 
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
@@ -18,8 +19,24 @@ const DEFAULT_SEQ_HASH = sha256("1,2,3,4,1,3");
 
 export async function POST(req) {
   try {
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || req.headers.get("cf-connecting-ip") || "127.0.0.1";
     const userAgent = req.headers.get("user-agent") || "Unknown Device";
+
+    // 1. Strict Serverless VPN / Proxy Detection Check
+    const vpnDetected = await isVpnOrProxy(ip);
+    if (vpnDetected) {
+      await sendSecurityAlert({
+        type: "VPN_ACCESS_BLOCKED",
+        details: `Access attempt blocked due to active VPN / Proxy server: ${ip}`,
+        ip,
+        userAgent,
+      });
+
+      return NextResponse.json(
+        { success: false, error: "🚫 VPN or Proxy connection detected. Please disable your VPN to continue." },
+        { status: 403 }
+      );
+    }
 
     // Fetch feature flag config from DB
     const flag = await prisma.featureFlag.findUnique({
