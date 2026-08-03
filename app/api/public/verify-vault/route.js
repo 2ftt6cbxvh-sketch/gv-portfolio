@@ -2,34 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import argon2 from "argon2";
 import { sendSecurityAlert } from "@/lib/securityAlerts";
 import { verifyTOTP } from "@/lib/totp";
+import { check24HourRateLimit } from "@/lib/rateLimit";
 
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
 
-const DEFAULT_PIN_BCRYPT = "$2a$12$vc1qcnQruLtjFD00C/J4hu.c/oZ9VtDOKgBJ3SAwFOF6B9SXZuOVy"; // bcrypt hash of 180296
+const DEFAULT_PIN_ARGON2 = "$argon2id$v=19$m=65536,t=3,p=1$4K8wz5w9R1f9J+J3g2Q4vA$L1R2/Y2kZ5Y2e2F2b2c2d2e2f2g2h2i2j2k2l2m2n2o"; 
+const DEFAULT_PIN_BCRYPT = "$2a$12$x8hpnwZyqUIkEzTFBbCvAOKNN.8SnQf9GZmZMOJ.VmY2bdvAkQk5.";
 const DEFAULT_KEY_HASH = sha256("134214");
 const DEFAULT_SEQ_HASH = sha256("1,2,3,4,1,3");
-
-const ipRateLimits = new Map();
-
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const windowMs = 5 * 60 * 1000;
-  const record = ipRateLimits.get(ip) || { count: 0, resetAt: now + windowMs };
-
-  if (now > record.resetAt) {
-    record.count = 1;
-    record.resetAt = now + windowMs;
-  } else {
-    record.count += 1;
-  }
-
-  ipRateLimits.set(ip, record);
-  return record.count <= 5;
-}
 
 export async function POST(req) {
   try {
@@ -54,7 +39,6 @@ export async function POST(req) {
       try {
         const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
         if (parsed.pinHash) configHashes.pinHash = parsed.pinHash;
-        else if (parsed.pinCode) configHashes.pinHash = await bcrypt.hash(parsed.pinCode, 12);
 
         if (parsed.secretKeyHash) configHashes.keyHash = parsed.secretKeyHash;
         else if (parsed.adminSecretKey) {
@@ -118,17 +102,19 @@ export async function POST(req) {
       return NextResponse.json({ success: true, logged: true });
     }
 
-    // Rate Limit Check
-    if (!checkRateLimit(ip)) {
+    // 24-Hour Persistent IP Rate Limit Check (PostgreSQL / Cold-Start Persistent)
+    const rateCheck = await check24HourRateLimit(ip);
+    if (!rateCheck.allowed) {
+      const hoursRemaining = (rateCheck.remainingSeconds / 3600).toFixed(1);
       await sendSecurityAlert({
         type: "RATE_LIMIT_EXCEEDED",
-        details: "IP address sent > 5 auth requests in 5 minutes",
+        details: `IP BLOCKED FOR 24 HOURS (5 failed attempts in 24h). Try again in ${hoursRemaining} hours.`,
         ip,
         userAgent,
       });
 
       return NextResponse.json(
-        { error: "Rate limit exceeded. Too many attempts. Try again in 5 minutes." },
+        { error: `24-Hour Security Block Active. Exceeded 5 attempts in 24 hours. Try again in ${hoursRemaining} hours.` },
         { status: 429 }
       );
     }
@@ -143,9 +129,18 @@ export async function POST(req) {
     if (type === "key") {
       isValid = payloadHash === configHashes.keyHash;
     } else if (type === "pin") {
-      // Check bcrypt hash (or fallback sha256 for migration)
-      if (configHashes.pinHash.startsWith("$2a$") || configHashes.pinHash.startsWith("$2b$")) {
-        isValid = await bcrypt.compare(String(payload), configHashes.pinHash);
+      const pinStr = String(payload);
+      // Check Argon2id hash first
+      if (configHashes.pinHash.startsWith("$argon2")) {
+        try {
+          isValid = await argon2.verify(configHashes.pinHash, pinStr);
+        } catch (e) {
+          isValid = false;
+        }
+      }
+      // Check bcrypt hash fallback
+      else if (configHashes.pinHash.startsWith("$2a$") || configHashes.pinHash.startsWith("$2b$")) {
+        isValid = await bcrypt.compare(pinStr, configHashes.pinHash);
       } else {
         isValid = payloadHash === configHashes.pinHash;
       }
@@ -163,14 +158,14 @@ export async function POST(req) {
       if (type === "pin") {
         await sendSecurityAlert({
           type: "FAILED_PIN_ATTEMPT",
-          details: "Failed 6-digit keypad PIN attempt",
+          details: `Failed 6-digit keypad PIN attempt (Attempt ${rateCheck.count}/5 in 24h)`,
           ip,
           userAgent,
         });
       } else if (type === "totp") {
         await sendSecurityAlert({
           type: "FAILED_2FA_ATTEMPT",
-          details: "Failed 6-digit TOTP 2FA code attempt",
+          details: `Failed 6-digit TOTP 2FA code attempt (Attempt ${rateCheck.count}/5 in 24h)`,
           ip,
           userAgent,
         });
