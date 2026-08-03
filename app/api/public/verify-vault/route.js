@@ -106,6 +106,17 @@ export async function POST(req) {
       return NextResponse.json({ success: true, logged: true });
     }
 
+    // Direct Unauthorized URL Access Handler
+    if (type === "unauthorized_url") {
+      await sendSecurityAlert({
+        type: "UNAUTHORIZED_URL_ACCESS",
+        details: `Direct address bar access attempt to /admin: ${payload || "Direct URL"}`,
+        ip,
+        userAgent,
+      });
+      return NextResponse.json({ success: true, logged: true });
+    }
+
     // Rate Limit Check
     if (!checkRateLimit(ip)) {
       await sendSecurityAlert({
@@ -157,9 +168,26 @@ export async function POST(req) {
           ip,
           userAgent,
         });
+      } else if (type === "key") {
+        await sendSecurityAlert({
+          type: "UNAUTHORIZED_URL_ACCESS",
+          details: `Failed direct URL key attempt: /admin?key=${payload}`,
+          ip,
+          userAgent,
+        });
       }
 
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
+    }
+
+    // If type === 'key' succeeded, send alert
+    if (type === "key") {
+      await sendSecurityAlert({
+        type: "SUCCESSFUL_URL_KEY_ACCESS",
+        details: `Successful direct URL key access: /admin?key=${payload}`,
+        ip,
+        userAgent,
+      });
     }
 
     // If type === 'pin' and 2FA is enabled, require TOTP code in 2nd step
