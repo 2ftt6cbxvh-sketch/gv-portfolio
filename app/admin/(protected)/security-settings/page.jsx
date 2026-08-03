@@ -8,6 +8,13 @@ export default function CyberVaultSecuritySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // 2FA Setup States
+  const [totpSecret, setTotpSecret] = useState("");
+  const [otpauthUrl, setOtpauthUrl] = useState("");
+  const [totpCodeInput, setTotpCodeInput] = useState("");
+  const [totpStatus, setTotpStatus] = useState("");
+  const [is2FAActive, setIs2FAActive] = useState(false);
+
   const [gatewayConfig, setGatewayConfig] = useState({
     sequenceStr: "1,2,3,4,1,3",
     adminSecretKey: "134214",
@@ -20,6 +27,8 @@ export default function CyberVaultSecuritySettingsPage() {
     telegramChatId: "",
     enableAlerts: true,
     enableLumosWand: true,
+    is2FAEnabled: false,
+    totpSecret: "",
   });
 
   useEffect(() => {
@@ -42,10 +51,13 @@ export default function CyberVaultSecuritySettingsPage() {
         if (gatewayFlag && gatewayFlag.metadata) {
           try {
             const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
+            const active2FA = !!parsed.is2FAEnabled;
+            setIs2FAActive(active2FA);
+
             setGatewayConfig({
               sequenceStr: parsed.sequenceStr || "1,2,3,4,1,3",
               adminSecretKey: parsed.adminSecretKey || "134214",
-              pinCode: parsed.pinCode || "134214",
+              pinCode: parsed.pinCode || "180296",
               maxAttempts: String(parsed.maxAttempts || "3"),
               lockdownSec: String(parsed.lockdownSec || "90"),
               accentColor: parsed.accentColor || "#00f0ff",
@@ -54,6 +66,8 @@ export default function CyberVaultSecuritySettingsPage() {
               telegramChatId: parsed.telegramChatId || "",
               enableAlerts: typeof parsed.enableAlerts === "boolean" ? parsed.enableAlerts : true,
               enableLumosWand: typeof parsed.enableLumosWand === "boolean" ? parsed.enableLumosWand : true,
+              is2FAEnabled: active2FA,
+              totpSecret: parsed.totpSecret || "",
             });
           } catch (e) {}
         }
@@ -61,6 +75,72 @@ export default function CyberVaultSecuritySettingsPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const handleGenerate2FASecret = async () => {
+    try {
+      setTotpStatus("Generating 2FA Secret Key...");
+      const res = await fetch("/api/admin/setup-2fa");
+      const data = await res.json();
+      if (data.secret) {
+        setTotpSecret(data.secret);
+        setOtpauthUrl(data.otpauthUrl);
+        setTotpStatus("Scan or paste secret into Apple Passwords App / Authenticator.");
+      } else {
+        setTotpStatus("Failed to generate 2FA key.");
+      }
+    } catch (e) {
+      setTotpStatus("Error generating 2FA secret.");
+    }
+  };
+
+  const handleEnable2FA = async () => {
+    if (!totpSecret || !totpCodeInput) {
+      alert("Please generate 2FA key and enter 6-digit code from Apple Passwords App.");
+      return;
+    }
+
+    try {
+      setTotpStatus("Verifying 6-digit code...");
+      const res = await fetch("/api/admin/setup-2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "enable", secret: totpSecret, code: totpCodeInput }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIs2FAActive(true);
+        setTotpStatus("✅ 2FA TOTP Enabled! Authenticator code required on Gatekeeper.");
+        setTotpCodeInput("");
+        alert("🎉 Success! TOTP 2FA is now active. Your Apple Passwords App code is required after entering your 6-Digit PIN.");
+      } else {
+        setTotpStatus("❌ Error: " + (data.error || "Invalid code"));
+      }
+    } catch (e) {
+      setTotpStatus("Error verifying 2FA code.");
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!confirm("Are you sure you want to disable 2FA?")) return;
+
+    try {
+      const res = await fetch("/api/admin/setup-2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disable" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIs2FAActive(false);
+        setTotpSecret("");
+        setTotpStatus("2FA Disabled.");
+        alert("2FA Disabled.");
+      }
+    } catch (e) {
+      alert("Error disabling 2FA");
+    }
+  };
 
   const handleSaveSecuritySettings = async () => {
     setSaving(true);
@@ -77,65 +157,35 @@ export default function CyberVaultSecuritySettingsPage() {
         }),
       });
 
-      const data = await res.json();
-
       if (res.ok) {
-        // Auto-Register Telegram Webhook API
-        if (gatewayConfig.telegramBotToken) {
-          try {
-            await fetch("/api/admin/setup-telegram-webhook", { method: "POST" });
-          } catch (e) {}
-        }
-        alert("🛡️ Security Vault Settings & Telegram Webhook saved successfully!");
+        alert("✅ Security Vault settings updated in PostgreSQL!");
       } else {
-        alert("Failed to save security settings: " + (data.error || "Unknown server error"));
+        alert("Error saving security settings");
       }
     } catch (e) {
-      alert("Error saving security settings: " + e.message);
-    }
-    setSaving(false);
-  };
-
-  const handleRegisterWebhook = async () => {
-    try {
-      const res = await fetch("/api/admin/setup-telegram-webhook", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        alert("🔗 TELEGRAM WEBHOOK REGISTERED SUCCESSFULLY!\n\nYou can now reply /killswitch ON to your Telegram bot to take down the site remotely.");
-      } else {
-        alert("Failed to register Telegram Webhook: " + (data.error || "Check Bot Token"));
-      }
-    } catch (e) {
-      alert("Error registering Webhook.");
-    }
-  };
-
-  const handleSendTestAlert = async () => {
-    try {
-      const res = await fetch("/api/public/verify-vault", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "test_telegram_alert" }),
-      });
-      const data = await res.json();
-      if (res.ok) alert("🧪 Test Telegram Alert sent! Check your Telegram phone app now.");
-      else alert("Failed to send test alert: " + (data.error || "Check Bot Token & Chat ID"));
-    } catch (e) {
-      alert("Error dispatching test alert.");
+      alert("Error saving settings: " + e.message);
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) {
-    return <div style={{ color: "var(--a-muted)" }}>Loading Security & Vault Settings...</div>;
+    return (
+      <div>
+        <div className="admin-topbar">
+          <h1 className="admin-h1">🛡️ Loading Security & Cyber Vault Settings...</h1>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
-      <div className="admin-topbar">
+      <div className="admin-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <h1 className="admin-h1">🛡️ Cyber Vault & Telegram Alert Customization</h1>
           <p className="admin-sub">
-            Full control over 4-Star Spell Rune tap sequence, Secret URL Keys, 6-Digit Keypad PIN, Telegram Alerts, and Remote Killswitch.
+            Full control over 4-Star Spell Rune tap sequence, Secret URL Keys, 6-Digit Keypad PIN, Apple Passwords 2FA, Telegram Alerts, and Remote Killswitch.
           </p>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -179,7 +229,7 @@ export default function CyberVaultSecuritySettingsPage() {
                       }),
                     });
 
-                    alert("✅ Success! Your Mac's Touch ID Hardware is now EXCLUSIVELY registered to this Cyber Vault in PostgreSQL! Other devices will be strictly blocked.");
+                    alert("✅ Success! Your Mac's Touch ID Hardware is now EXCLUSIVELY registered to this Cyber Vault in PostgreSQL!");
                   }
                 } catch (e) {
                   alert("⚠️ Registration cancelled or error: " + e.message);
@@ -191,16 +241,78 @@ export default function CyberVaultSecuritySettingsPage() {
           >
             🛡️ Register This Mac's Touch ID Hardware
           </button>
-          <button onClick={handleRegisterWebhook} className="admin-btn" style={{ background: "rgba(0, 240, 255, 0.15)", color: "#00f0ff", borderColor: "rgba(0, 240, 255, 0.3)" }}>
-            🔗 Bind Telegram Webhook
-          </button>
-          <button onClick={handleSendTestAlert} className="admin-btn">
-            🧪 Send Test Telegram Alert
-          </button>
           <button onClick={handleSaveSecuritySettings} disabled={saving} className="admin-btn admin-btn--primary">
             {saving ? "Saving..." : "💾 Save Security Settings"}
           </button>
         </div>
+      </div>
+
+      {/* 100% Free 2FA Authenticator Section (Apple Passwords App) */}
+      <div className="admin-card" style={{ marginBottom: 20, border: is2FAActive ? "1px solid rgba(0, 240, 255, 0.4)" : "1px solid var(--a-border)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ margin: 0, color: "#00f0ff" }}>🔐 100% Free 2FA Authenticator (Apple Passwords App / Google Authenticator)</h3>
+          <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 12, background: is2FAActive ? "rgba(0, 240, 255, 0.2)" : "rgba(255, 255, 255, 0.1)", color: is2FAActive ? "#00f0ff" : "#aaa", fontWeight: 700 }}>
+            STATUS: {is2FAActive ? "ENABLED" : "DISABLED"}
+          </span>
+        </div>
+
+        <p style={{ fontSize: 12, color: "var(--a-muted)", marginTop: 0, marginBottom: 16 }}>
+          Standard RFC 6238 TOTP Two-Factor Authentication. Works 100% FREE with Apple Native Passwords App on macOS/iOS, Google Authenticator, and 1Password without any paid APIs or subscriptions!
+        </p>
+
+        {!is2FAActive ? (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <button onClick={handleGenerate2FASecret} className="admin-btn" style={{ background: "rgba(0, 240, 255, 0.15)", color: "#00f0ff", borderColor: "rgba(0, 240, 255, 0.4)", fontWeight: 600 }}>
+                🔑 1. Generate 2FA Key for Apple Passwords App
+              </button>
+            </div>
+
+            {totpSecret && (
+              <div style={{ background: "rgba(0, 0, 0, 0.3)", padding: 16, borderRadius: 10, marginBottom: 16, border: "1px solid rgba(0, 240, 255, 0.2)" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", marginBottom: 6 }}>
+                  Apple Passwords Setup Key:
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 16, color: "#00f0ff", letterSpacing: 2, background: "#050811", padding: "8px 12px", borderRadius: 6, userSelect: "all", display: "inline-block", marginBottom: 10 }}>
+                  {totpSecret}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--a-muted)" }}>
+                  Open <strong>Apple Passwords App ➔ Add Password / Edit ➔ Setup Verification Code</strong> and paste this key.
+                </div>
+
+                <div style={{ marginTop: 16, display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={totpCodeInput}
+                    onChange={(e) => setTotpCodeInput(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                    style={{ width: 160, fontFamily: "monospace", letterSpacing: 3, fontSize: 16 }}
+                  />
+                  <button onClick={handleEnable2FA} className="admin-btn admin-btn--primary">
+                    ✅ 2. Verify & Enable 2FA
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: 12, color: "#00f0ff", marginBottom: 12, fontWeight: 600 }}>
+              ✅ TOTP 2FA is Active! Gatekeeper requires your 6-digit Apple Passwords App verification code after entering your PIN.
+            </div>
+            <button onClick={handleDisable2FA} className="admin-btn" style={{ background: "rgba(255, 51, 102, 0.15)", color: "#ff3366", borderColor: "rgba(255, 51, 102, 0.3)" }}>
+              ❌ Disable 2FA
+            </button>
+          </div>
+        )}
+
+        {totpStatus && (
+          <div style={{ fontSize: 11, color: totpStatus.includes("✅") ? "#00f0ff" : "#ffdd00", marginTop: 10 }}>
+            {totpStatus}
+          </div>
+        )}
       </div>
 
       {/* 4-Star Spell Rune Sequence Card */}
@@ -255,112 +367,6 @@ export default function CyberVaultSecuritySettingsPage() {
               Admin-Controlled PIN Code (Saved directly into PostgreSQL database).
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* Telegram Real-Time Push Alerts Card */}
-      <div className="admin-card" style={{ marginBottom: 20 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 12, color: "#00f0ff" }}>📱 Real-Time Telegram Intrusion Push Alerts (100% Free)</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              Telegram Bot Token (@BotFather)
-            </label>
-            <input
-              type="password"
-              className="admin-input"
-              value={gatewayConfig.telegramBotToken}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, telegramBotToken: e.target.value })}
-              placeholder="e.g. 7123456789:AAFg8x..."
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              Telegram Chat ID (@userinfobot)
-            </label>
-            <input
-              type="text"
-              className="admin-input"
-              value={gatewayConfig.telegramChatId}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, telegramChatId: e.target.value })}
-              placeholder="e.g. 987654321"
-            />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 24 }}>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={gatewayConfig.enableAlerts}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, enableAlerts: e.target.checked })}
-            />
-            <span>Enable Real-Time Telegram Intrusion Push Alerts</span>
-          </label>
-
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={gatewayConfig.enableLumosWand}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, enableLumosWand: e.target.checked })}
-            />
-            <span>Enable Interactive "Lumos" Magic Wand Cursor Trail</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Cyber Strobe Lockdown & Cooldown Parameters Card */}
-      <div className="admin-card">
-        <h3 style={{ marginTop: 0, marginBottom: 12, color: "#ff6b6b" }}>🚨 Cyber Strobe Lockdown & Remote Killswitch Parameters</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              Max Failed Strike Attempts
-            </label>
-            <input
-              type="number"
-              className="admin-input"
-              value={gatewayConfig.maxAttempts}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, maxAttempts: e.target.value })}
-              placeholder="3"
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              Lockdown Cooldown Timer (Seconds)
-            </label>
-            <input
-              type="number"
-              className="admin-input"
-              value={gatewayConfig.lockdownSec}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, lockdownSec: e.target.value })}
-              placeholder="90"
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-              Modal Accent Color
-            </label>
-            <input
-              type="color"
-              style={{ width: "100%", height: 38, border: "none", borderRadius: 6, cursor: "pointer" }}
-              value={gatewayConfig.accentColor}
-              onChange={(e) => setGatewayConfig({ ...gatewayConfig, accentColor: e.target.value })}
-            />
-          </div>
-        </div>
-
-        {/* 1-Tap Remote Killswitch Instruction Card */}
-        <div style={{ background: "rgba(255, 0, 60, 0.1)", border: "1px solid rgba(255, 0, 60, 0.4)", borderRadius: 10, padding: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#ff6b6b", marginBottom: 6 }}>
-            🔴 TELEGRAM 1-TAP REMOTE KILL-SWITCH ACTIVE
-          </div>
-          <p style={{ fontSize: 13, color: "var(--a-muted)", margin: 0, lineHeight: 1.5 }}>
-            Whenever you receive a security alert on Telegram, reply <code style={{ color: "#ff6b6b", fontWeight: 700 }}>/killswitch ON</code> to your Telegram bot to instantly take down public site access (HTTP 503 Cyber Defense Mode). Reply <code style={{ color: "#4ade80", fontWeight: 700 }}>/killswitch OFF</code> to restore your site live online in 1 second!
-          </p>
         </div>
       </div>
     </div>

@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 
 export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [pinInput, setPinInput] = useState("");
+  const [totpInput, setTotpInput] = useState("");
+  const [step, setStep] = useState("pin"); // "pin" | "totp"
+  const [verifiedPin, setVerifiedPin] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -11,55 +14,103 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   useEffect(() => {
     if (isOpen) {
       setPinInput("");
+      setTotpInput("");
+      setStep("pin");
+      setVerifiedPin("");
       setErrorMsg("");
       setAttemptsLeft(3);
     }
   }, [isOpen]);
 
   const handleKeyPress = async (digit) => {
-    if (pinInput.length < 6 && !isVerifying) {
-      const nextPin = pinInput + digit;
-      setPinInput(nextPin);
-      setErrorMsg("");
+    if (step === "pin") {
+      if (pinInput.length < 6 && !isVerifying) {
+        const nextPin = pinInput + digit;
+        setPinInput(nextPin);
+        setErrorMsg("");
 
-      if (nextPin.length === 6) {
-        setIsVerifying(true);
-        try {
-          // Server-Side PIN Verification API Call
-          const res = await fetch("/api/public/verify-vault", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "pin", payload: nextPin }),
-          });
+        if (nextPin.length === 6) {
+          setIsVerifying(true);
+          try {
+            const res = await fetch("/api/public/verify-vault", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "pin", payload: nextPin }),
+            });
 
-          const data = await res.json();
-          setIsVerifying(false);
+            const data = await res.json();
+            setIsVerifying(false);
 
-          if (res.status === 429) {
-            setErrorMsg(data.error || "RATE LIMIT EXCEEDED. LOCKDOWN ACTIVATED.");
-            onFail(); // Trigger 90s Cyber Lockdown Strobe Modal & Siren
-            return;
-          }
-
-          if (data.success) {
-            // PIN Match!
-            setTimeout(() => {
-              onSuccess();
-            }, 250);
-          } else {
-            // PIN Mismatch!
-            const remaining = attemptsLeft - 1;
-            setAttemptsLeft(remaining);
-            setErrorMsg(`INVALID SECURITY PIN. ${remaining} ATTEMPTS REMAINING.`);
-            setPinInput("");
-
-            if (remaining <= 0) {
-              onFail(); // Trigger 90s Cyber Lockdown Strobe Modal & Siren
+            if (res.status === 429) {
+              setErrorMsg(data.error || "RATE LIMIT EXCEEDED. LOCKDOWN ACTIVATED.");
+              onFail();
+              return;
             }
+
+            if (data.requires2FA) {
+              // Move to Step 2: 2FA Code Verification
+              setVerifiedPin(nextPin);
+              setStep("totp");
+              setErrorMsg("PIN VERIFIED. ENTER 6-DIGIT CODE FROM APPLE PASSWORDS APP.");
+              return;
+            }
+
+            if (data.success) {
+              setTimeout(() => {
+                onSuccess();
+              }, 250);
+            } else {
+              const remaining = attemptsLeft - 1;
+              setAttemptsLeft(remaining);
+              setErrorMsg(`INVALID SECURITY PIN. ${remaining} ATTEMPTS REMAINING.`);
+              setPinInput("");
+
+              if (remaining <= 0) {
+                onFail();
+              }
+            }
+          } catch (e) {
+            setIsVerifying(false);
+            setErrorMsg("SERVER VERIFICATION ERROR.");
           }
-        } catch (e) {
-          setIsVerifying(false);
-          setErrorMsg("SERVER VERIFICATION ERROR.");
+        }
+      }
+    } else if (step === "totp") {
+      if (totpInput.length < 6 && !isVerifying) {
+        const nextTotp = totpInput + digit;
+        setTotpInput(nextTotp);
+        setErrorMsg("");
+
+        if (nextTotp.length === 6) {
+          setIsVerifying(true);
+          try {
+            const res = await fetch("/api/public/verify-vault", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "pin", payload: verifiedPin, totpCode: nextTotp }),
+            });
+
+            const data = await res.json();
+            setIsVerifying(false);
+
+            if (data.success) {
+              setTimeout(() => {
+                onSuccess();
+              }, 250);
+            } else {
+              const remaining = attemptsLeft - 1;
+              setAttemptsLeft(remaining);
+              setErrorMsg(`INVALID 2FA AUTHENTICATOR CODE. ${remaining} ATTEMPTS REMAINING.`);
+              setTotpInput("");
+
+              if (remaining <= 0) {
+                onFail();
+              }
+            }
+          } catch (e) {
+            setIsVerifying(false);
+            setErrorMsg("2FA VERIFICATION ERROR.");
+          }
         }
       }
     }
@@ -77,7 +128,6 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
         setIsVerifying(true);
         setErrorMsg("VERIFYING REGISTERED TOUCHID PASSKEY...");
 
-        // Fetch registered admin Passkey ID from public features API
         let registeredCredId = null;
         try {
           const featRes = await fetch("/api/public/features");
@@ -96,7 +146,6 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
         window.crypto.getRandomValues(challenge);
 
         if (registeredCredId) {
-          // Verify against Ganesh Varma's Official Registered Mac Passkey!
           const rawId = Uint8Array.from(atob(registeredCredId), (c) => c.charCodeAt(0));
 
           const credential = await navigator.credentials.get({
@@ -110,11 +159,10 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
 
           setIsVerifying(false);
           if (credential) {
-            onSuccess(); // Official Admin Mac Hardware Verified!
+            onSuccess();
             return;
           }
         } else {
-          // If no Passkey registered in DB yet, instruct admin to register inside /admin/security-settings
           setIsVerifying(false);
           setErrorMsg("NO TOUCHID PASSKEY REGISTERED IN DB YET. REGISTER DEVICE IN ADMIN PANEL OR USE 6-DIGIT PIN.");
         }
@@ -128,11 +176,17 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   };
 
   const handleClear = () => {
-    setPinInput("");
+    if (step === "pin") {
+      setPinInput("");
+    } else {
+      setTotpInput("");
+    }
     setErrorMsg("");
   };
 
   if (!isOpen) return null;
+
+  const currentDisplayValue = step === "pin" ? pinInput : totpInput;
 
   return (
     <div
@@ -146,148 +200,189 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
         alignItems: "center",
         justifyContent: "center",
         padding: 20,
-        pointerEvents: "auto",
-        animation: "fadeIn 0.3s ease-out",
+        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
       }}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 420,
-          background: "#080c14",
-          border: "2px solid #00f0ff",
+          maxWidth: 380,
+          background: "#090d16",
+          border: step === "totp" ? "1px solid rgba(0, 240, 255, 0.4)" : "1px solid rgba(0, 240, 255, 0.25)",
           borderRadius: 16,
-          padding: 28,
+          padding: "28px 24px",
+          boxShadow: step === "totp" ? "0 0 45px rgba(0, 240, 255, 0.25)" : "0 0 35px rgba(0, 240, 255, 0.12)",
           textAlign: "center",
-          boxShadow: "0 0 50px rgba(0, 240, 255, 0.35)",
-          boxSizing: "border-box",
+          color: "#e2e8f0",
         }}
       >
-        <div style={{ fontSize: 38, marginBottom: 10 }}>
-          🛡️
-        </div>
+        <div style={{ fontSize: 32, marginBottom: 10 }}>{step === "totp" ? "🔐" : "🛡️"}</div>
 
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.74rem", color: "#00f0ff", letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: 6 }}>
-          SECURITY GATEKEEPER // PIN REQUIRED
-        </span>
+        <h2 style={{ fontSize: 15, fontWeight: 700, letterSpacing: "1px", margin: "0 0 6px 0", color: step === "totp" ? "#00f0ff" : "#fff" }}>
+          {step === "totp" ? "STEP 2: APPLE PASSWORDS 2FA" : "SECURITY GATEKEEPER"}
+        </h2>
 
-        <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", color: "#ffffff", fontWeight: 700 }}>
-          ENTER 6-DIGIT SECURITY PIN
-        </h3>
+        <p style={{ fontSize: 11, color: "rgba(226, 232, 240, 0.6)", margin: "0 0 16px 0" }}>
+          {step === "totp" ? "ENTER 6-DIGIT CODE FROM APPLE PASSWORDS / AUTHENTICATOR APP" : "ENTER 6-DIGIT SECURITY VAULT PIN CODE"}
+        </p>
 
-        {/* PIN Dots Indicator */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 16 }}>
-          {[...Array(6)].map((_, i) => (
+        {/* Display Dots */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 12,
+            marginBottom: 18,
+          }}
+        >
+          {[0, 1, 2, 3, 4, 5].map((index) => (
             <div
-              key={i}
+              key={index}
               style={{
                 width: 14,
                 height: 14,
                 borderRadius: "50%",
-                border: "2px solid #00f0ff",
-                background: i < pinInput.length ? "#00f0ff" : "transparent",
-                boxShadow: i < pinInput.length ? "0 0 12px #00f0ff" : "none",
-                transition: "all 0.2s ease",
+                border: step === "totp" ? "1.5px solid rgba(0, 240, 255, 0.6)" : "1.5px solid rgba(0, 240, 255, 0.4)",
+                background: index < currentDisplayValue.length ? (step === "totp" ? "#00f0ff" : "#00f0ff") : "transparent",
+                boxShadow: index < currentDisplayValue.length ? (step === "totp" ? "0 0 10px #00f0ff" : "0 0 8px #00f0ff") : "none",
+                transition: "all 0.15s ease",
               }}
             />
           ))}
         </div>
 
         {errorMsg && (
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "#ff003c", marginBottom: 16, fontWeight: 700 }}>
-            ⚠️ {errorMsg}
-          </p>
+          <div
+            style={{
+              fontSize: 10,
+              color: errorMsg.includes("VERIFIED") ? "#00f0ff" : "#ff3366",
+              marginBottom: 16,
+              background: errorMsg.includes("VERIFIED") ? "rgba(0, 240, 255, 0.08)" : "rgba(255, 51, 102, 0.1)",
+              border: errorMsg.includes("VERIFIED") ? "1px solid rgba(0, 240, 255, 0.2)" : "1px solid rgba(255, 51, 102, 0.2)",
+              padding: "8px 10px",
+              borderRadius: 8,
+              lineHeight: 1.4,
+            }}
+          >
+            {errorMsg}
+          </div>
         )}
 
-        {/* 3x4 Cyber Keypad Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 280, margin: "0 auto 20px auto" }}>
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
+        {/* 3x4 Keypad Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
             <button
               key={num}
-              onClick={() => handleKeyPress(num)}
+              onClick={() => handleKeyPress(String(num))}
               disabled={isVerifying}
               style={{
-                padding: "14px 0",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(0, 240, 255, 0.3)",
+                background: "rgba(15, 23, 42, 0.8)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 borderRadius: 10,
-                color: "#ffffff",
-                fontFamily: "var(--font-mono)",
-                fontSize: "1.2rem",
-                fontWeight: 700,
+                padding: "12px 0",
+                fontSize: 18,
+                fontWeight: 600,
+                color: "#f8fafc",
                 cursor: "pointer",
-                transition: "all 0.15s ease",
+                transition: "all 0.12s ease",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0, 240, 255, 0.2)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+              onMouseDown={(e) => (e.currentTarget.style.background = "rgba(0, 240, 255, 0.2)")}
+              onMouseUp={(e) => (e.currentTarget.style.background = "rgba(15, 23, 42, 0.8)")}
             >
               {num}
             </button>
           ))}
+
           <button
             onClick={handleClear}
             disabled={isVerifying}
             style={{
-              padding: "14px 0",
-              background: "rgba(255, 0, 60, 0.15)",
-              border: "1px solid rgba(255, 0, 60, 0.4)",
+              background: "rgba(255, 51, 102, 0.12)",
+              border: "1px solid rgba(255, 51, 102, 0.2)",
               borderRadius: 10,
-              color: "#ff003c",
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.85rem",
+              padding: "12px 0",
+              fontSize: 11,
               fontWeight: 700,
+              color: "#ff3366",
               cursor: "pointer",
             }}
           >
             CLR
           </button>
+
           <button
             onClick={() => handleKeyPress("0")}
             disabled={isVerifying}
             style={{
-              padding: "14px 0",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(0, 240, 255, 0.3)",
+              background: "rgba(15, 23, 42, 0.8)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: 10,
-              color: "#ffffff",
-              fontFamily: "var(--font-mono)",
-              fontSize: "1.2rem",
-              fontWeight: 700,
+              padding: "12px 0",
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#f8fafc",
               cursor: "pointer",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0, 240, 255, 0.2)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
           >
             0
           </button>
-          <div />
+
+          {step === "totp" ? (
+            <button
+              onClick={() => {
+                setStep("pin");
+                setTotpInput("");
+                setErrorMsg("");
+              }}
+              style={{
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                borderRadius: 10,
+                padding: "12px 0",
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#aaa",
+                cursor: "pointer",
+              }}
+            >
+              BACK
+            </button>
+          ) : (
+            <div />
+          )}
         </div>
 
-        {/* WebAuthn Hardware Biometric Passkey Option */}
-        <div style={{ marginTop: 12 }}>
+        {step === "pin" && (
           <button
             onClick={handleBiometricAuth}
+            disabled={isVerifying}
             style={{
               width: "100%",
-              maxWidth: 280,
-              padding: "10px 16px",
-              background: "rgba(0, 240, 255, 0.1)",
-              border: "1px solid #00f0ff",
+              background: "rgba(0, 240, 255, 0.08)",
+              border: "1px solid rgba(0, 240, 255, 0.25)",
               borderRadius: 10,
+              padding: "10px 0",
+              fontSize: 11,
+              fontWeight: 600,
               color: "#00f0ff",
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.8rem",
-              fontWeight: 700,
               cursor: "pointer",
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
+              transition: "all 0.15s ease",
             }}
           >
-            <span>📱 USE FACEID / TOUCHID BIOMETRICS</span>
+            📱 USE FACEID / TOUCHID BIOMETRICS
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

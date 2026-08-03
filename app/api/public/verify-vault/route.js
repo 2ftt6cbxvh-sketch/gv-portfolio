@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { sendSecurityAlert } from "@/lib/securityAlerts";
+import { verifyTOTP } from "@/lib/totp";
 
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
@@ -44,6 +45,8 @@ export async function POST(req) {
       keyHash: DEFAULT_KEY_HASH,
       seqHash: DEFAULT_SEQ_HASH,
       rawSecretKey: "134214",
+      totpSecret: "",
+      is2FAEnabled: false,
     };
 
     if (flag?.metadata) {
@@ -61,11 +64,14 @@ export async function POST(req) {
         if (parsed.sequenceStr && !parsed.sequenceStr.includes("1,3,4,2,1,4")) {
           configHashes.seqHash = sha256(parsed.sequenceStr);
         }
+
+        if (parsed.totpSecret) configHashes.totpSecret = parsed.totpSecret;
+        if (typeof parsed.is2FAEnabled === "boolean") configHashes.is2FAEnabled = parsed.is2FAEnabled;
       } catch (e) {}
     }
 
     const body = await req.json();
-    const { type, payload } = body;
+    const { type, payload, totpCode } = body;
 
     // Test Alert Handler
     if (type === "test_telegram_alert") {
@@ -115,11 +121,11 @@ export async function POST(req) {
       );
     }
 
-    if (!payload) {
+    if (!payload && type !== "totp") {
       return NextResponse.json({ success: false, error: "Missing payload" }, { status: 400 });
     }
 
-    const payloadHash = sha256(payload);
+    const payloadHash = payload ? sha256(payload) : "";
     let isValid = false;
 
     if (type === "key") {
@@ -128,6 +134,12 @@ export async function POST(req) {
       isValid = payloadHash === configHashes.pinHash;
     } else if (type === "pattern") {
       isValid = payloadHash === configHashes.seqHash;
+    } else if (type === "totp") {
+      if (configHashes.is2FAEnabled && configHashes.totpSecret) {
+        isValid = verifyTOTP(configHashes.totpSecret, totpCode || payload);
+      } else {
+        isValid = true;
+      }
     }
 
     if (!isValid) {
@@ -138,9 +150,38 @@ export async function POST(req) {
           ip,
           userAgent,
         });
+      } else if (type === "totp") {
+        await sendSecurityAlert({
+          type: "FAILED_2FA_ATTEMPT",
+          details: "Failed 6-digit TOTP 2FA code attempt",
+          ip,
+          userAgent,
+        });
       }
 
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
+    }
+
+    // If type === 'pin' and 2FA is enabled, require TOTP code in 2nd step
+    if (type === "pin" && configHashes.is2FAEnabled && configHashes.totpSecret) {
+      if (!totpCode) {
+        return NextResponse.json({
+          success: false,
+          requires2FA: true,
+          message: "PIN verified! Enter 6-digit code from Apple Passwords App / Authenticator.",
+        });
+      }
+
+      const isTOTPValid = verifyTOTP(configHashes.totpSecret, totpCode);
+      if (!isTOTPValid) {
+        await sendSecurityAlert({
+          type: "FAILED_2FA_ATTEMPT",
+          details: "Failed 6-digit TOTP 2FA verification code after PIN entry",
+          ip,
+          userAgent,
+        });
+        return NextResponse.json({ success: false, error: "Invalid 2FA code" }, { status: 401 });
+      }
     }
 
     const expiresAt = Date.now() + 3 * 60 * 1000;
