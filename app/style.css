@@ -1442,12 +1442,14 @@
 .cinematic-bar--top {
   top: 0;
   height: 60px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .cinematic-bar--bottom {
   bottom: 0;
   height: 52px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .cinematic-rec-status {
@@ -1456,7 +1458,14 @@
   gap: 8px;
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #000;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 2;
+  white-space: nowrap;
 }
 
 .cinematic-rec-dot {
