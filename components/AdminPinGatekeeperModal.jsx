@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import VpnBlockModal from "./VpnBlockModal";
 import GeoBlockModal from "./GeoBlockModal";
 import RateLimitBlockModal from "./RateLimitBlockModal";
+import DecoyAdminDashboardModal from "./DecoyAdminDashboardModal";
 
 export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [pinInput, setPinInput] = useState("");
@@ -16,6 +17,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [vpnBlock, setVpnBlock] = useState({ isOpen: false, ip: "" });
   const [geoBlock, setGeoBlock] = useState({ isOpen: false, countryCode: "", countryName: "" });
   const [rateLimitBlock, setRateLimitBlock] = useState({ isOpen: false, ip: "", hoursRemaining: "", resetAt: "" });
+  const [isDecoyOpen, setIsDecoyOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -73,9 +75,18 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
               return;
             }
 
+            if (data.isDecoy) {
+              setErrorMsg("GATEKEEPER PIN VERIFIED. GRANTED.");
+              setTimeout(() => {
+                setIsDecoyOpen(true);
+                if (onSuccess) onSuccess(true);
+              }, 400);
+              return;
+            }
+
             if (data.success) {
               setTimeout(() => {
-                onSuccess();
+                onSuccess(false);
               }, 400);
             } else {
               const newLeft = attemptsLeft - 1;
@@ -188,6 +199,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
 
   return (
     <>
+      <DecoyAdminDashboardModal isOpen={isDecoyOpen} onClose={() => setIsDecoyOpen(false)} />
       <VpnBlockModal isOpen={vpnBlock.isOpen} ipAddress={vpnBlock.ip} />
       <GeoBlockModal isOpen={geoBlock.isOpen} countryCode={geoBlock.countryCode} countryName={geoBlock.countryName} />
       <RateLimitBlockModal
