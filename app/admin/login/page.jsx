@@ -14,6 +14,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [isPinGatekeeperOpen, setIsPinGatekeeperOpen] = useState(true);
   const [isLockdownOpen, setIsLockdownOpen] = useState(false);
+  const [isDecoySession, setIsDecoySession] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -38,7 +39,13 @@ export default function AdminLoginPage() {
       {/* 6-Digit Cyber Security Holographic Keypad Gatekeeper Modal */}
       <AdminPinGatekeeperModal
         isOpen={isPinGatekeeperOpen}
-        onSuccess={() => setIsPinGatekeeperOpen(false)}
+        onSuccess={(isDecoy) => {
+          if (isDecoy) {
+            setIsDecoySession(true);
+          } else {
+            setIsPinGatekeeperOpen(false);
+          }
+        }}
         onFail={() => {
           setIsPinGatekeeperOpen(false);
           setIsLockdownOpen(true);
@@ -56,47 +63,45 @@ export default function AdminLoginPage() {
         }}
       />
 
-      <div className="admin-login-wrap" style={{ filter: isPinGatekeeperOpen ? "blur(12px)" : "none", transition: "filter 0.3s ease" }}>
-        <div className="admin-login-card">
-          <h1 className="admin-login-title">GV Admin Vault</h1>
-          <p className="admin-login-sub">Sign in to manage portfolio content.</p>
-          {error && <div className="admin-error">{error}</div>}
-          <form onSubmit={handleSubmit}>
-            <div className="admin-field">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                className="admin-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="username"
-                required
-              />
-            </div>
-            <div className="admin-field">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                className="admin-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="admin-btn admin-btn--primary"
-              style={{ width: "100%", marginTop: 8 }}
-              disabled={loading}
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
+      {/* Hide real admin email/password card completely if decoy trap session is active */}
+      {!isDecoySession && (
+        <div className="admin-login-wrap" style={{ filter: isPinGatekeeperOpen ? "blur(16px)" : "none", transition: "filter 0.3s ease" }}>
+          <div className="admin-login-card">
+            <h1 className="admin-login-title">🔐 Admin Authentication</h1>
+            <p className="admin-login-subtitle">Enter your primary credentials to continue.</p>
+
+            {error && <div className="admin-error">{error}</div>}
+
+            <form onSubmit={handleSubmit} className="admin-login-form">
+              <div className="admin-field">
+                <label>Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@ganeshvarma.in"
+                  required
+                />
+              </div>
+
+              <div className="admin-field">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  required
+                />
+              </div>
+
+              <button type="submit" className="admin-btn-primary" disabled={loading}>
+                {loading ? "Authenticating..." : "Sign In"}
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

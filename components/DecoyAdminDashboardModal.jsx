@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DecoyAdminDashboardModal({ isOpen, onClose }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("flags");
   const [toast, setToast] = useState("");
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
+  };
+
+  const handleExit = () => {
+    if (onClose) onClose();
+    router.push("/");
   };
 
   if (!isOpen) return null;
@@ -18,10 +25,8 @@ export default function DecoyAdminDashboardModal({ isOpen, onClose }) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 99999,
-        background: "rgba(5, 5, 12, 0.95)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        zIndex: 2147483647,
+        background: "#04040a",
         display: "flex",
         flexDirection: "column",
         color: "#ffffff",
@@ -54,7 +59,7 @@ export default function DecoyAdminDashboardModal({ isOpen, onClose }) {
             🟢 SYSTEM STAGING ONLINE
           </span>
           <button
-            onClick={onClose}
+            onClick={handleExit}
             style={{
               padding: "6px 14px",
               background: "rgba(255, 0, 60, 0.2)",
