@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isVpnOrProxy } from "@/lib/vpnCheck";
+import { sendSecurityAlert } from "@/lib/securityAlerts";
 
 export async function GET(req) {
   try {
@@ -7,6 +8,15 @@ export async function GET(req) {
     const userAgent = req.headers.get("user-agent") || "Unknown Device";
 
     const vpnActive = await isVpnOrProxy(ip);
+
+    if (vpnActive) {
+      await sendSecurityAlert({
+        type: "VPN_ACCESS_BLOCKED",
+        details: `Visitor tried to access website via active VPN / Proxy server: ${ip}`,
+        ip,
+        userAgent,
+      });
+    }
 
     return NextResponse.json({
       isVpn: vpnActive,
