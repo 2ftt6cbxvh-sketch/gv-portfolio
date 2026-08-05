@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import VpnBlockModal from "./VpnBlockModal";
+import GeoBlockModal from "./GeoBlockModal";
 
 export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [pinInput, setPinInput] = useState("");
@@ -12,6 +13,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [isVerifying, setIsVerifying] = useState(false);
   const [vpnBlock, setVpnBlock] = useState({ isOpen: false, ip: "" });
+  const [geoBlock, setGeoBlock] = useState({ isOpen: false, countryCode: "", countryName: "" });
 
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +46,11 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
             setIsVerifying(false);
 
             if (res.status === 403) {
-              setVpnBlock({ isOpen: true, ip: data.ip || "Active Proxy IP" });
+              if (data.error && (data.error.includes("RESTRICTED") || data.error.includes("India"))) {
+                setGeoBlock({ isOpen: true, countryCode: "EXTERNAL", countryName: "Non-IN Region" });
+              } else {
+                setVpnBlock({ isOpen: true, ip: data.ip || "Active Proxy IP" });
+              }
               return;
             }
 
@@ -177,6 +183,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   return (
     <>
       <VpnBlockModal isOpen={vpnBlock.isOpen} ipAddress={vpnBlock.ip} />
+      <GeoBlockModal isOpen={geoBlock.isOpen} countryCode={geoBlock.countryCode} countryName={geoBlock.countryName} />
 
       <div
         className="gatekeeper-overlay"
