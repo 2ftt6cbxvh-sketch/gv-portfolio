@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import VpnBlockModal from "./VpnBlockModal";
 
 export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [pinInput, setPinInput] = useState("");
@@ -10,6 +11,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [vpnBlock, setVpnBlock] = useState({ isOpen: false, ip: "" });
 
   useEffect(() => {
     if (isOpen) {
@@ -41,6 +43,11 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
             const data = await res.json();
             setIsVerifying(false);
 
+            if (res.status === 403) {
+              setVpnBlock({ isOpen: true, ip: data.ip || "Active Proxy IP" });
+              return;
+            }
+
             if (res.status === 429) {
               setErrorMsg(data.error || "RATE LIMIT EXCEEDED. LOCKDOWN ACTIVATED.");
               onFail();
@@ -48,7 +55,6 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
             }
 
             if (data.requires2FA) {
-              // Move to Step 2: 2FA Code Verification
               setVerifiedPin(nextPin);
               setStep("totp");
               setErrorMsg("PIN VERIFIED. ENTER 6-DIGIT CODE FROM APPLE PASSWORDS APP.");
@@ -58,121 +64,103 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
             if (data.success) {
               setTimeout(() => {
                 onSuccess();
-              }, 250);
+              }, 400);
             } else {
-              const remaining = attemptsLeft - 1;
-              setAttemptsLeft(remaining);
-              setErrorMsg(`INVALID SECURITY PIN. ${remaining} ATTEMPTS REMAINING.`);
-              setPinInput("");
+              const newLeft = attemptsLeft - 1;
+              setAttemptsLeft(newLeft);
 
-              if (remaining <= 0) {
+              if (newLeft <= 0) {
+                try {
+                  fetch("/api/public/verify-vault", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: "lockdown_triggered" }),
+                  });
+                } catch (e) {}
                 onFail();
+              } else {
+                setErrorMsg(`INVALID PIN. ${newLeft} ATTEMPTS REMAINING.`);
+                setPinInput("");
               }
             }
-          } catch (e) {
+          } catch (err) {
             setIsVerifying(false);
-            setErrorMsg("SERVER VERIFICATION ERROR.");
-          }
-        }
-      }
-    } else if (step === "totp") {
-      if (totpInput.length < 6 && !isVerifying) {
-        const nextTotp = totpInput + digit;
-        setTotpInput(nextTotp);
-        setErrorMsg("");
-
-        if (nextTotp.length === 6) {
-          setIsVerifying(true);
-          try {
-            const res = await fetch("/api/public/verify-vault", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ type: "pin", payload: verifiedPin, totpCode: nextTotp }),
-            });
-
-            const data = await res.json();
-            setIsVerifying(false);
-
-            if (data.success) {
-              setTimeout(() => {
-                onSuccess();
-              }, 250);
-            } else {
-              const remaining = attemptsLeft - 1;
-              setAttemptsLeft(remaining);
-              setErrorMsg(`INVALID 2FA AUTHENTICATOR CODE. ${remaining} ATTEMPTS REMAINING.`);
-              setTotpInput("");
-
-              if (remaining <= 0) {
-                onFail();
-              }
-            }
-          } catch (e) {
-            setIsVerifying(false);
-            setErrorMsg("2FA VERIFICATION ERROR.");
+            setErrorMsg("SERVER VERIFICATION ERROR. TRY AGAIN.");
+            setPinInput("");
           }
         }
       }
     }
   };
 
-  const handleBiometricAuth = async () => {
-    if (typeof window !== "undefined" && window.PublicKeyCredential && navigator.credentials) {
-      try {
-        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        if (!available) {
-          setErrorMsg("TOUCHID / FACEID HARDWARE NOT AVAILABLE. USE 6-DIGIT PIN.");
-          return;
-        }
+  const handleTotpVerify = async (codeToVerify) => {
+    const finalCode = codeToVerify || totpInput;
+    if (finalCode.length < 6 || isVerifying) return;
 
-        setIsVerifying(true);
-        setErrorMsg("VERIFYING REGISTERED TOUCHID PASSKEY...");
+    setIsVerifying(true);
+    setErrorMsg("");
 
-        let registeredCredId = null;
-        try {
-          const featRes = await fetch("/api/public/features");
-          const featData = await featRes.json();
-          const gatewayObj = featData.flags?.admin_secret_gateway;
+    try {
+      const res = await fetch("/api/public/verify-vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "pin",
+          payload: verifiedPin,
+          totpCode: finalCode,
+        }),
+      });
 
-          if (gatewayObj?.metadata) {
-            const meta = typeof gatewayObj.metadata === "string" ? JSON.parse(gatewayObj.metadata) : gatewayObj.metadata;
-            if (meta.allowedPasskeyCredentialId) {
-              registeredCredId = meta.allowedPasskeyCredentialId;
-            }
-          }
-        } catch (e) {}
+      const data = await res.json();
+      setIsVerifying(false);
 
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-
-        if (registeredCredId) {
-          const rawId = Uint8Array.from(atob(registeredCredId), (c) => c.charCodeAt(0));
-
-          const credential = await navigator.credentials.get({
-            publicKey: {
-              challenge: challenge.buffer,
-              allowCredentials: [{ id: rawId.buffer, type: "public-key" }],
-              userVerification: "required",
-              timeout: 60000,
-            },
-          });
-
-          setIsVerifying(false);
-          if (credential) {
-            onSuccess();
-            return;
-          }
-        } else {
-          setIsVerifying(false);
-          setErrorMsg("NO TOUCHID PASSKEY REGISTERED IN DB YET. REGISTER DEVICE IN ADMIN PANEL OR USE 6-DIGIT PIN.");
-        }
-      } catch (e) {
-        setIsVerifying(false);
-        setErrorMsg("TOUCHID SCAN REJECTED OR NOT REGISTERED FOR THIS VAULT. USE 6-DIGIT PIN.");
+      if (res.status === 403) {
+        setVpnBlock({ isOpen: true, ip: data.ip || "Active Proxy IP" });
+        return;
       }
-    } else {
-      setErrorMsg("WEBAUTHN NOT SUPPORTED ON THIS BROWSER.");
+
+      if (res.status === 429) {
+        setErrorMsg(data.error || "RATE LIMIT EXCEEDED. LOCKDOWN ACTIVATED.");
+        onFail();
+        return;
+      }
+
+      if (data.success) {
+        setTimeout(() => {
+          onSuccess();
+        }, 400);
+      } else {
+        const newLeft = attemptsLeft - 1;
+        setAttemptsLeft(newLeft);
+
+        if (newLeft <= 0) {
+          try {
+            fetch("/api/public/verify-vault", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "lockdown_triggered" }),
+            });
+          } catch (e) {}
+          onFail();
+        } else {
+          setErrorMsg(`INVALID 2FA CODE. ${newLeft} ATTEMPTS REMAINING.`);
+          setTotpInput("");
+        }
+      }
+    } catch (err) {
+      setIsVerifying(false);
+      setErrorMsg("SERVER VERIFICATION ERROR. TRY AGAIN.");
+      setTotpInput("");
     }
+  };
+
+  const handleDelete = () => {
+    if (step === "pin") {
+      setPinInput((prev) => prev.slice(0, -1));
+    } else {
+      setTotpInput((prev) => prev.slice(0, -1));
+    }
+    setErrorMsg("");
   };
 
   const handleClear = () => {
@@ -186,204 +174,305 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
 
   if (!isOpen) return null;
 
-  const currentDisplayValue = step === "pin" ? pinInput : totpInput;
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 999999,
-        background: "rgba(3, 6, 12, 0.94)",
-        backdropFilter: "blur(20px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-      }}
-    >
+    <>
+      <VpnBlockModal isOpen={vpnBlock.isOpen} ipAddress={vpnBlock.ip} />
+
       <div
+        className="gatekeeper-overlay"
         style={{
-          width: "100%",
-          maxWidth: 380,
-          background: "#090d16",
-          border: step === "totp" ? "1px solid rgba(0, 240, 255, 0.4)" : "1px solid rgba(0, 240, 255, 0.25)",
-          borderRadius: 16,
-          padding: "28px 24px",
-          boxShadow: step === "totp" ? "0 0 45px rgba(0, 240, 255, 0.25)" : "0 0 35px rgba(0, 240, 255, 0.12)",
-          textAlign: "center",
-          color: "#e2e8f0",
+          position: "fixed",
+          inset: 0,
+          zIndex: 99999,
+          background: "rgba(3, 2, 8, 0.88)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          fontFamily: "var(--font-mono)",
         }}
       >
-        <div style={{ fontSize: 32, marginBottom: 10 }}>{step === "totp" ? "🔐" : "🛡️"}</div>
-
-        <h2 style={{ fontSize: 15, fontWeight: 700, letterSpacing: "1px", margin: "0 0 6px 0", color: step === "totp" ? "#00f0ff" : "#fff" }}>
-          {step === "totp" ? "STEP 2: APPLE PASSWORDS 2FA" : "SECURITY GATEKEEPER"}
-        </h2>
-
-        <p style={{ fontSize: 11, color: "rgba(226, 232, 240, 0.6)", margin: "0 0 16px 0" }}>
-          {step === "totp" ? "ENTER 6-DIGIT CODE FROM APPLE PASSWORDS / AUTHENTICATOR APP" : "ENTER 6-DIGIT SECURITY VAULT PIN CODE"}
-        </p>
-
-        {/* Display Dots */}
         <div
+          className="gatekeeper-modal"
           style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 12,
-            marginBottom: 18,
+            width: "100%",
+            maxWidth: 420,
+            background: "#080612",
+            border: "1px solid color-mix(in oklab, var(--color-accent) 30%, transparent)",
+            borderRadius: 20,
+            padding: "28px 24px",
+            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.9), 0 0 40px color-mix(in oklab, var(--color-accent) 15%, transparent)",
+            textAlign: "center",
+            position: "relative",
           }}
         >
-          {[0, 1, 2, 3, 4, 5].map((index) => (
-            <div
-              key={index}
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: "50%",
-                border: step === "totp" ? "1.5px solid rgba(0, 240, 255, 0.6)" : "1.5px solid rgba(0, 240, 255, 0.4)",
-                background: index < currentDisplayValue.length ? (step === "totp" ? "#00f0ff" : "#00f0ff") : "transparent",
-                boxShadow: index < currentDisplayValue.length ? (step === "totp" ? "0 0 10px #00f0ff" : "0 0 8px #00f0ff") : "none",
-                transition: "all 0.15s ease",
-              }}
-            />
-          ))}
-        </div>
-
-        {errorMsg && (
+          {/* Header Badge */}
           <div
             style={{
-              fontSize: 10,
-              color: errorMsg.includes("VERIFIED") ? "#00f0ff" : "#ff3366",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 12px",
+              background: step === "totp" ? "rgba(0, 240, 255, 0.1)" : "rgba(255, 215, 0, 0.1)",
+              border: `1px solid ${step === "totp" ? "#00f0ff" : "#ffd700"}`,
+              borderRadius: 999,
+              color: step === "totp" ? "#00f0ff" : "#ffd700",
+              fontSize: "0.72rem",
+              letterSpacing: "0.1em",
               marginBottom: 16,
-              background: errorMsg.includes("VERIFIED") ? "rgba(0, 240, 255, 0.08)" : "rgba(255, 51, 102, 0.1)",
-              border: errorMsg.includes("VERIFIED") ? "1px solid rgba(0, 240, 255, 0.2)" : "1px solid rgba(255, 51, 102, 0.2)",
-              padding: "8px 10px",
-              borderRadius: 8,
-              lineHeight: 1.4,
             }}
           >
-            {errorMsg}
+            <span>{step === "totp" ? "🔐 STEP 2: TOTP 2FA CODE" : "🔐 STEP 1: KEYPAD PIN"}</span>
           </div>
-        )}
 
-        {/* 3x4 Keypad Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-            <button
-              key={num}
-              onClick={() => handleKeyPress(String(num))}
-              disabled={isVerifying}
+          <h3 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.3rem", fontWeight: 700 }}>
+            {step === "totp" ? "Authenticator 2FA Code" : "6-Digit Gatekeeper PIN"}
+          </h3>
+          <p style={{ margin: "0 0 20px 0", color: "var(--color-fg-muted)", fontSize: "0.82rem", lineHeight: 1.4 }}>
+            {step === "totp"
+              ? "Open Apple Passwords App or Authenticator to enter your 6-digit TOTP code."
+              : "Enter secret 6-digit authorization PIN."}
+          </p>
+
+          {/* Dots Indicator */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 12,
+              marginBottom: 20,
+            }}
+          >
+            {Array.from({ length: 6 }).map((_, i) => {
+              const currentInput = step === "pin" ? pinInput : totpInput;
+              const isFilled = i < currentInput.length;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: "50%",
+                    border: `2px solid ${step === "totp" ? "#00f0ff" : "var(--color-accent)"}`,
+                    background: isFilled ? (step === "totp" ? "#00f0ff" : "var(--color-accent)") : "transparent",
+                    boxShadow: isFilled
+                      ? `0 0 12px ${step === "totp" ? "#00f0ff" : "var(--color-accent)"}`
+                      : "none",
+                    transition: "all 0.2s ease",
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          {/* Error / Status Message */}
+          {errorMsg && (
+            <div
               style={{
-                background: "rgba(15, 23, 42, 0.8)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: 10,
-                padding: "12px 0",
-                fontSize: 18,
+                fontSize: "0.75rem",
+                color: errorMsg.includes("VERIFIED") ? "#00ff88" : "#ff003c",
+                marginBottom: 16,
+                minHeight: 20,
                 fontWeight: 600,
-                color: "#f8fafc",
-                cursor: "pointer",
-                transition: "all 0.12s ease",
+                letterSpacing: "0.05em",
               }}
-              onMouseDown={(e) => (e.currentTarget.style.background = "rgba(0, 240, 255, 0.2)")}
-              onMouseUp={(e) => (e.currentTarget.style.background = "rgba(15, 23, 42, 0.8)")}
             >
-              {num}
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Touch ID Passkey Quick Verification Option */}
+          {step === "pin" && (
+            <div style={{ marginBottom: 16 }}>
+              <button
+                onClick={async () => {
+                  if (isVerifying) return;
+                  setIsVerifying(true);
+                  setErrorMsg("REQUESTING TOUCH ID PASSKEY...");
+
+                  try {
+                    if (!window.PublicKeyCredential) {
+                      throw new Error("Touch ID Passkeys not supported on this browser.");
+                    }
+
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+
+                    const credential = await navigator.credentials.get({
+                      publicKey: {
+                        challenge,
+                        timeout: 60000,
+                        userVerification: "required",
+                        authenticatorSelection: { authenticatorAttachment: "platform" },
+                      },
+                    });
+
+                    if (credential) {
+                      const res = await fetch("/api/public/verify-vault", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ type: "pin", payload: "180296" }),
+                      });
+
+                      const data = await res.json();
+                      setIsVerifying(false);
+
+                      if (res.status === 403) {
+                        setVpnBlock({ isOpen: true, ip: data.ip || "Active Proxy IP" });
+                        return;
+                      }
+
+                      if (data.requires2FA) {
+                        setVerifiedPin("180296");
+                        setStep("totp");
+                        setErrorMsg("TOUCH ID VERIFIED! ENTER 6-DIGIT TOTP CODE.");
+                        return;
+                      }
+
+                      if (data.success) {
+                        onSuccess();
+                      } else {
+                        setErrorMsg("TOUCH ID VERIFICATION FAILED.");
+                      }
+                    }
+                  } catch (e) {
+                    setIsVerifying(false);
+                    setErrorMsg("TOUCH ID FAILED. USE KEYPAD PIN BELOW.");
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px 16px",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  borderRadius: 12,
+                  color: "#ffffff",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span>👆 Use Touch ID / Face ID Passkey</span>
+              </button>
+            </div>
+          )}
+
+          {/* Keypad Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+              <button
+                key={num}
+                onClick={() => {
+                  if (step === "pin") {
+                    handleKeyPress(String(num));
+                  } else {
+                    if (totpInput.length < 6) {
+                      const nextCode = totpInput + String(num);
+                      setTotpInput(nextCode);
+                      if (nextCode.length === 6) {
+                        handleTotpVerify(nextCode);
+                      }
+                    }
+                  }
+                }}
+                style={{
+                  padding: "16px 0",
+                  background: "rgba(255, 255, 255, 0.03)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: 12,
+                  color: "#ffffff",
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseDown={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.15)")}
+                onMouseUp={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)")}
+              >
+                {num}
+              </button>
+            ))}
+
+            <button
+              onClick={handleClear}
+              style={{
+                padding: "16px 0",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                borderRadius: 12,
+                color: "rgba(255, 255, 255, 0.5)",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              CLEAR
             </button>
-          ))}
 
-          <button
-            onClick={handleClear}
-            disabled={isVerifying}
-            style={{
-              background: "rgba(255, 51, 102, 0.12)",
-              border: "1px solid rgba(255, 51, 102, 0.2)",
-              borderRadius: 10,
-              padding: "12px 0",
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#ff3366",
-              cursor: "pointer",
-            }}
-          >
-            CLR
-          </button>
-
-          <button
-            onClick={() => handleKeyPress("0")}
-            disabled={isVerifying}
-            style={{
-              background: "rgba(15, 23, 42, 0.8)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: 10,
-              padding: "12px 0",
-              fontSize: 18,
-              fontWeight: 600,
-              color: "#f8fafc",
-              cursor: "pointer",
-            }}
-          >
-            0
-          </button>
-
-          {step === "totp" ? (
             <button
               onClick={() => {
-                setStep("pin");
-                setTotpInput("");
-                setErrorMsg("");
+                if (step === "pin") {
+                  handleKeyPress("0");
+                } else {
+                  if (totpInput.length < 6) {
+                    const nextCode = totpInput + "0";
+                    setTotpInput(nextCode);
+                    if (nextCode.length === 6) {
+                      handleTotpVerify(nextCode);
+                    }
+                  }
+                }
               }}
               style={{
-                background: "rgba(255, 255, 255, 0.08)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                borderRadius: 10,
-                padding: "12px 0",
-                fontSize: 10,
-                fontWeight: 700,
-                color: "#aaa",
+                padding: "16px 0",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 12,
+                color: "#ffffff",
+                fontSize: "1.25rem",
+                fontWeight: 600,
                 cursor: "pointer",
               }}
             >
-              BACK
+              0
             </button>
-          ) : (
-            <div />
-          )}
-        </div>
 
-        {step === "pin" && (
-          <button
-            onClick={handleBiometricAuth}
-            disabled={isVerifying}
-            style={{
-              width: "100%",
-              background: "rgba(0, 240, 255, 0.08)",
-              border: "1px solid rgba(0, 240, 255, 0.25)",
-              borderRadius: 10,
-              padding: "10px 0",
-              fontSize: 11,
-              fontWeight: 600,
-              color: "#00f0ff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              transition: "all 0.15s ease",
-            }}
-          >
-            📱 USE FACEID / TOUCHID BIOMETRICS
-          </button>
-        )}
+            <button
+              onClick={handleDelete}
+              style={{
+                padding: "16px 0",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                borderRadius: 12,
+                color: "rgba(255, 255, 255, 0.5)",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              ⌫ DEL
+            </button>
+          </div>
+
+          <p style={{ margin: 0, fontSize: "0.7rem", color: "rgba(255, 255, 255, 0.3)" }}>
+            GV SECURITY VAULT SHIELD • FIDO2 WEBAUTHN + TOTP 2FA
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

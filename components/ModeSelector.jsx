@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SITE_VERSION } from "@/lib/version";
 import LandingConstellation from "./LandingConstellation";
 import KineticHeadline from "./KineticHeadline";
 import LandingStatusPill from "./LandingStatusPill";
+import VpnBlockModal from "./VpnBlockModal";
 
 // Per-mode animated SVG cues shown inside each portal card
 function EditorCue({ accent }) {
@@ -66,6 +67,22 @@ function PortalCue({ modeId, accent }) {
 
 export default function ModeSelector({ selectorRef, person, modes, features = {} }) {
   const portalsRef = useRef(null);
+  const [vpnState, setVpnState] = useState({ isOpen: false, ip: "" });
+
+  useEffect(() => {
+    async function checkVpnOnLoad() {
+      try {
+        const res = await fetch("/api/public/check-vpn");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isVpn) {
+            setVpnState({ isOpen: true, ip: data.ip || "Active Proxy IP" });
+          }
+        }
+      } catch (e) {}
+    }
+    checkVpnOnLoad();
+  }, []);
 
   const flags = features.flags || {};
   const constellationFlag = flags.constellation_bg;
@@ -243,6 +260,9 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
 
   return (
     <main className="selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
+      {/* Full-Screen Flashy VPN Security Policy Warning Modal */}
+      <VpnBlockModal isOpen={vpnState.isOpen} ipAddress={vpnState.ip} />
+
       {/* Interactive Canvas Constellation background (Controlled by Admin toggle) */}
       {constellationFlag?.enabled !== false && (
         <LandingConstellation accentColor={constellationAccent} metadata={features?.flags?.admin_secret_gateway?.metadata} />
