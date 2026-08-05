@@ -19,8 +19,24 @@ export async function POST(req) {
   try {
     const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const userAgent = req.headers.get("user-agent") || "Unknown Device";
+    const countryCode = (req.headers.get("cf-ipcountry") || req.headers.get("x-vercel-ip-country") || "").toUpperCase();
 
-    // 1. Strict Serverless VPN / Proxy Detection Check (Fail-safe)
+    // 1. Dynamic Geo-Fencing Policy (Admin Secret Vault Access Restricted to India "IN" Only)
+    if (countryCode && countryCode !== "IN" && countryCode !== "XX" && countryCode !== "LOCAL") {
+      await sendSecurityAlert({
+        type: "UNAUTHORIZED_GEO_ACCESS",
+        details: `Vault access attempt blocked from non-allowed country code: ${countryCode}`,
+        ip,
+        userAgent,
+      });
+
+      return NextResponse.json(
+        { success: false, error: `🌐 ACCESS RESTRICTED: Vault administrative routes are locked to India (IN). Attempt from ${countryCode} blocked.` },
+        { status: 403 }
+      );
+    }
+
+    // 2. Strict Serverless VPN / Proxy Detection Check (Fail-safe)
     let vpnDetected = false;
     try {
       vpnDetected = await isVpnOrProxy(ip);
