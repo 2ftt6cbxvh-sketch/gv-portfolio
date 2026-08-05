@@ -152,7 +152,7 @@ export default function RateLimitBlockModal({ isOpen, ipAddress, hoursRemaining,
         </div>
 
         <p style={{ margin: "12px 0 0 0", color: "rgba(255, 255, 255, 0.45)", fontSize: "0.7rem" }}>
-          Site administrator can unblock your IP instantly via Telegram command: <code style={{ color: "#00f0ff" }}>/unblock &lt;IP&gt;</code>
+          Access will be automatically restored when the 24-hour security window expires.
         </p>
       </div>
 
