@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
-import argon2 from "argon2";
+import bcrypt from "bcryptjs";
 
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
@@ -39,13 +39,8 @@ export async function PATCH(request) {
         const metaObj = { ...parsed };
 
         if (parsed.pinCode) {
-          // OWASP 2026 Gold Standard Argon2id Memory-Hard Hashing (64MB memory, 3 iterations)
-          metaObj.pinHash = await argon2.hash(String(parsed.pinCode), {
-            type: argon2.argon2id,
-            memoryCost: 2 ** 16, // 64MB memory hardness
-            timeCost: 3,        // 3 time iterations
-            parallelism: 1,
-          });
+          // OWASP-Compliant bcrypt (Cost Factor 12) - Zero-Dependency Pure JS
+          metaObj.pinHash = await bcrypt.hash(String(parsed.pinCode), 12);
         }
         if (parsed.adminSecretKey) {
           metaObj.secretKeyHash = sha256(parsed.adminSecretKey);
