@@ -255,7 +255,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
               marginBottom: 16,
             }}
           >
-            <span>{step === "totp" ? "🔐 STEP 2: TOTP 2FA CODE" : "🔐 STEP 1: KEYPAD PIN"}</span>
+            <span>{step === "totp" ? "🔐 2FA VERIFICATION" : "🔐 KEYPAD VERIFICATION"}</span>
           </div>
 
           <h3 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.3rem", fontWeight: 700 }}>
