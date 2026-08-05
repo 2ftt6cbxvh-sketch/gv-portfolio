@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import VpnBlockModal from "./VpnBlockModal";
 import GeoBlockModal from "./GeoBlockModal";
+import RateLimitBlockModal from "./RateLimitBlockModal";
 
 export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [pinInput, setPinInput] = useState("");
@@ -14,6 +15,7 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [vpnBlock, setVpnBlock] = useState({ isOpen: false, ip: "" });
   const [geoBlock, setGeoBlock] = useState({ isOpen: false, countryCode: "", countryName: "" });
+  const [rateLimitBlock, setRateLimitBlock] = useState({ isOpen: false, ip: "", hoursRemaining: "", resetAt: "" });
 
   useEffect(() => {
     if (isOpen) {
@@ -55,8 +57,12 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
             }
 
             if (res.status === 429) {
-              setErrorMsg(data.error || "RATE LIMIT EXCEEDED. LOCKDOWN ACTIVATED.");
-              onFail();
+              setRateLimitBlock({
+                isOpen: true,
+                ip: data.ip || "Your Current IP",
+                hoursRemaining: data.hoursRemaining || "24.0",
+                resetAt: data.resetAt || "In 24 Hours",
+              });
               return;
             }
 
@@ -184,6 +190,12 @@ export default function AdminPinGatekeeperModal({ isOpen, onSuccess, onFail }) {
     <>
       <VpnBlockModal isOpen={vpnBlock.isOpen} ipAddress={vpnBlock.ip} />
       <GeoBlockModal isOpen={geoBlock.isOpen} countryCode={geoBlock.countryCode} countryName={geoBlock.countryName} />
+      <RateLimitBlockModal
+        isOpen={rateLimitBlock.isOpen}
+        ipAddress={rateLimitBlock.ip}
+        hoursRemaining={rateLimitBlock.hoursRemaining}
+        resetAtTime={rateLimitBlock.resetAt}
+      />
 
       <div
         className="gatekeeper-overlay"

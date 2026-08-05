@@ -145,15 +145,23 @@ export async function POST(req) {
 
     if (!rateCheck.allowed) {
       const hoursRemaining = (rateCheck.remainingSeconds / 3600).toFixed(1);
+      const resetAtDate = new Date(Date.now() + rateCheck.remainingSeconds * 1000).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
       await sendSecurityAlert({
         type: "RATE_LIMIT_EXCEEDED",
-        details: `IP BLOCKED FOR 24 HOURS (5 failed attempts in 24h). Try again in ${hoursRemaining} hours.`,
+        details: `IP BLOCKED FOR 24 HOURS (5 failed attempts in 24h). Auto-restores in ${hoursRemaining} hours.`,
         ip,
         userAgent,
       });
 
       return NextResponse.json(
-        { error: `24-Hour Security Block Active. Exceeded 5 attempts in 24 hours. Try again in ${hoursRemaining} hours.` },
+        {
+          success: false,
+          error: `24-Hour Security Block Active. Exceeded 5 attempts in 24 hours. Auto-restores in ${hoursRemaining} hours.`,
+          hoursRemaining,
+          resetAt: resetAtDate,
+          ip,
+        },
         { status: 429 }
       );
     }
