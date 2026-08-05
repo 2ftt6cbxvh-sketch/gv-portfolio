@@ -15,10 +15,10 @@ const SCRAMBLE_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?/AX019Z#&~?";
 
 export default function KineticHeadline({ roles }) {
   const roleList = useMemo(() => {
-    if (Array.isArray(roles) && roles.length > 0) return roles;
-    if (typeof roles === "string" && roles.trim() !== "") {
+    if (Array.isArray(roles) && roles.length > 1) return roles;
+    if (typeof roles === "string" && roles.includes(",")) {
       const parsed = roles.split(",").map((r) => r.trim()).filter((r) => r.length > 0);
-      if (parsed.length > 0) return parsed;
+      if (parsed.length > 1) return parsed;
     }
     return DEFAULT_ROLES;
   }, [roles]);
@@ -29,19 +29,19 @@ export default function KineticHeadline({ roles }) {
   const animationFrameRef = useRef(null);
 
   useEffect(() => {
-    if (roleList.length <= 1) return;
-
     const interval = setInterval(() => {
-      const nextIndex = (currentIndex + 1) % roleList.length;
-      setCurrentIndex(nextIndex);
-      scrambleTo(roleList[nextIndex]);
-    }, 3200); // Rotate every 3.2 seconds
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % roleList.length;
+        scrambleTo(roleList[nextIndex]);
+        return nextIndex;
+      });
+    }, 3200); // Rotate & scramble every 3.2 seconds
 
     return () => {
       clearInterval(interval);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [currentIndex, roleList]);
+  }, [roleList]);
 
   const scrambleTo = (targetText) => {
     setIsScrambling(true);
@@ -50,28 +50,23 @@ export default function KineticHeadline({ roles }) {
     let lastTime = performance.now();
 
     const animate = (currentTime) => {
-      // Step frame every 35ms for smooth cyberpunk scramble
-      if (currentTime - lastTime > 35) {
+      if (currentTime - lastTime > 30) {
         lastTime = currentTime;
 
         const scrambled = targetText
           .split("")
           .map((char, index) => {
-            // Settle characters left to right
             if (index < iteration) {
               return targetText[index];
             }
-            // Preserve emojis and whitespace without scrambling
             if (char === " " || char.codePointAt(0) > 1000) {
               return char;
             }
-            // Return random matrix glyph
             return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
           })
           .join("");
 
         setDisplayText(scrambled);
-
         iteration += 1.5;
 
         if (iteration >= totalChars + 2) {
