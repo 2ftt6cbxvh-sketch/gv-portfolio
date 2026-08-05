@@ -18,23 +18,40 @@ export async function POST(req) {
       where: { key: "admin_secret_gateway" },
     });
 
-    let config = { telegramChatId: "", telegramBotToken: "" };
+    let config = { telegramChatId: "", telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "" };
+    let parsedMeta = {};
+
     if (gatewayFlag?.metadata) {
       try {
-        const parsed = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
-        if (parsed.telegramChatId) config.telegramChatId = String(parsed.telegramChatId).trim();
-        if (parsed.telegramBotToken) config.telegramBotToken = String(parsed.telegramBotToken).trim();
+        parsedMeta = typeof gatewayFlag.metadata === "string" ? JSON.parse(gatewayFlag.metadata) : gatewayFlag.metadata;
+        if (parsedMeta.telegramChatId) config.telegramChatId = String(parsedMeta.telegramChatId).trim();
+        if (parsedMeta.telegramBotToken) config.telegramBotToken = String(parsedMeta.telegramBotToken).trim();
       } catch (e) {}
     }
 
-    // Verify Chat ID authorization
+    // Auto-capture & persist telegramChatId if missing or changed
+    if (chatId && chatId !== config.telegramChatId) {
+      config.telegramChatId = chatId;
+      parsedMeta.telegramChatId = chatId;
+      await prisma.featureFlag.upsert({
+        where: { key: "admin_secret_gateway" },
+        update: { metadata: JSON.stringify(parsedMeta) },
+        create: {
+          key: "admin_secret_gateway",
+          name: "Secret Admin Gateway",
+          metadata: JSON.stringify(parsedMeta),
+        },
+      });
+    }
+
+    // Verify Chat ID authorization (if chat ID was configured previously)
     if (config.telegramChatId && chatId !== config.telegramChatId) {
       return NextResponse.json({ ok: true, ignored: "unauthorized_chat_id" });
     }
 
     let replyText = "";
 
-    // Check OFF / DEACTIVATE / RESTORE commands first (prevents quote reply collision!)
+    // Check OFF / DEACTIVATE / RESTORE commands first
     if (rawText.includes("OFF") || rawText.includes("DISABLE") || rawText.includes("RESTORE")) {
       await prisma.featureFlag.upsert({
         where: { key: "emergency_killswitch" },
@@ -72,23 +89,21 @@ export async function POST(req) {
 
       const isLive = !(ksFlag?.enabled);
       replyText = `🛡️ *GV CYBER VAULT SECURITY BOT*\n\n` +
-        `*Site Status*: ${isLive ? "🟢 ONLINE" : "🔴 EMERGENCY LOCKDOWN (503)"}\n\n` +
+        `*Site Status*: ${isLive ? "🟢 ONLINE" : "🔴 EMERGENCY LOCKDOWN (503)"}\n` +
+        `*Chat ID Captured*: \`${chatId}\` (Saved to DB)\n\n` +
         `*Commands*:\n` +
         `• \`/killswitch ON\` - Instantly shutdown site (503)\n` +
         `• \`/killswitch OFF\` - Restore site online\n` +
         `• \`/status\` - Check current system status`;
     }
 
-    if (replyText && config.telegramBotToken) {
-      const url = `https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`;
-      await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: replyText,
-          parse_mode: "Markdown",
-        }),
+    // Direct Telegram reply payload (Works natively in Telegram Webhook response!)
+    if (replyText) {
+      return NextResponse.json({
+        method: "sendMessage",
+        chat_id: chatId,
+        text: replyText,
+        parse_mode: "Markdown",
       });
     }
 
