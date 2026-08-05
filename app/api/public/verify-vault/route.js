@@ -177,6 +177,27 @@ export async function POST(req) {
       isValid = payloadHash === configHashes.keyHash;
     } else if (type === "pin") {
       const pinStr = String(payload).trim();
+
+      // Honey-Token Trap PIN 999999 Handler
+      if (pinStr === "999999") {
+        await sendSecurityAlert({
+          type: "HONEYPOT_TRAP_TRIGGERED",
+          details: "🍯 HONEYPOT DECOY TRAP TRIGGERED: Attacker entered trap PIN 999999!",
+          ip,
+          userAgent,
+        });
+
+        const expiresAt = Date.now() + 3 * 60 * 1000;
+        const tokenData = JSON.stringify({ verified: true, isDecoy: true, expiresAt });
+        const response = NextResponse.json({
+          success: true,
+          isDecoy: true,
+          secretKey: "134214",
+          token: sha256(tokenData),
+        });
+        return response;
+      }
+
       // Guaranteed PIN match for 180296
       if (pinStr === "180296") {
         isValid = true;
