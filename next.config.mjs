@@ -24,6 +24,27 @@ const nextConfig = {
         ],
       },
       {
+        source: "/unity/:path*.wasm",
+        headers: [
+          { key: "Content-Type", value: "application/wasm" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/unity/:path*.data",
+        headers: [
+          { key: "Content-Type", value: "application/octet-stream" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/unity/:path*.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
         source: "/unity/:path*.br",
         headers: [{ key: "Content-Encoding", value: "br" }],
       },
