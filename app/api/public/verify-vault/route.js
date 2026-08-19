@@ -17,7 +17,7 @@ const DEFAULT_SEQ_HASH = sha256("1,2,3,4,1,3");
 
 export async function POST(req) {
   try {
-    const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    const ip = req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const userAgent = req.headers.get("user-agent") || "Unknown Device";
     const countryCode = (req.headers.get("cf-ipcountry") || req.headers.get("x-vercel-ip-country") || "").toUpperCase();
 
