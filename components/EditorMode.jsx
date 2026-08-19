@@ -14,6 +14,7 @@ import JourneyMap from "./JourneyMap";
 import EditorAudioWave from "./EditorAudioWave";
 import EditorFilmGrainToggle from "./EditorFilmGrainToggle";
 import CertModal from "./CertModal";
+import KineticHeroTitle from "./KineticHeroTitle";
 
 // Not admin-editable this phase (per "do not overengineer" — cinematic
 // flavor text, not core content). Keyed by mode id so this file stays
@@ -57,11 +58,13 @@ export default function EditorMode({ data, features }) {
           <EditorFilmGrainToggle />
           <EditorCinematicToggle />
         </div>
-        <h2 className="hero-mode__title hero-mode__title--editor">
-          {d.heroTitlePrefix}
-          <span className="accent accent--script">{d.heroTitleAccent}</span>
-          {d.heroTitleSuffix}
-        </h2>
+        <KineticHeroTitle
+          prefix={d.heroTitlePrefix}
+          accent={d.heroTitleAccent}
+          suffix={d.heroTitleSuffix}
+          className="hero-mode__title--editor"
+          isScript={true}
+        />
         <p className="hero-mode__lede">{d.lede}</p>
         <div className="hero-mode__meta">
           {d.meta.map((m) => (

@@ -11,6 +11,7 @@ import DeveloperCodeIDE from "./DeveloperCodeIDE";
 import CertModal from "./CertModal";
 import TextScramble from "./TextScramble";
 import DeveloperInteractiveSuite from "./DeveloperInteractiveSuite";
+import KineticHeroTitle from "./KineticHeroTitle";
 
 export default function DeveloperMode({ data, features }) {
   const d = data;
@@ -33,14 +34,11 @@ export default function DeveloperMode({ data, features }) {
           <span className="label-mono">{d.role}</span>
           <span className="hero-mode__cursor" aria-hidden="true" />
         </div>
-        <h2
-          className="hero-mode__title"
-          data-text={`${d.heroTitlePrefix}${d.heroTitleAccent}${d.heroTitleSuffix}`}
-        >
-          {d.heroTitlePrefix}
-          <span className="accent">{d.heroTitleAccent}</span>
-          {d.heroTitleSuffix}
-        </h2>
+        <KineticHeroTitle
+          prefix={d.heroTitlePrefix}
+          accent={d.heroTitleAccent}
+          suffix={d.heroTitleSuffix}
+        />
         <p className="hero-mode__lede">{d.lede}</p>
         <div className="hero-mode__meta">
           {d.meta.map((m) => (

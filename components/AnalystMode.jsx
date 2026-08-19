@@ -11,6 +11,7 @@ import AnalystDataTicker from "./AnalystDataTicker";
 import CertModal from "./CertModal";
 import AnalystNeuralNet from "./AnalystNeuralNet";
 import AnalystHologramCube from "./AnalystHologramCube";
+import KineticHeroTitle from "./KineticHeroTitle";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -60,11 +61,11 @@ export default function AnalystMode({ data, features }) {
           <span className="label-mono">{d.role}</span>
           <span className="hero-mode__cursor" aria-hidden="true" />
         </div>
-        <h2 className="hero-mode__title">
-          {d.heroTitlePrefix}
-          <span className="accent">{d.heroTitleAccent}</span>
-          {d.heroTitleSuffix}
-        </h2>
+        <KineticHeroTitle
+          prefix={d.heroTitlePrefix}
+          accent={d.heroTitleAccent}
+          suffix={d.heroTitleSuffix}
+        />
         <p className="hero-mode__lede">{d.lede}</p>
         <div className="hero-mode__meta">
           {d.meta.map((m) => (
