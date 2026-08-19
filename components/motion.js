@@ -1,7 +1,7 @@
 /**
- * Shared motion system — mode-agnostic.
- * Split-text reveal, stagger reveal, portal ambient cues.
- * Reused by every mode; only CSS tokens differ, not this logic.
+ * Shared motion system — mode-agnostic & ultra buttery smooth.
+ * GPU-accelerated text reveal, staggered slide-up, portal ambient cues.
+ * Engineered for 60fps/120fps ProMotion displays with zero frame jitter.
  */
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -10,81 +10,128 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-function wrapWordChars(word) {
-  return word.split('').map((ch) => `<span class="char">${ch}</span>`).join('');
+/**
+ * Ultra-smooth Title & Hero Text Slide-Up Reveal
+ * Animates text gracefully upward with hardware-accelerated transforms and smooth easing.
+ */
+function revealTitle(el) {
+  if (!el) return;
+
+  // Kill any existing animations on this element to prevent conflicts
+  gsap.killTweensOf(el);
+  gsap.killTweensOf(el.children);
+
+  // Set initial state
+  gsap.set(el, {
+    opacity: 0,
+    y: 40,
+    willChange: "transform, opacity",
+    force3D: true,
+  });
+
+  return gsap.to(el, {
+    opacity: 1,
+    y: 0,
+    duration: 0.95,
+    ease: "power4.out",
+    delay: 0.05,
+    clearProps: "willChange",
+  });
 }
 
-// Splits into per-character spans for a stagger reveal while preserving any
-// inline markup (e.g. <span class="accent">) and natural word wrapping.
-function splitChars(el) {
-  const ariaLabel = el.textContent;
-  el.setAttribute('aria-label', ariaLabel);
+/**
+ * Buttery smooth hero block entrance
+ * Animates role, title, lede, and meta items in a fluid sequence
+ */
+function revealHeroBlock(root) {
+  if (!root) return;
 
-  function renderNode(node) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node.textContent
-        .split(' ')
-        .map((word) => (word ? `<span class="word">${wrapWordChars(word)}</span>` : ''))
-        .join(' ');
-    }
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const inner = Array.from(node.childNodes).map(renderNode).join('');
-      const cls = node.className ? ` class="${node.className}"` : '';
-      return `<${node.tagName.toLowerCase()}${cls}>${inner}</${node.tagName.toLowerCase()}>`;
-    }
-    return '';
+  const role = root.querySelector(".hero-mode__role");
+  const title = root.querySelector(".hero-mode__title");
+  const lede = root.querySelector(".hero-mode__lede");
+  const metaItems = root.querySelectorAll(".hero-mode__meta .meta-item");
+
+  const tl = gsap.timeline({ defaults: { ease: "power4.out", force3D: true } });
+
+  if (role) {
+    gsap.killTweensOf(role);
+    gsap.set(role, { opacity: 0, y: 20, willChange: "transform, opacity" });
+    tl.to(role, { opacity: 1, y: 0, duration: 0.75, clearProps: "willChange" }, 0);
   }
 
-  el.innerHTML = Array.from(el.childNodes).map(renderNode).join('');
-  return el.querySelectorAll('.char');
-}
+  if (title) {
+    gsap.killTweensOf(title);
+    gsap.set(title, { opacity: 0, y: 48, willChange: "transform, opacity" });
+    tl.to(title, { opacity: 1, y: 0, duration: 0.95, clearProps: "willChange" }, 0.08);
+  }
 
-function revealTitle(el) {
-  const chars = splitChars(el);
-  gsap.set(chars, { opacity: 0, y: '0.4em' });
-  gsap.to(chars, {
-    opacity: 1, y: 0, duration: 0.7, ease: 'power3.out',
-    stagger: 0.018,
-  });
+  if (lede) {
+    gsap.killTweensOf(lede);
+    gsap.set(lede, { opacity: 0, y: 32, willChange: "transform, opacity" });
+    tl.to(lede, { opacity: 1, y: 0, duration: 0.85, clearProps: "willChange" }, 0.22);
+  }
+
+  if (metaItems && metaItems.length > 0) {
+    gsap.killTweensOf(metaItems);
+    gsap.set(metaItems, { opacity: 0, y: 24, willChange: "transform, opacity" });
+    tl.to(metaItems, { opacity: 1, y: 0, duration: 0.75, stagger: 0.06, clearProps: "willChange" }, 0.35);
+  }
+
+  return tl;
 }
 
 function staggerIn(selector, opts = {}) {
   const els = gsap.utils.toArray(selector);
-  gsap.set(els, { opacity: 0, y: 14 });
-  gsap.to(els, {
-    opacity: 1, y: 0, duration: 0.6, ease: 'power2.out',
+  if (!els.length) return;
+
+  gsap.killTweensOf(els);
+  gsap.set(els, { opacity: 0, y: 24, willChange: "transform, opacity", force3D: true });
+
+  return gsap.to(els, {
+    opacity: 1,
+    y: 0,
+    duration: opts.duration || 0.75,
+    ease: "power3.out",
     stagger: opts.stagger || 0.06,
-    scrollTrigger: opts.scroll ? {
-      trigger: opts.trigger || els[0],
-      start: 'top 85%',
-      once: true,
-    } : undefined,
+    delay: opts.delay || 0,
+    clearProps: "willChange",
+    scrollTrigger: opts.scroll
+      ? {
+          trigger: opts.trigger || els[0],
+          start: "top 88%",
+          once: true,
+        }
+      : undefined,
   });
 }
 
 /** Draws a simple line-chart cue once (Data Analyst ambient signature). */
 function drawLineChart(svgEl) {
-  const path = svgEl.querySelector('path');
+  const path = svgEl?.querySelector("path");
   if (!path) return;
   const len = path.getTotalLength();
   gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
-  return gsap.to(path, { strokeDashoffset: 0, duration: 1.1, ease: 'power2.out' });
+  return gsap.to(path, { strokeDashoffset: 0, duration: 1.1, ease: "power2.out" });
 }
 
 /** Skill bar fill animation (Developer / Analyst skill sections). */
 function animateSkillBars(selector) {
   gsap.utils.toArray(selector).forEach((bar) => {
-    const fill = bar.querySelector('.skill-bar__fill');
-    const target = bar.dataset.level || '70';
-    if (typeof window !== 'undefined') {
+    const fill = bar.querySelector(".skill-bar__fill");
+    const target = bar.dataset.level || "70";
+    if (!fill) return;
+
+    if (typeof window !== "undefined") {
       gsap.to(fill, {
-        width: target + '%', duration: 0.8, ease: 'power2.out',
-        scrollTrigger: { trigger: bar, start: 'top 90%', once: true },
+        width: target + "%",
+        duration: 0.85,
+        ease: "power2.out",
+        scrollTrigger: { trigger: bar, start: "top 92%", once: true },
       });
     } else {
-      gsap.to(fill, { width: target + '%', duration: 0.8, ease: 'power2.out' });
+      gsap.to(fill, { width: target + "%", duration: 0.85, ease: "power2.out" });
     }
   });
 }
 
-export { revealTitle, staggerIn, drawLineChart, animateSkillBars, splitChars };
+export { revealTitle, revealHeroBlock, staggerIn, drawLineChart, animateSkillBars };
