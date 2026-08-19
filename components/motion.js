@@ -1,7 +1,7 @@
 /**
  * Shared motion system — mode-agnostic & ultra buttery smooth.
- * GPU-accelerated text reveal, staggered slide-up, portal ambient cues.
- * Engineered for 60fps/120fps ProMotion displays with zero frame jitter.
+ * Masked split-word kinetic reveal, staggered hero entrance, portal ambient cues.
+ * Engineered for 60fps/120fps ProMotion displays with zero layout thrashing.
  */
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -11,37 +11,71 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Ultra-smooth Title & Hero Text Slide-Up Reveal
- * Animates text gracefully upward with hardware-accelerated transforms and smooth easing.
+ * Splits text into masked words with complete HTML/class preservation (e.g. <span class="accent">).
+ * Each word is wrapped in an overflow:hidden mask.
+ * When animated, words glide smoothly upward from below the baseline.
+ */
+function splitIntoMaskedWords(el) {
+  if (!el) return [];
+  if (el.dataset.splitReady === "true") {
+    return el.querySelectorAll(".split-word-inner");
+  }
+
+  const nodes = Array.from(el.childNodes);
+
+  function processNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const words = node.textContent.split(/(\s+)/);
+      return words
+        .map((word) => {
+          if (!word) return "";
+          if (/^\s+$/.test(word)) {
+            return word; // preserve natural whitespace
+          }
+          return `<span class="split-word-mask" style="display:inline-block; overflow:hidden; vertical-align:bottom; padding-bottom:0.06em; margin-bottom:-0.06em;"><span class="split-word-inner" style="display:inline-block; transform:translate3d(0, 115%, 0); opacity:0; will-change:transform, opacity;">${word}</span></span>`;
+        })
+        .join("");
+    }
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const inner = Array.from(node.childNodes).map(processNode).join("");
+      const tag = node.tagName.toLowerCase();
+      const attrs = Array.from(node.attributes)
+        .map((attr) => ` ${attr.name}="${attr.value}"`)
+        .join("");
+      return `<${tag}${attrs}>${inner}</${tag}>`;
+    }
+    return "";
+  }
+
+  el.innerHTML = nodes.map(processNode).join("");
+  el.dataset.splitReady = "true";
+  return el.querySelectorAll(".split-word-inner");
+}
+
+/**
+ * Ultra-smooth Title Split-Word Slide-Up Reveal
  */
 function revealTitle(el) {
   if (!el) return;
+  const words = splitIntoMaskedWords(el);
+  if (!words || !words.length) return;
 
-  // Kill any existing animations on this element to prevent conflicts
-  gsap.killTweensOf(el);
-  gsap.killTweensOf(el.children);
+  gsap.killTweensOf(words);
+  gsap.set(words, { y: "115%", opacity: 0 });
 
-  // Set initial state
-  gsap.set(el, {
-    opacity: 0,
-    y: 40,
-    willChange: "transform, opacity",
-    force3D: true,
-  });
-
-  return gsap.to(el, {
+  return gsap.to(words, {
+    y: "0%",
     opacity: 1,
-    y: 0,
     duration: 0.95,
     ease: "power4.out",
-    delay: 0.05,
-    clearProps: "willChange",
+    stagger: 0.038,
+    force3D: true,
   });
 }
 
 /**
  * Buttery smooth hero block entrance
- * Animates role, title, lede, and meta items in a fluid sequence
+ * Animates role, masked split title, lede, and meta items in a fluid sequence
  */
 function revealHeroBlock(root) {
   if (!root) return;
@@ -53,28 +87,46 @@ function revealHeroBlock(root) {
 
   const tl = gsap.timeline({ defaults: { ease: "power4.out", force3D: true } });
 
+  // 1. Role badge
   if (role) {
     gsap.killTweensOf(role);
-    gsap.set(role, { opacity: 0, y: 20, willChange: "transform, opacity" });
-    tl.to(role, { opacity: 1, y: 0, duration: 0.75, clearProps: "willChange" }, 0);
+    gsap.set(role, { opacity: 0, y: 16, willChange: "transform, opacity" });
+    tl.to(role, { opacity: 1, y: 0, duration: 0.7, clearProps: "willChange" }, 0);
   }
 
+  // 2. Masked kinetic title words
   if (title) {
-    gsap.killTweensOf(title);
-    gsap.set(title, { opacity: 0, y: 48, willChange: "transform, opacity" });
-    tl.to(title, { opacity: 1, y: 0, duration: 0.95, clearProps: "willChange" }, 0.08);
+    const words = splitIntoMaskedWords(title);
+    if (words && words.length) {
+      gsap.killTweensOf(words);
+      gsap.set(words, { y: "115%", opacity: 0 });
+      tl.to(
+        words,
+        {
+          y: "0%",
+          opacity: 1,
+          duration: 0.95,
+          ease: "power4.out",
+          stagger: 0.038,
+          force3D: true,
+        },
+        0.06
+      );
+    }
   }
 
+  // 3. Hero lede description
   if (lede) {
     gsap.killTweensOf(lede);
-    gsap.set(lede, { opacity: 0, y: 32, willChange: "transform, opacity" });
+    gsap.set(lede, { opacity: 0, y: 24, willChange: "transform, opacity" });
     tl.to(lede, { opacity: 1, y: 0, duration: 0.85, clearProps: "willChange" }, 0.22);
   }
 
+  // 4. Meta chips
   if (metaItems && metaItems.length > 0) {
     gsap.killTweensOf(metaItems);
-    gsap.set(metaItems, { opacity: 0, y: 24, willChange: "transform, opacity" });
-    tl.to(metaItems, { opacity: 1, y: 0, duration: 0.75, stagger: 0.06, clearProps: "willChange" }, 0.35);
+    gsap.set(metaItems, { opacity: 0, y: 20, willChange: "transform, opacity" });
+    tl.to(metaItems, { opacity: 1, y: 0, duration: 0.75, stagger: 0.05, clearProps: "willChange" }, 0.35);
   }
 
   return tl;
@@ -85,14 +137,14 @@ function staggerIn(selector, opts = {}) {
   if (!els.length) return;
 
   gsap.killTweensOf(els);
-  gsap.set(els, { opacity: 0, y: 24, willChange: "transform, opacity", force3D: true });
+  gsap.set(els, { opacity: 0, y: 20, willChange: "transform, opacity", force3D: true });
 
   return gsap.to(els, {
     opacity: 1,
     y: 0,
     duration: opts.duration || 0.75,
     ease: "power3.out",
-    stagger: opts.stagger || 0.06,
+    stagger: opts.stagger || 0.05,
     delay: opts.delay || 0,
     clearProps: "willChange",
     scrollTrigger: opts.scroll
