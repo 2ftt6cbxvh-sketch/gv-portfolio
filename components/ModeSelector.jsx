@@ -324,8 +324,9 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
               }
             }}
           >
-            {/* Cursor-follow glow layer */}
+            {/* Cursor-follow glow & 3D light glare layers */}
             <div className="portal__cursor-glow" aria-hidden="true" />
+            <div className="portal__glare" aria-hidden="true" />
             <div className="portal__tint" />
 
             <div className="portal__top">

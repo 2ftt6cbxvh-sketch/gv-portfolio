@@ -347,10 +347,12 @@
   overflow: hidden;
   isolation: isolate;
   cursor: pointer;
-  transition: transform 400ms var(--ease-out), background 300ms var(--ease-out);
+  transform-style: preserve-3d;
+  perspective: 1200px;
+  will-change: transform;
+  transition: background 300ms var(--ease-out);
 }
 .portal:last-child { border-right: none; }
-.portal:hover { transform: translateY(-3px); }
 
 /* Ambient radial tint at top */
 .portal__tint {
@@ -364,18 +366,33 @@
 .portal__cursor-glow {
   position: absolute; inset: 0; z-index: 0; opacity: 0; pointer-events: none;
   background: radial-gradient(
-    circle 180px at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    color-mix(in oklab, var(--portal-accent, var(--color-accent)) 12%, transparent),
+    circle 220px at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    color-mix(in oklab, var(--portal-accent, var(--color-accent)) 16%, transparent),
     transparent 70%
   );
   transition: opacity 300ms var(--ease-out);
 }
 .portal:hover .portal__cursor-glow { opacity: 1; }
 
-/* Top row: index + mode tag */
+/* Dynamic 3D Specular Light Glare */
+.portal__glare {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0;
+  background: radial-gradient(
+    circle 320px at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.14),
+    transparent 65%
+  );
+  transition: opacity 350ms var(--ease-out);
+  mix-blend-mode: overlay;
+}
+.portal:hover .portal__glare { opacity: 1; }
+
+/* Top row: index + mode tag (elevated in 3D space) */
 .portal__top {
   display: flex; align-items: center; justify-content: space-between;
   position: relative; z-index: 1;
+  transform: translateZ(24px);
+  transform-style: preserve-3d;
 }
 .portal__index {
   font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-faint);
@@ -399,7 +416,11 @@
   border-color: color-mix(in oklab, var(--portal-accent, var(--color-accent)) 40%, var(--color-border));
 }
 
-.portal__body { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; padding-block: var(--space-6); }
+.portal__body {
+  position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center;
+  padding-block: var(--space-6);
+  transform-style: preserve-3d;
+}
 
 .portal__name {
   font-family: var(--font-mono); font-size: clamp(1.1rem, 1rem + 1vw, 1.6rem);
@@ -407,6 +428,8 @@
   color: var(--color-text);
   transition: color 300ms var(--ease-out);
   position: relative;
+  transform: translateZ(36px);
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 .portal__name::after {
   content: '';
@@ -419,12 +442,19 @@
 .portal:hover .portal__name { color: var(--portal-accent, var(--color-accent)); }
 .portal:hover .portal__name::after { width: 100%; }
 
-.portal__desc { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); max-width: 26ch; line-height: 1.55; }
+.portal__desc {
+  margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); max-width: 26ch; line-height: 1.55;
+  transform: translateZ(18px);
+}
 
-/* Animated SVG cue zone */
-.portal__cue { position: relative; height: 52px; margin-top: var(--space-6); overflow: hidden; }
-.portal__cue-svg { width: 100%; height: 100%; display: block; opacity: 0.6; transition: opacity 350ms var(--ease-out); }
-.portal:hover .portal__cue-svg { opacity: 1; }
+/* Animated SVG cue zone (elevated in 3D space) */
+.portal__cue {
+  position: relative; height: 52px; margin-top: var(--space-6); overflow: hidden;
+  transform: translateZ(28px);
+  transform-style: preserve-3d;
+}
+.portal__cue-svg { width: 100%; height: 100%; display: block; opacity: 0.6; transition: opacity 350ms var(--ease-out), transform 350ms var(--ease-out); }
+.portal:hover .portal__cue-svg { opacity: 1; transform: scale(1.04); }
 
 /* Analyst chart line draw-in on hover */
 .analyst-cue-line {
@@ -437,8 +467,12 @@
 /* Developer cursor blink */
 .dev-cursor { animation: blink 1.1s steps(1) infinite; }
 
-/* Portal footer: enter CTA */
-.portal__footer { position: relative; z-index: 1; padding-top: var(--space-4); }
+/* Portal footer: enter CTA (elevated in 3D space) */
+.portal__footer {
+  position: relative; z-index: 1; padding-top: var(--space-4);
+  transform: translateZ(22px);
+  transform-style: preserve-3d;
+}
 
 .portal__enter {
   display: inline-flex; align-items: center; gap: var(--space-2);
