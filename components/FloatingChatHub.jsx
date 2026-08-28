@@ -9,11 +9,22 @@ const QUICK_PROMPTS = [
   "👋 Hey Ganesh, just wanted to connect!",
 ];
 
+// Validate 10-digit Indian Mobile Number
+function isValidIndianPhone(phone) {
+  if (!phone) return false;
+  const digits = String(phone).replace(/\D/g, "");
+  let standardDigits = digits;
+  if (digits.length === 12 && digits.startsWith("91")) standardDigits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) standardDigits = digits.slice(1);
+  return /^[6-9]\d{9}$/.test(standardDigits);
+}
+
 export default function FloatingChatHub() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("chat"); // "chat" | "contacts"
   const [sessionToken, setSessionToken] = useState("");
   const [visitorName, setVisitorName] = useState("");
+  const [visitorPhone, setVisitorPhone] = useState("");
   const [visitorEmail, setVisitorEmail] = useState("");
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState([]);
@@ -21,24 +32,27 @@ export default function FloatingChatHub() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [copiedKey, setCopiedKey] = useState(null);
   const [currentMode, setCurrentMode] = useState("Landing");
+  const [validationError, setValidationError] = useState("");
 
   const messagesEndRef = useRef(null);
   const pollIntervalRef = useRef(null);
 
-  // Initialize unique session token and retrieve stored info
+  // Initialize session token from sessionStorage (clears automatically on browser close/refresh to save space)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let token = localStorage.getItem("gv_chat_token");
+    let token = sessionStorage.getItem("gv_chat_session_token");
     if (!token) {
-      token = "sess_" + Math.random().toString(36).substring(2, 15) + "_" + Date.now();
-      localStorage.setItem("gv_chat_token", token);
+      token = "sess_" + Math.random().toString(36).substring(2, 12) + "_" + Date.now();
+      sessionStorage.setItem("gv_chat_session_token", token);
     }
     setSessionToken(token);
 
-    const savedName = localStorage.getItem("gv_chat_name") || "";
-    const savedEmail = localStorage.getItem("gv_chat_email") || "";
+    const savedName = sessionStorage.getItem("gv_chat_name") || "";
+    const savedPhone = sessionStorage.getItem("gv_chat_phone") || "";
+    const savedEmail = sessionStorage.getItem("gv_chat_email") || "";
     if (savedName) setVisitorName(savedName);
+    if (savedPhone) setVisitorPhone(savedPhone);
     if (savedEmail) setVisitorEmail(savedEmail);
 
     // Track active mode from DOM
@@ -70,7 +84,7 @@ export default function FloatingChatHub() {
 
           // Calculate unread admin messages when widget is closed
           if (!isOpen) {
-            const lastReadCount = parseInt(localStorage.getItem("gv_chat_last_read_count") || "0", 10);
+            const lastReadCount = parseInt(sessionStorage.getItem("gv_chat_last_read_count") || "0", 10);
             const adminMsgs = data.messages.filter((m) => m.sender === "ADMIN").length;
             if (adminMsgs > lastReadCount) {
               setUnreadCount(adminMsgs - lastReadCount);
@@ -99,24 +113,48 @@ export default function FloatingChatHub() {
   useEffect(() => {
     if (isOpen && activeTab === "chat") {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      // Mark as read
       const adminMsgs = messages.filter((m) => m.sender === "ADMIN").length;
-      localStorage.setItem("gv_chat_last_read_count", String(adminMsgs));
+      sessionStorage.setItem("gv_chat_last_read_count", String(adminMsgs));
       setUnreadCount(0);
     }
   }, [messages, isOpen, activeTab]);
 
+  // Start fresh new chat (clear session from browser)
+  const handleStartFreshChat = () => {
+    const newToken = "sess_" + Math.random().toString(36).substring(2, 12) + "_" + Date.now();
+    sessionStorage.setItem("gv_chat_session_token", newToken);
+    setSessionToken(newToken);
+    setMessages([]);
+    setValidationError("");
+  };
+
   const handleSendMessage = async (e) => {
     e?.preventDefault();
+    setValidationError("");
+
+    // Validate Name
+    if (!visitorName.trim() || visitorName.trim().length < 2) {
+      setValidationError("⚠️ Please enter your name (minimum 2 characters).");
+      return;
+    }
+
+    // Validate Indian Phone Number
+    if (!isValidIndianPhone(visitorPhone)) {
+      setValidationError("⚠️ Please enter a valid 10-digit Indian phone number (e.g. 9876543210).");
+      return;
+    }
+
     if (!messageText.trim() || isSending) return;
 
     const textToSend = messageText.trim();
-    const finalName = visitorName.trim() || "Visitor";
+    const finalName = visitorName.trim();
+    const finalPhone = visitorPhone.trim();
     setMessageText("");
     setIsSending(true);
 
-    if (visitorName.trim()) localStorage.setItem("gv_chat_name", visitorName.trim());
-    if (visitorEmail.trim()) localStorage.setItem("gv_chat_email", visitorEmail.trim());
+    sessionStorage.setItem("gv_chat_name", finalName);
+    sessionStorage.setItem("gv_chat_phone", finalPhone);
+    if (visitorEmail.trim()) sessionStorage.setItem("gv_chat_email", visitorEmail.trim());
 
     // Optimistic UI update
     const tempId = "temp_" + Date.now();
@@ -136,17 +174,22 @@ export default function FloatingChatHub() {
         body: JSON.stringify({
           sessionToken,
           visitorName: finalName,
+          visitorPhone: finalPhone,
           visitorEmail: visitorEmail.trim(),
           text: textToSend,
           currentMode,
         }),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+      if (!data.ok) {
+        setValidationError(data.error || "Failed to send message.");
+      } else {
         syncMessages(sessionToken);
       }
     } catch (err) {
       console.error("Failed to send message:", err);
+      setValidationError("Network error. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -262,8 +305,8 @@ export default function FloatingChatHub() {
             bottom: "76px",
             right: "22px",
             width: "calc(100vw - 44px)",
-            maxWidth: "410px",
-            height: "560px",
+            maxWidth: "420px",
+            height: "580px",
             maxHeight: "calc(100vh - 100px)",
             background: "rgba(8, 10, 16, 0.96)",
             backdropFilter: "blur(24px)",
@@ -280,7 +323,7 @@ export default function FloatingChatHub() {
           {/* Header */}
           <div
             style={{
-              padding: "16px 20px",
+              padding: "14px 18px",
               background: "rgba(14, 18, 28, 0.9)",
               borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
               display: "flex",
@@ -291,15 +334,15 @@ export default function FloatingChatHub() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div
                 style={{
-                  width: "36px",
-                  height: "36px",
+                  width: "34px",
+                  height: "34px",
                   borderRadius: "10px",
                   background: "linear-gradient(135deg, #00f0ff22, #a56ce844)",
                   border: "1px solid rgba(0, 240, 255, 0.4)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   color: "#00f0ff",
                   fontFamily: "var(--font-mono)",
@@ -309,26 +352,46 @@ export default function FloatingChatHub() {
               </div>
               <div>
                 <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#ffffff" }}>Ganesh Varma</div>
-                <div style={{ fontSize: "11px", color: "#39ff88", display: "flex", alignItems: "center", gap: "5px" }}>
-                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#39ff88" }} />
-                  Active on Telegram &amp; Mobile
+                <div style={{ fontSize: "10.5px", color: "#39ff88", display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#39ff88" }} />
+                  Active on Telegram &amp; Phone
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={() => setIsOpen(false)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "rgba(255,255,255,0.6)",
-                cursor: "pointer",
-                fontSize: "16px",
-                padding: "6px",
-              }}
-            >
-              ✕
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {messages.length > 0 && (
+                <button
+                  onClick={handleStartFreshChat}
+                  title="Clear & Start Fresh Conversation"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.06)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    color: "rgba(255, 255, 255, 0.7)",
+                    borderRadius: "6px",
+                    padding: "4px 8px",
+                    fontSize: "10px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  🔄 Reset
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "rgba(255,255,255,0.6)",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                  padding: "4px",
+                }}
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Navigation Tabs */}
@@ -361,10 +424,10 @@ export default function FloatingChatHub() {
               onClick={() => setActiveTab("contacts")}
               style={{
                 padding: "10px",
-                background: activeTab === "contacts" ? "rgba(165, 108, 232, 0.1)" : "transparent",
-                color: activeTab === "contacts" ? "#a56ce8" : "rgba(255, 255, 255, 0.6)",
+                background: activeTab === "contacts" ? "rgba(57, 255, 136, 0.1)" : "transparent",
+                color: activeTab === "contacts" ? "#39ff88" : "rgba(255, 255, 255, 0.6)",
                 border: "none",
-                borderBottom: activeTab === "contacts" ? "2px solid #a56ce8" : "2px solid transparent",
+                borderBottom: activeTab === "contacts" ? "2px solid #39ff88" : "2px solid transparent",
                 cursor: "pointer",
                 fontWeight: 600,
                 transition: "all 0.2s",
@@ -383,7 +446,7 @@ export default function FloatingChatHub() {
               <div
                 style={{
                   flex: 1,
-                  padding: "16px",
+                  padding: "14px 16px",
                   overflowY: "auto",
                   display: "flex",
                   flexDirection: "column",
@@ -393,27 +456,27 @@ export default function FloatingChatHub() {
                 {/* Intro System Message */}
                 <div
                   style={{
-                    background: "rgba(0, 240, 255, 0.05)",
-                    border: "1px solid rgba(0, 240, 255, 0.18)",
+                    background: "rgba(0, 240, 255, 0.04)",
+                    border: "1px solid rgba(0, 240, 255, 0.16)",
                     borderRadius: "10px",
-                    padding: "12px 14px",
-                    fontSize: "12px",
+                    padding: "10px 12px",
+                    fontSize: "11.5px",
                     color: "rgba(255, 255, 255, 0.85)",
-                    lineHeight: 1.5,
+                    lineHeight: 1.45,
                   }}
                 >
                   👋 <b>Direct Line to Ganesh</b>
-                  <div style={{ marginTop: "4px", fontSize: "11px", color: "rgba(255, 255, 255, 0.6)" }}>
-                    Your message dispatches immediately to my Telegram. I can reply in real-time right here!
+                  <div style={{ marginTop: "2px", fontSize: "10.5px", color: "rgba(255, 255, 255, 0.6)" }}>
+                    Enter your name &amp; Indian mobile number below to start. Your message arrives directly on my phone.
                   </div>
                 </div>
 
                 {messages.length === 0 && (
-                  <div style={{ marginTop: "auto", marginBottom: "8px" }}>
-                    <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.4)", marginBottom: "8px", fontFamily: "var(--font-mono)" }}>
-                      SUGGESTED TOPICS:
+                  <div style={{ marginTop: "auto", marginBottom: "4px" }}>
+                    <div style={{ fontSize: "10.5px", color: "rgba(255, 255, 255, 0.4)", marginBottom: "6px", fontFamily: "var(--font-mono)" }}>
+                      QUICK TOPICS:
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                       {QUICK_PROMPTS.map((prompt, i) => (
                         <button
                           key={i}
@@ -422,9 +485,9 @@ export default function FloatingChatHub() {
                             background: "rgba(255, 255, 255, 0.04)",
                             border: "1px solid rgba(255, 255, 255, 0.1)",
                             borderRadius: "8px",
-                            padding: "8px 12px",
+                            padding: "7px 12px",
                             color: "rgba(255, 255, 255, 0.85)",
-                            fontSize: "11.5px",
+                            fontSize: "11px",
                             textAlign: "left",
                             cursor: "pointer",
                             transition: "background 0.2s, border-color 0.2s",
@@ -458,7 +521,7 @@ export default function FloatingChatHub() {
                     >
                       <div
                         style={{
-                          fontSize: "10.5px",
+                          fontSize: "10px",
                           fontFamily: "var(--font-mono)",
                           color: "rgba(255, 255, 255, 0.4)",
                           marginBottom: "3px",
@@ -469,14 +532,14 @@ export default function FloatingChatHub() {
                       <div
                         style={{
                           maxWidth: "84%",
-                          padding: "10px 14px",
+                          padding: "9px 13px",
                           borderRadius: isMe ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
                           background: isMe
                             ? "linear-gradient(135deg, #00f0ff, #0099ff)"
                             : "rgba(255, 255, 255, 0.08)",
                           color: isMe ? "#000000" : "#ffffff",
                           fontWeight: isMe ? 500 : 400,
-                          fontSize: "12.5px",
+                          fontSize: "12px",
                           lineHeight: 1.45,
                           boxShadow: isMe ? "0 4px 14px rgba(0, 240, 255, 0.25)" : "none",
                           border: isMe ? "none" : "1px solid rgba(255, 255, 255, 0.12)",
@@ -489,7 +552,7 @@ export default function FloatingChatHub() {
                         style={{
                           fontSize: "9px",
                           color: "rgba(255, 255, 255, 0.35)",
-                          marginTop: "3px",
+                          marginTop: "2px",
                           fontFamily: "var(--font-mono)",
                         }}
                       >
@@ -515,39 +578,71 @@ export default function FloatingChatHub() {
                   gap: "8px",
                 }}
               >
-                {/* Name / Email row (if first time) */}
+                {/* Inline Validation Banner */}
+                {validationError && (
+                  <div
+                    style={{
+                      background: "rgba(255, 95, 86, 0.15)",
+                      border: "1px solid rgba(255, 95, 86, 0.4)",
+                      borderRadius: "6px",
+                      padding: "6px 10px",
+                      color: "#ff5f56",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {validationError}
+                  </div>
+                )}
+
+                {/* Mandatory Name & Phone Input Row */}
                 {messages.length === 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                    <input
-                      type="text"
-                      placeholder="Your Name (Optional)"
-                      value={visitorName}
-                      onChange={(e) => setVisitorName(e.target.value)}
-                      style={{
-                        padding: "6px 10px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        borderRadius: "6px",
-                        color: "#fff",
-                        fontSize: "11px",
-                        outline: "none",
-                      }}
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email (for offline reply)"
-                      value={visitorEmail}
-                      onChange={(e) => setVisitorEmail(e.target.value)}
-                      style={{
-                        padding: "6px 10px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        borderRadius: "6px",
-                        color: "#fff",
-                        fontSize: "11px",
-                        outline: "none",
-                      }}
-                    />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "8px" }}>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Your Name *"
+                        required
+                        value={visitorName}
+                        onChange={(e) => {
+                          setVisitorName(e.target.value);
+                          setValidationError("");
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "7px 10px",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          border: "1px solid rgba(255, 255, 255, 0.15)",
+                          borderRadius: "6px",
+                          color: "#fff",
+                          fontSize: "11px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="tel"
+                        placeholder="+91 Mobile Number *"
+                        required
+                        value={visitorPhone}
+                        onChange={(e) => {
+                          setVisitorPhone(e.target.value);
+                          setValidationError("");
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "7px 10px",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          border: "1px solid rgba(57, 255, 136, 0.3)",
+                          borderRadius: "6px",
+                          color: "#39ff88",
+                          fontSize: "11px",
+                          outline: "none",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -556,15 +651,18 @@ export default function FloatingChatHub() {
                     type="text"
                     placeholder="Type your message..."
                     value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
+                    onChange={(e) => {
+                      setMessageText(e.target.value);
+                      setValidationError("");
+                    }}
                     style={{
                       flex: 1,
-                      padding: "10px 14px",
+                      padding: "9px 12px",
                       background: "rgba(255, 255, 255, 0.06)",
                       border: "1px solid rgba(0, 240, 255, 0.3)",
                       borderRadius: "8px",
                       color: "#ffffff",
-                      fontSize: "12.5px",
+                      fontSize: "12px",
                       outline: "none",
                     }}
                   />
@@ -572,13 +670,13 @@ export default function FloatingChatHub() {
                     type="submit"
                     disabled={isSending || !messageText.trim()}
                     style={{
-                      padding: "0 18px",
+                      padding: "0 16px",
                       background: messageText.trim() ? "#00f0ff" : "rgba(255, 255, 255, 0.1)",
                       color: messageText.trim() ? "#000000" : "rgba(255, 255, 255, 0.4)",
                       border: "none",
                       borderRadius: "8px",
                       fontWeight: 700,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                       cursor: messageText.trim() ? "pointer" : "default",
                       transition: "all 0.2s",
                       fontFamily: "var(--font-mono)",
@@ -598,101 +696,47 @@ export default function FloatingChatHub() {
             <div
               style={{
                 flex: 1,
-                padding: "20px",
+                padding: "18px",
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
                 gap: "12px",
               }}
             >
-              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", marginBottom: "4px" }}>
+              <div style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.7)", marginBottom: "2px" }}>
                 Reach out directly across any of my channels:
               </div>
 
-              {/* Email Card */}
-              <div
-                style={{
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  borderRadius: "10px",
-                  padding: "12px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.4)" }}>
-                    PRIMARY EMAIL
-                  </div>
-                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", marginTop: "2px" }}>
-                    gp61080@gmail.com
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button
-                    onClick={() => copyToClipboard("gp61080@gmail.com", "email")}
-                    style={{
-                      padding: "6px 10px",
-                      background: "rgba(0, 240, 255, 0.1)",
-                      border: "1px solid rgba(0, 240, 255, 0.3)",
-                      borderRadius: "6px",
-                      color: "#00f0ff",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {copiedKey === "email" ? "COPIED!" : "COPY"}
-                  </button>
-                  <a
-                    href="mailto:gp61080@gmail.com"
-                    style={{
-                      padding: "6px 10px",
-                      background: "rgba(255, 255, 255, 0.1)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "6px",
-                      color: "#fff",
-                      fontSize: "11px",
-                      textDecoration: "none",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    OPEN ↗
-                  </a>
-                </div>
-              </div>
-
-              {/* Direct Phone & WhatsApp Card */}
+              {/* Phone & WhatsApp Card */}
               <div
                 style={{
                   background: "rgba(57, 255, 136, 0.04)",
                   border: "1px solid rgba(57, 255, 136, 0.2)",
                   borderRadius: "10px",
-                  padding: "12px 16px",
+                  padding: "12px 14px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                 }}
               >
                 <div>
-                  <div style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "rgba(57, 255, 136, 0.85)" }}>
+                  <div style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "rgba(57, 255, 136, 0.85)" }}>
                     DIRECT PHONE / WHATSAPP
                   </div>
-                  <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#fff", marginTop: "2px", letterSpacing: "0.02em" }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", marginTop: "2px", letterSpacing: "0.02em" }}>
                     +91 85550 21322
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div style={{ display: "flex", gap: "5px" }}>
                   <button
                     onClick={() => copyToClipboard("+91 85550 21322", "phone")}
                     style={{
-                      padding: "6px 10px",
+                      padding: "5px 8px",
                       background: "rgba(57, 255, 136, 0.1)",
                       border: "1px solid rgba(57, 255, 136, 0.3)",
                       borderRadius: "6px",
                       color: "#39ff88",
-                      fontSize: "11px",
+                      fontSize: "10.5px",
                       cursor: "pointer",
                       fontFamily: "var(--font-mono)",
                     }}
@@ -702,12 +746,12 @@ export default function FloatingChatHub() {
                   <a
                     href="tel:+918555021322"
                     style={{
-                      padding: "6px 10px",
+                      padding: "5px 8px",
                       background: "rgba(255, 255, 255, 0.1)",
                       border: "1px solid rgba(255, 255, 255, 0.2)",
                       borderRadius: "6px",
                       color: "#fff",
-                      fontSize: "11px",
+                      fontSize: "10.5px",
                       textDecoration: "none",
                       fontFamily: "var(--font-mono)",
                     }}
@@ -719,18 +763,72 @@ export default function FloatingChatHub() {
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
-                      padding: "6px 10px",
+                      padding: "5px 8px",
                       background: "rgba(37, 211, 102, 0.15)",
                       border: "1px solid rgba(37, 211, 102, 0.4)",
                       borderRadius: "6px",
                       color: "#25d366",
-                      fontSize: "11px",
+                      fontSize: "10.5px",
                       textDecoration: "none",
                       fontFamily: "var(--font-mono)",
                       fontWeight: 600,
                     }}
                   >
                     WA ↗
+                  </a>
+                </div>
+              </div>
+
+              {/* Email Card */}
+              <div
+                style={{
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.4)" }}>
+                    PRIMARY EMAIL
+                  </div>
+                  <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#fff", marginTop: "2px" }}>
+                    gp61080@gmail.com
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "5px" }}>
+                  <button
+                    onClick={() => copyToClipboard("gp61080@gmail.com", "email")}
+                    style={{
+                      padding: "5px 8px",
+                      background: "rgba(0, 240, 255, 0.1)",
+                      border: "1px solid rgba(0, 240, 255, 0.3)",
+                      borderRadius: "6px",
+                      color: "#00f0ff",
+                      fontSize: "10.5px",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {copiedKey === "email" ? "COPIED!" : "COPY"}
+                  </button>
+                  <a
+                    href="mailto:gp61080@gmail.com"
+                    style={{
+                      padding: "5px 8px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderRadius: "6px",
+                      color: "#fff",
+                      fontSize: "10.5px",
+                      textDecoration: "none",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    OPEN ↗
                   </a>
                 </div>
               </div>

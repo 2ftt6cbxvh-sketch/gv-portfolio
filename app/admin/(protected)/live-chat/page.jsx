@@ -238,12 +238,47 @@ export default function AdminLiveChatPage() {
               }}
             >
               <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>
-                  {activeSession.visitorName}
-                  {activeSession.visitorEmail && (
-                    <span style={{ marginLeft: "8px", fontSize: "12px", color: "#00f0ff", fontWeight: 400 }}>
-                      ({activeSession.visitorEmail})
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <span>{activeSession.visitorName}</span>
+                  {activeSession.visitorPhone && (
+                    <span style={{ fontSize: "12px", color: "#39ff88", fontFamily: "var(--font-mono)", background: "rgba(57, 255, 136, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                      📱 {activeSession.visitorPhone}
                     </span>
+                  )}
+                  {activeSession.visitorPhone && (
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      <a
+                        href={`tel:${activeSession.visitorPhone.replace(/\s+/g, "")}`}
+                        style={{
+                          fontSize: "10px",
+                          color: "#fff",
+                          background: "rgba(255,255,255,0.1)",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          textDecoration: "none",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        CALL ↗
+                      </a>
+                      <a
+                        href={`https://wa.me/${activeSession.visitorPhone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: "10px",
+                          color: "#25d366",
+                          background: "rgba(37, 211, 102, 0.15)",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          textDecoration: "none",
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        WHATSAPP ↗
+                      </a>
+                    </div>
                   )}
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--a-text-muted)", marginTop: "2px" }}>

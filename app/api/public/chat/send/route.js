@@ -47,19 +47,55 @@ async function getIpGeo(ip) {
   return { location: "Unknown Location", isp: "Unknown Carrier", flag: "🌐" };
 }
 
+// Format and validate Indian Phone Number (+91 format, 10 digits starting with 6-9)
+function validateIndianPhoneNumber(phone) {
+  if (!phone) return null;
+  const digits = String(phone).replace(/\D/g, ""); // strip non-digits
+  let standardDigits = digits;
+
+  if (digits.length === 12 && digits.startsWith("91")) {
+    standardDigits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith("0")) {
+    standardDigits = digits.slice(1);
+  }
+
+  if (/^[6-9]\d{9}$/.test(standardDigits)) {
+    return standardDigits;
+  }
+  return null;
+}
+
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { sessionToken, visitorName, visitorEmail, text, currentMode } = body;
+    const { sessionToken, visitorName, visitorPhone, visitorEmail, text, currentMode } = body;
 
     if (!sessionToken || !text || !text.trim()) {
       return NextResponse.json({ ok: false, error: "Message text is required" }, { status: 400 });
     }
 
+    const cleanName = (visitorName || "").trim().slice(0, 80);
+    if (!cleanName || cleanName.length < 2) {
+      return NextResponse.json({ ok: false, error: "Please enter your name (minimum 2 characters)." }, { status: 400 });
+    }
+
+    const validatedPhone = validateIndianPhoneNumber(visitorPhone);
+    if (!validatedPhone) {
+      return NextResponse.json({
+        ok: false,
+        error: "Please enter a valid 10-digit Indian mobile number (e.g. 9876543210).",
+      }, { status: 400 });
+    }
+
     const cleanText = text.trim().slice(0, 2000);
-    const cleanName = (visitorName || "Anonymous Visitor").trim().slice(0, 80);
     const cleanEmail = (visitorEmail || "").trim().slice(0, 120);
     const cleanMode = (currentMode || "Landing").trim().slice(0, 50);
+
+    // Auto-prune old sessions older than 24 hours to save DB space and prevent clutter
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    prisma.chatSession.deleteMany({
+      where: { lastActiveAt: { lt: twentyFourHoursAgo } },
+    }).catch(() => {});
 
     // Extract visitor IP from edge headers
     const forwarded = req.headers.get("x-forwarded-for");
@@ -74,6 +110,7 @@ export async function POST(req) {
       where: { sessionToken },
       update: {
         visitorName: cleanName,
+        visitorPhone: `+91 ${validatedPhone}`,
         visitorEmail: cleanEmail || undefined,
         visitorIp: ip,
         visitorLocation: geo.location,
@@ -85,6 +122,7 @@ export async function POST(req) {
       create: {
         sessionToken,
         visitorName: cleanName,
+        visitorPhone: `+91 ${validatedPhone}`,
         visitorEmail: cleanEmail,
         visitorIp: ip,
         visitorLocation: geo.location,
@@ -115,12 +153,13 @@ export async function POST(req) {
     let telegramMsgId = null;
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-    // 3. Dispatch Live Telegram Push Notification
+    // 3. Dispatch Live Telegram Push Notification with direct Phone & WhatsApp action links
     if (config.telegramBotToken && config.telegramChatId) {
       const emailLine = cleanEmail ? `📧 <b>Email</b>: <code>${cleanEmail}</code>\n` : "";
       const telegramText =
         `💬 <b>NEW LIVE CHAT MESSAGE</b>\n\n` +
         `👤 <b>Visitor</b>: <b>${cleanName}</b>\n` +
+        `📱 <b>Phone</b>: <code>+91 ${validatedPhone}</code> (<a href="tel:+91${validatedPhone}">Call</a> | <a href="https://wa.me/91${validatedPhone}">WhatsApp</a>)\n` +
         emailLine +
         `🌐 <b>Location</b>: ${geo.location}\n` +
         `📍 <b>Mode</b>: <code>${cleanMode}</code>\n` +
@@ -128,8 +167,8 @@ export async function POST(req) {
         `📝 <b>Message</b>:\n` +
         `<i>"${cleanText}"</i>\n\n` +
         `⚡ <b>Quick Reply Options</b>:\n` +
-        `• Type: <code>/r ${cleanText.slice(0, 15)}...</code> &lt;your reply&gt;\n` +
-        `• Or simply <b>Swipe-Reply</b> to this message!`;
+        `• Type: <code>/r &lt;your reply&gt;</code>\n` +
+        `• Or simply <b>Swipe-Reply</b> to this alert!`;
 
       try {
         const tgRes = await fetch(`https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`, {

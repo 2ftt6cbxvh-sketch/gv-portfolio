@@ -222,6 +222,7 @@ model ChatSession {
   id               String        @id @default(cuid())
   sessionToken     String        @unique
   visitorName      String        @default("Anonymous Visitor")
+  visitorPhone     String?       @default("")
   visitorEmail     String?       @default("")
   visitorIp        String?       @default("")
   visitorLocation  String?       @default("Unknown")
