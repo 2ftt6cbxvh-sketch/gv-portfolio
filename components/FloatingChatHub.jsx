@@ -663,11 +663,11 @@ export default function FloatingChatHub() {
                 </div>
               </div>
 
-              {/* Telegram Card */}
+              {/* Direct Phone & WhatsApp Card */}
               <div
                 style={{
-                  background: "rgba(0, 240, 255, 0.04)",
-                  border: "1px solid rgba(0, 240, 255, 0.15)",
+                  background: "rgba(57, 255, 136, 0.04)",
+                  border: "1px solid rgba(57, 255, 136, 0.2)",
                   borderRadius: "10px",
                   padding: "12px 16px",
                   display: "flex",
@@ -676,31 +676,63 @@ export default function FloatingChatHub() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "rgba(0, 240, 255, 0.7)" }}>
-                    TELEGRAM DIRECT
+                  <div style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "rgba(57, 255, 136, 0.85)" }}>
+                    DIRECT PHONE / WHATSAPP
                   </div>
-                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", marginTop: "2px" }}>
-                    @GaneshVarma
+                  <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#fff", marginTop: "2px", letterSpacing: "0.02em" }}>
+                    +91 85550 21322
                   </div>
                 </div>
-                <a
-                  href="https://t.me/GaneshVarma"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    padding: "6px 12px",
-                    background: "rgba(0, 240, 255, 0.15)",
-                    border: "1px solid rgba(0, 240, 255, 0.4)",
-                    borderRadius: "6px",
-                    color: "#00f0ff",
-                    fontSize: "11px",
-                    textDecoration: "none",
-                    fontFamily: "var(--font-mono)",
-                    fontWeight: 600,
-                  }}
-                >
-                  CHAT ↗
-                </a>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    onClick={() => copyToClipboard("+91 85550 21322", "phone")}
+                    style={{
+                      padding: "6px 10px",
+                      background: "rgba(57, 255, 136, 0.1)",
+                      border: "1px solid rgba(57, 255, 136, 0.3)",
+                      borderRadius: "6px",
+                      color: "#39ff88",
+                      fontSize: "11px",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {copiedKey === "phone" ? "COPIED!" : "COPY"}
+                  </button>
+                  <a
+                    href="tel:+918555021322"
+                    style={{
+                      padding: "6px 10px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderRadius: "6px",
+                      color: "#fff",
+                      fontSize: "11px",
+                      textDecoration: "none",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    CALL ↗
+                  </a>
+                  <a
+                    href="https://wa.me/918555021322"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: "6px 10px",
+                      background: "rgba(37, 211, 102, 0.15)",
+                      border: "1px solid rgba(37, 211, 102, 0.4)",
+                      borderRadius: "6px",
+                      color: "#25d366",
+                      fontSize: "11px",
+                      textDecoration: "none",
+                      fontFamily: "var(--font-mono)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    WA ↗
+                  </a>
+                </div>
               </div>
 
               {/* LinkedIn & GitHub Grid */}
