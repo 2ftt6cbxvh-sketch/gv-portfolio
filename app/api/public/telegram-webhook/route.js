@@ -27,6 +27,7 @@ export async function POST(req) {
     const chatId = String(message.chat?.id || "");
     const rawText = (message.text || "").trim();
     const upperText = rawText.toUpperCase();
+    const replyToMsg = message.reply_to_message;
 
     // Fetch Telegram Config from DB
     const gatewayFlag = await prisma.featureFlag.findUnique({
@@ -67,9 +68,85 @@ export async function POST(req) {
     let replyText = "";
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // 💬 FEATURE: 2-Way Live Chat Reply Handler (/r, /c, or Direct Swipe-Reply)
+    // ──────────────────────────────────────────────────────────────────────────
+    const isExplicitReplyCommand = upperText.startsWith("/R ") || upperText.startsWith("/C ") || upperText.startsWith("/REPLY ");
+    const isSwipeReply = Boolean(replyToMsg && !rawText.startsWith("/"));
+
+    if (isExplicitReplyCommand || isSwipeReply) {
+      let messageContent = rawText;
+      if (isExplicitReplyCommand) {
+        const parts = rawText.split(" ");
+        messageContent = parts.slice(1).join(" ").trim();
+      }
+
+      if (!messageContent) {
+        replyText = `⚠️ *Usage*: \`/r <your message>\`\nExample: \`/r Yes, I am open for freelance projects!\``;
+      } else {
+        let targetSession = null;
+
+        // 1. If replying to a specific Telegram alert, correlate by telegramMsgId
+        if (replyToMsg?.message_id) {
+          const matchedMessage = await prisma.chatMessage.findFirst({
+            where: { telegramMsgId: replyToMsg.message_id },
+            include: { session: true },
+          });
+          if (matchedMessage?.session) {
+            targetSession = matchedMessage.session;
+          }
+        }
+
+        // 2. Fallback to the latest active chat session
+        if (!targetSession) {
+          targetSession = await prisma.chatSession.findFirst({
+            where: { status: "ACTIVE" },
+            orderBy: { lastActiveAt: "desc" },
+          });
+        }
+
+        if (!targetSession) {
+          replyText = `⚠️ *No Active Visitor Session Found*\n\nThere are currently no active live chat conversations in the database.`;
+        } else {
+          // Insert Admin Chat Message
+          await prisma.chatMessage.create({
+            data: {
+              sessionId: targetSession.id,
+              sender: "ADMIN",
+              senderName: "Ganesh Varma",
+              text: messageContent,
+              read: true,
+            },
+          });
+
+          // Update Session Activity & increment unread for visitor
+          await prisma.chatSession.update({
+            where: { id: targetSession.id },
+            data: {
+              lastActiveAt: new Date(),
+              unreadByVisitor: { increment: 1 },
+            },
+          });
+
+          replyText =
+            `✅ *REPLY DELIVERED TO VISITOR*\n\n` +
+            `👤 *Recipient*: *${targetSession.visitorName}*\n` +
+            `📍 *Mode*: \`${targetSession.currentMode || "Landing"}\`\n` +
+            `💬 *Your Reply*: "${messageContent}"\n\n` +
+            `⚡ *Visitor screen updated in real-time!*`;
+        }
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 🤖 SECURITY COMMAND REGISTRY
+    // ──────────────────────────────────────────────────────────────────────────
     // 1. ALL COMMANDS LIST (/commands, /help)
-    if (upperText.startsWith("/COMMANDS") || upperText.startsWith("/HELP") || upperText === "/START") {
+    else if (upperText.startsWith("/COMMANDS") || upperText.startsWith("/HELP") || upperText === "/START") {
       replyText = `🤖 *GV CYBER VAULT TELEGRAM COMMAND REGISTRY*\n\n` +
+        `*Live Chat Commands*:\n` +
+        `• \`/r <message>\` — Reply to the latest live chat visitor\n` +
+        `• *Swipe-Reply* — Swipe any visitor alert to chat directly\n\n` +
         `*Security Controls*:\n` +
         `• \`/killswitch ON\` — Instantly shut down site (HTTP 503)\n` +
         `• \`/killswitch OFF\` — Restore site online\n` +
@@ -110,7 +187,6 @@ export async function POST(req) {
       if (!targetIp) {
         replyText = `⚠️ *Usage*: \`/blacklist <IP_ADDRESS>\`\nExample: \`/blacklist 185.220.101.4\``;
       } else {
-        // Manually push to PostgreSQL rate limit table with count = 999
         const windowMs = 24 * 60 * 60 * 1000;
         const now = Date.now();
         const flag = await prisma.featureFlag.findUnique({ where: { key: "ip_rate_limits_24h" } });

@@ -1,6 +1,7 @@
 import "./base.css";
 import "./style.css";
 import SessionProviderWrapper from "@/components/admin/SessionProviderWrapper";
+import FloatingChatHub from "@/components/FloatingChatHub";
 
 export const metadata = {
   title: "GV — Ganesh Varma",
@@ -16,7 +17,10 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <a href="#stage" className="skip-link">Skip to content</a>
-        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+        <SessionProviderWrapper>
+          {children}
+          <FloatingChatHub />
+        </SessionProviderWrapper>
       </body>
     </html>
   );

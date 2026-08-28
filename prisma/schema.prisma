@@ -215,3 +215,36 @@ model JourneyMilestone {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// ---------- Live Chat Sessions & Messages ----------
+
+model ChatSession {
+  id               String        @id @default(cuid())
+  sessionToken     String        @unique
+  visitorName      String        @default("Anonymous Visitor")
+  visitorEmail     String?       @default("")
+  visitorIp        String?       @default("")
+  visitorLocation  String?       @default("Unknown")
+  visitorCarrier   String?       @default("Unknown")
+  currentMode      String?       @default("Landing")
+  unreadByAdmin    Int           @default(0)
+  unreadByVisitor  Int           @default(0)
+  status           String        @default("ACTIVE") // ACTIVE | CLOSED
+  lastActiveAt     DateTime      @default(now())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  messages         ChatMessage[]
+}
+
+model ChatMessage {
+  id             String      @id @default(cuid())
+  sessionId      String
+  session        ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender         String      // VISITOR | ADMIN
+  senderName     String?     @default("")
+  text           String
+  telegramMsgId  Int?
+  read           Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+}
+

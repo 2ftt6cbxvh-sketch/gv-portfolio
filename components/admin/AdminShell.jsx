@@ -4,7 +4,13 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 const NAV = [
-  { group: "Overview", links: [{ href: "/admin", label: "Dashboard" }] },
+  {
+    group: "Overview & Communications",
+    links: [
+      { href: "/admin", label: "Dashboard" },
+      { href: "/admin/live-chat", label: "💬 Live Visitor Chat" },
+    ],
+  },
   {
     group: "Security & Cyber Vault",
     links: [
