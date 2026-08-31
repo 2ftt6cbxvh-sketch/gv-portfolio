@@ -1,56 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-function getCountryFlag(countryCode) {
-  if (!countryCode || countryCode.length !== 2) return "🌐";
-  try {
-    const codePoints = countryCode
-      .toUpperCase()
-      .split("")
-      .map((char) => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
-  } catch (e) {
-    return "🌐";
-  }
-}
-
-async function getIpGeo(ip) {
-  if (!ip || ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
-    return { location: "Local Server / India", isp: "Internal Network", flag: "🏠" };
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
-
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp`, {
-      signal: controller.signal,
-    }).catch(() => null);
-
-    clearTimeout(timeoutId);
-
-    if (res && res.ok) {
-      const data = await res.json().catch(() => null);
-      if (data && data.status === "success") {
-        const flag = getCountryFlag(data.countryCode);
-        const cityRegion = [data.city, data.regionName].filter(Boolean).join(", ");
-        const location = `${flag} ${cityRegion ? cityRegion + ", " : ""}${data.country}`;
-        return {
-          location,
-          isp: data.isp || "Unknown Carrier",
-          flag,
-        };
-      }
-    }
-  } catch (e) {}
-
-  return { location: "Unknown Location", isp: "Unknown Carrier", flag: "🌐" };
-}
+import { getDetailedTelemetry } from "@/lib/telemetry";
 
 // Format and validate Indian Phone Number (+91 format, 10 digits starting with 6-9)
 function validateIndianPhoneNumber(phone) {
   if (!phone) return null;
-  const digits = String(phone).replace(/\D/g, ""); // strip non-digits
+  const digits = String(phone).replace(/\D/g, "");
   let standardDigits = digits;
 
   if (digits.length === 12 && digits.startsWith("91")) {
@@ -97,13 +52,14 @@ export async function POST(req) {
       where: { lastActiveAt: { lt: twentyFourHoursAgo } },
     }).catch(() => {});
 
-    // Extract visitor IP from edge headers
+    // Extract visitor IP and User-Agent from headers
     const forwarded = req.headers.get("x-forwarded-for");
     const cfIp = req.headers.get("cf-connecting-ip");
     const realIp = req.headers.get("x-real-ip");
+    const userAgent = req.headers.get("user-agent") || "Unknown Device";
     let ip = cfIp || realIp || (forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1");
 
-    const geo = await getIpGeo(ip);
+    const telemetry = await getDetailedTelemetry(ip, userAgent);
 
     // 1. Upsert or update ChatSession in DB
     const session = await prisma.chatSession.upsert({
@@ -113,8 +69,8 @@ export async function POST(req) {
         visitorPhone: `+91 ${validatedPhone}`,
         visitorEmail: cleanEmail || undefined,
         visitorIp: ip,
-        visitorLocation: geo.location,
-        visitorCarrier: geo.isp,
+        visitorLocation: telemetry.location,
+        visitorCarrier: telemetry.isp,
         currentMode: cleanMode,
         lastActiveAt: new Date(),
         unreadByAdmin: { increment: 1 },
@@ -125,8 +81,8 @@ export async function POST(req) {
         visitorPhone: `+91 ${validatedPhone}`,
         visitorEmail: cleanEmail,
         visitorIp: ip,
-        visitorLocation: geo.location,
-        visitorCarrier: geo.isp,
+        visitorLocation: telemetry.location,
+        visitorCarrier: telemetry.isp,
         currentMode: cleanMode,
         unreadByAdmin: 1,
       },
@@ -153,15 +109,22 @@ export async function POST(req) {
     let telegramMsgId = null;
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-    // 3. Dispatch Live Telegram Push Notification with direct Phone & WhatsApp action links
+    // 3. Dispatch Live Telegram Push Notification with direct Phone & WhatsApp action links & GPS Pin
     if (config.telegramBotToken && config.telegramChatId) {
       const emailLine = cleanEmail ? `📧 <b>Email</b>: <code>${cleanEmail}</code>\n` : "";
+      const mapsLink = telemetry.googleMapsUrl
+        ? `\n📍 <b>GPS Pin</b>: <a href="${telemetry.googleMapsUrl}">View on Google Maps</a> (<code>${telemetry.coordinates}</code>)`
+        : "";
+
       const telegramText =
         `💬 <b>NEW LIVE CHAT MESSAGE</b>\n\n` +
         `👤 <b>Visitor</b>: <b>${cleanName}</b>\n` +
         `📱 <b>Phone</b>: <code>+91 ${validatedPhone}</code> (<a href="tel:+91${validatedPhone}">Call</a> | <a href="https://wa.me/91${validatedPhone}">WhatsApp</a>)\n` +
         emailLine +
-        `🌐 <b>Location</b>: ${geo.location}\n` +
+        `🌐 <b>Location</b>: ${telemetry.location}${mapsLink}\n` +
+        `📶 <b>ISP / Carrier</b>: <code>${telemetry.isp}</code>\n` +
+        `🛰️ <b>Integrity</b>: <b>${telemetry.integrityStatus}</b>\n` +
+        `📱 <b>Hardware Device</b>: <code>${telemetry.device.summary}</code>\n` +
         `📍 <b>Mode</b>: <code>${cleanMode}</code>\n` +
         `🕒 <b>Time (IST)</b>: <code>${timestamp}</code>\n\n` +
         `📝 <b>Message</b>:\n` +
@@ -178,6 +141,7 @@ export async function POST(req) {
             chat_id: config.telegramChatId,
             text: telegramText,
             parse_mode: "HTML",
+            disable_web_page_preview: false,
           }),
         });
 

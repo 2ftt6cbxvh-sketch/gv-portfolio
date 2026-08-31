@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { unblockIp, check24HourRateLimit } from "@/lib/rateLimit";
-
-function getCountryFlag(countryCode) {
-  if (!countryCode || countryCode.length !== 2) return "🌐";
-  try {
-    const codePoints = countryCode
-      .toUpperCase()
-      .split("")
-      .map((char) => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
-  } catch (e) {
-    return "🌐";
-  }
-}
+import { unblockIp } from "@/lib/rateLimit";
+import { getDetailedTelemetry } from "@/lib/telemetry";
 
 export async function POST(req) {
   try {
@@ -69,7 +57,7 @@ export async function POST(req) {
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 💬 FEATURE: 2-Way Live Chat Reply Handler (/r, /c, or Direct Swipe-Reply)
+    // 💬 FEATURE 1: 2-Way Live Chat Reply Handler (/r, /c, or Direct Swipe-Reply)
     // ──────────────────────────────────────────────────────────────────────────
     const isExplicitReplyCommand = upperText.startsWith("/R ") || upperText.startsWith("/C ") || upperText.startsWith("/REPLY ");
     const isSwipeReply = Boolean(replyToMsg && !rawText.startsWith("/"));
@@ -139,26 +127,102 @@ export async function POST(req) {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // 🛠️ FEATURE 2: Under Maintenance Mode Control (/maintenance)
+    // ──────────────────────────────────────────────────────────────────────────
+    else if (upperText.startsWith("/MAINTENANCE") || upperText.startsWith("/MAINT")) {
+      const parts = rawText.split(" ");
+      const action = (parts[1] || "").toUpperCase();
+      const customParam = parts.slice(2).join(" ").trim();
+
+      if (action === "OFF" || action === "DISABLE" || action === "STOP") {
+        await prisma.featureFlag.upsert({
+          where: { key: "under_maintenance_mode" },
+          update: { enabled: false, metadata: "" },
+          create: { key: "under_maintenance_mode", name: "Under Maintenance Mode", enabled: false, metadata: "" },
+        });
+
+        replyText =
+          `✅ *MAINTENANCE MODE DEACTIVATED!*\n\n` +
+          `*Status*: 🟢 SITE IS FULLY LIVE & PUBLIC\n` +
+          `*Time*: \`${timestamp}\`\n\n` +
+          `*System*: Normal operation restored across all global edges.`;
+      } else if (action === "STATUS") {
+        const flag = await prisma.featureFlag.findUnique({ where: { key: "under_maintenance_mode" } });
+        let meta = {};
+        if (flag?.metadata) {
+          try { meta = JSON.parse(flag.metadata); } catch (e) {}
+        }
+        const isActive = !!flag?.enabled;
+
+        replyText =
+          `🛠️ *MAINTENANCE MODE STATUS*\n\n` +
+          `*Status*: ${isActive ? "🟡 ACTIVE (Maintenance Screen Shown)" : "🟢 OFF (Site is Live)"}\n` +
+          `*Custom Notice*: ${meta.message || "Default Notice"}\n` +
+          `*ETA*: ${meta.eta || "N/A"}\n\n` +
+          `*To toggle*: \`/maintenance ON [message]\` or \`/maintenance OFF\``;
+      } else {
+        // ON or Timed Maintenance (e.g. /maintenance ON or /maintenance 45m or /maintenance ON System Upgrade)
+        let durationMinutes = 0;
+        let noticeMessage = customParam || "We are currently performing high-speed infrastructure optimizations and upgrading the AI & 3D graphics engine.";
+        let eta = "30 - 45 Minutes";
+
+        if (action.endsWith("M")) {
+          durationMinutes = parseInt(action.replace("M", ""), 10) || 30;
+          eta = `${durationMinutes} Minutes`;
+        } else if (action.endsWith("H")) {
+          durationMinutes = (parseInt(action.replace("H", ""), 10) || 1) * 60;
+          eta = `${durationMinutes / 60} Hour(s)`;
+        }
+
+        const autoRestoreAt = durationMinutes > 0 ? Date.now() + durationMinutes * 60 * 1000 : null;
+        const metaPayload = {
+          message: noticeMessage,
+          eta: eta,
+          autoRestoreAt: autoRestoreAt,
+        };
+
+        await prisma.featureFlag.upsert({
+          where: { key: "under_maintenance_mode" },
+          update: { enabled: true, metadata: JSON.stringify(metaPayload) },
+          create: { key: "under_maintenance_mode", name: "Under Maintenance Mode", enabled: true, metadata: JSON.stringify(metaPayload) },
+        });
+
+        const restoreNotice = autoRestoreAt
+          ? `\n*Auto-Restore At*: \`${new Date(autoRestoreAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\``
+          : "";
+
+        replyText =
+          `🛠️ *UNDER MAINTENANCE MODE ACTIVATED!*\n\n` +
+          `*Status*: 🟡 ACTIVE (Cyber Maintenance Screen Active)\n` +
+          `*Notice*: "${noticeMessage}"\n` +
+          `*ETA*: \`${eta}\`${restoreNotice}\n` +
+          `*Admin Bypass*: \`/admin\` remains unlocked for you.\n\n` +
+          `*To Deactivate*: Send \`/maintenance OFF\``;
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // 🤖 SECURITY COMMAND REGISTRY
     // ──────────────────────────────────────────────────────────────────────────
     // 1. ALL COMMANDS LIST (/commands, /help)
     else if (upperText.startsWith("/COMMANDS") || upperText.startsWith("/HELP") || upperText === "/START") {
       replyText = `🤖 *GV CYBER VAULT TELEGRAM COMMAND REGISTRY*\n\n` +
-        `*Live Chat Commands*:\n` +
+        `*Live Visitor Chat*:\n` +
         `• \`/r <message>\` — Reply to the latest live chat visitor\n` +
-        `• *Swipe-Reply* — Swipe any visitor alert to chat directly\n\n` +
-        `*Security Controls*:\n` +
-        `• \`/killswitch ON\` — Instantly shut down site (HTTP 503)\n` +
+        `• *Swipe-Reply* — Swipe any visitor alert to reply directly\n\n` +
+        `*Maintenance & Defense*:\n` +
+        `• \`/maintenance ON [message]\` — Turn ON maintenance mode\n` +
+        `• \`/maintenance 30m\` — Timed maintenance (Auto-restores)\n` +
+        `• \`/maintenance OFF\` — Turn OFF maintenance mode\n` +
+        `• \`/killswitch ON\` — Emergency 503 defense blackout\n` +
         `• \`/killswitch OFF\` — Restore site online\n` +
-        `• \`/lockdown 15m\` — Timed shutdown (Auto-restores in X mins)\n` +
-        `• \`/blacklist <IP>\` — Manually block an IP address\n` +
-        `• \`/unblock <IP>\` — Remove IP from 24h block list\n` +
-        `• \`/whitelist <IP>\` — Same as unblock IP\n\n` +
+        `• \`/lockdown 15m\` — Timed 503 shutdown\n\n` +
         `*Intelligence & Telemetry*:\n` +
-        `• \`/ip <IP>\` — Threat intelligence & location lookup\n` +
-        `• \`/logs\` — View last 5 security audit events\n` +
-        `• \`/stats\` — System metrics & database health\n` +
-        `• \`/commands\` — Display this command menu`;
+        `• \`/ip <IP>\` — Precise GPS coordinates & Google Maps pin\n` +
+        `• \`/blacklist <IP>\` — Block IP for 24 hours\n` +
+        `• \`/unblock <IP>\` — Whitelist / Unblock IP\n` +
+        `• \`/logs\` — View last 5 security events\n` +
+        `• \`/stats\` — System metrics & database health`;
     }
     // 2. LOGS COMMAND (/logs)
     else if (upperText.startsWith("/LOGS")) {
@@ -173,13 +237,38 @@ export async function POST(req) {
       } else {
         const logLines = logs.map((l, i) => {
           const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "N/A";
-          return `${i + 1}. *${l.type}*\n   • IP: \`${l.ip || "127.0.0.1"}\` (${l.location || "Local"})\n   • Time: \`${timeStr}\``;
+          const dev = l.device || "Unknown Device";
+          const map = l.googleMapsUrl ? `\n   • 📍 [Google Maps Pin](${l.googleMapsUrl})` : "";
+          return `${i + 1}. *${l.type}*\n   • IP: \`${l.ip || "127.0.0.1"}\` (${l.location || "Local"})\n   • Device: \`${dev}\`${map}\n   • Time: \`${timeStr}\``;
         }).join("\n\n");
 
         replyText = `📋 *LAST 5 SECURITY AUDIT LOGS*\n\n${logLines}`;
       }
     }
-    // 3. BLACKLIST IP COMMAND (/blacklist <IP>)
+    // 3. IP LOOKUP COMMAND WITH PRECISION GPS PIN (/ip <IP>)
+    else if (upperText.startsWith("/IP")) {
+      const parts = rawText.split(" ");
+      const targetIp = (parts[1] || "").trim();
+
+      if (!targetIp) {
+        replyText = `⚠️ *Usage*: \`/ip <IP_ADDRESS>\`\nExample: \`/ip 185.220.101.4\``;
+      } else {
+        const telemetry = await getDetailedTelemetry(targetIp);
+        const mapsLink = telemetry.googleMapsUrl
+          ? `\n*📍 GPS Coordinates*: [${telemetry.coordinates}](${telemetry.googleMapsUrl})`
+          : "";
+
+        replyText =
+          `🔍 *IP THREAT & PRECISION GPS INTELLIGENCE*\n\n` +
+          `*Query IP*: \`${targetIp}\`\n` +
+          `*Location*: ${telemetry.location}${mapsLink}\n` +
+          `*ISP / Carrier*: \`${telemetry.isp}\`\n` +
+          `*Autonomous System*: \`${telemetry.asOrg}\`\n` +
+          `*Location Integrity*: *${telemetry.integrityStatus}*\n` +
+          `*Proxy / VPN Detected*: \`${telemetry.isProxy ? "TRUE" : "FALSE"}\``;
+      }
+    }
+    // 4. BLACKLIST IP COMMAND (/blacklist <IP>)
     else if (upperText.startsWith("/BLACKLIST")) {
       const parts = rawText.split(" ");
       const targetIp = (parts[1] || "").trim();
@@ -205,7 +294,7 @@ export async function POST(req) {
         replyText = `🚫 *IP MANUALLY BLACKLISTED!*\n\n*Target IP*: \`${targetIp}\`\n*Status*: 🔴 Blocked in PostgreSQL database for 24 hours.`;
       }
     }
-    // 4. UNBLOCK / WHITELIST COMMAND (/unblock <IP>, /whitelist <IP>)
+    // 5. UNBLOCK / WHITELIST COMMAND (/unblock <IP>, /whitelist <IP>)
     else if (upperText.startsWith("/UNBLOCK") || upperText.startsWith("/WHITELIST")) {
       const parts = rawText.split(" ");
       const targetIp = (parts[1] || "").trim();
@@ -219,7 +308,7 @@ export async function POST(req) {
           : `⚠️ *IP Not Found*: \`${targetIp}\` was not active on the 24-hour block list.`;
       }
     }
-    // 5. TIMED LOCKDOWN COMMAND (/lockdown 5m, /lockdown 1h)
+    // 6. TIMED LOCKDOWN COMMAND (/lockdown 5m, /lockdown 1h)
     else if (upperText.startsWith("/LOCKDOWN")) {
       const parts = rawText.split(" ");
       const arg = (parts[1] || "").toLowerCase();
@@ -243,40 +332,8 @@ export async function POST(req) {
         `*Auto-Restore At*: \`${new Date(autoUnlockAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n\n` +
         `*To Restore Manually*: Send \`/killswitch OFF\``;
     }
-    // 6. IP LOOKUP COMMAND (/ip <IP>)
-    else if (upperText.startsWith("/IP")) {
-      const parts = rawText.split(" ");
-      const targetIp = (parts[1] || "").trim();
-
-      if (!targetIp) {
-        replyText = `⚠️ *Usage*: \`/ip <IP_ADDRESS>\`\nExample: \`/ip 185.220.101.4\``;
-      } else {
-        try {
-          const res = await fetch(`http://ip-api.com/json/${targetIp}?fields=status,country,countryCode,regionName,city,isp,org,proxy,hosting`).catch(() => null);
-          if (res && res.ok) {
-            const data = await res.json().catch(() => null);
-            if (data && data.status === "success") {
-              const flag = getCountryFlag(data.countryCode);
-              const isVpn = Boolean(data.proxy || data.hosting);
-              replyText = `🔍 *IP THREAT INTELLIGENCE REPORT*\n\n` +
-                `*Query IP*: \`${targetIp}\`\n` +
-                `*Location*: ${flag} ${data.city}, ${data.regionName}, ${data.country}\n` +
-                `*ISP*: \`${data.isp}\`\n` +
-                `*Threat Level*: ${isVpn ? "🔴 CRITICAL (Active Proxy / VPN)" : "🟢 SAFE (Consumer Broadband)"}\n` +
-                `*Proxy/Hosting*: \`${isVpn ? "TRUE" : "FALSE"}\``;
-            } else {
-              replyText = `⚠️ *Lookup Failed*: Could not fetch data for \`${targetIp}\`.`;
-            }
-          } else {
-            replyText = `⚠️ *Lookup Failed*: API unreachable for \`${targetIp}\`.`;
-          }
-        } catch (e) {
-          replyText = `⚠️ *Error*: Failed to query threat intelligence.`;
-        }
-      }
-    }
-    // 7. OFF / DISABLE / RESTORE COMMANDS
-    else if (upperText.includes("OFF") || upperText.includes("DISABLE") || upperText.includes("RESTORE")) {
+    // 7. OFF / DISABLE / RESTORE COMMANDS (Killswitch)
+    else if (upperText === "/KILLSWITCH OFF" || upperText === "OFF") {
       await prisma.featureFlag.upsert({
         where: { key: "emergency_killswitch" },
         update: { enabled: false, metadata: "" },
@@ -288,8 +345,8 @@ export async function POST(req) {
         `*Time*: \`${timestamp}\`\n\n` +
         `*System*: Normal operation restored across all global edges.`;
     }
-    // 8. ON / ENABLE / SHUTDOWN COMMANDS
-    else if (upperText.includes("ON") || upperText.includes("ENABLE") || upperText.includes("SHUTDOWN")) {
+    // 8. ON / ENABLE / SHUTDOWN COMMANDS (Killswitch)
+    else if (upperText === "/KILLSWITCH ON" || upperText === "ON") {
       await prisma.featureFlag.upsert({
         where: { key: "emergency_killswitch" },
         update: { enabled: true, metadata: "" },
@@ -304,8 +361,10 @@ export async function POST(req) {
     // 9. METRICS & STATS COMMAND (/stats, /status)
     else if (upperText.startsWith("/STATS") || upperText.startsWith("/STATUS")) {
       const ksFlag = await prisma.featureFlag.findUnique({ where: { key: "emergency_killswitch" } });
+      const maintFlag = await prisma.featureFlag.findUnique({ where: { key: "under_maintenance_mode" } });
       const logsFlag = await prisma.featureFlag.findUnique({ where: { key: "security_audit_logs" } });
       const rateFlag = await prisma.featureFlag.findUnique({ where: { key: "ip_rate_limits_24h" } });
+      const chatSessionsCount = await prisma.chatSession.count();
 
       let logCount = 0;
       if (logsFlag?.metadata) {
@@ -320,10 +379,12 @@ export async function POST(req) {
         } catch (e) {}
       }
 
-      const isLive = !(ksFlag?.enabled);
+      const isLive = !(ksFlag?.enabled) && !(maintFlag?.enabled);
+      const siteStatus = ksFlag?.enabled ? "🔴 EMERGENCY LOCKDOWN (503)" : maintFlag?.enabled ? "🟡 UNDER MAINTENANCE" : "🟢 ONLINE";
+
       replyText = `🛡️ *GV CYBER VAULT METRICS & STATUS*\n\n` +
-        `*Site Status*: ${isLive ? "🟢 ONLINE" : "🔴 EMERGENCY LOCKDOWN (503)"}\n` +
-        `*Geo-Fence Policy*: 🇮🇳 INDIA ONLY (Admin Routes Restricted)\n` +
+        `*Site Status*: ${siteStatus}\n` +
+        `*Live Chat Active Sessions*: \`${chatSessionsCount} Sessions\`\n` +
         `*24h Blocked IPs*: \`${blockedIpCount} IPs\`\n` +
         `*Security Audit Logs*: \`${logCount} Events Logged\`\n` +
         `*Chat ID Captured*: \`${chatId}\` (Saved to DB)\n\n` +

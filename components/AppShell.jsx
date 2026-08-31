@@ -11,6 +11,7 @@ import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
 import AdminSecretGatewayModal from "./AdminSecretGatewayModal";
 import CyberLockdownModal from "./CyberLockdownModal";
 import EmergencyKillswitchOverlay from "./EmergencyKillswitchOverlay";
+import MaintenanceOverlay from "./MaintenanceOverlay";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -28,6 +29,7 @@ export default function AppShell({ data }) {
   const [isLockdownOpen, setIsLockdownOpen] = useState(false);
   const [lockdownSec, setLockdownSec] = useState(30);
   const [isKillswitchActive, setIsKillswitchActive] = useState(false);
+  const [maintenanceState, setMaintenanceState] = useState({ active: false, metadata: null });
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
@@ -53,6 +55,9 @@ export default function AppShell({ data }) {
         .then((res) => res.json())
         .then((d) => {
           setIsKillswitchActive(!!d.active);
+          if (d.maintenance) {
+            setMaintenanceState(d.maintenance);
+          }
         })
         .catch(() => {});
     };
@@ -165,6 +170,11 @@ export default function AppShell({ data }) {
 
       {/* Emergency Cyber Defense Killswitch 503 Overlay */}
       {isKillswitchActive && <EmergencyKillswitchOverlay />}
+
+      {/* Cyber Under Active Maintenance Overlay */}
+      {maintenanceState.active && !isKillswitchActive && (
+        <MaintenanceOverlay metadata={maintenanceState.metadata} />
+      )}
 
       {/* Cyber Lockdown Statutory Legal Warning Modal */}
       <CyberLockdownModal
