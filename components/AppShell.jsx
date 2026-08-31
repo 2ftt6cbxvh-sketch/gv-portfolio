@@ -28,8 +28,8 @@ export default function AppShell({ data }) {
   const [showAdminGateway, setShowAdminGateway] = useState(false);
   const [isLockdownOpen, setIsLockdownOpen] = useState(false);
   const [lockdownSec, setLockdownSec] = useState(30);
-  const [isKillswitchActive, setIsKillswitchActive] = useState(false);
-  const [maintenanceState, setMaintenanceState] = useState({ active: false, metadata: null });
+  const [isKillswitchActive, setIsKillswitchActive] = useState(!!data?.initialKillswitch);
+  const [maintenanceState, setMaintenanceState] = useState(data?.initialMaintenance || { active: false, metadata: null });
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
@@ -50,10 +50,12 @@ export default function AppShell({ data }) {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     const checkKillswitch = () => {
-      fetch(`/api/public/killswitch-status?t=${Date.now()}`, { cache: "no-store" })
+      fetch(`/api/public/killswitch-status?t=${Date.now()}`, { cache: "no-store", headers: { "pragma": "no-cache" } })
         .then((res) => res.json())
         .then((d) => {
+          if (!isMounted) return;
           setIsKillswitchActive(!!d.active);
           if (d.maintenance) {
             setMaintenanceState(d.maintenance);
@@ -63,7 +65,15 @@ export default function AppShell({ data }) {
     };
 
     checkKillswitch();
-    const interval = setInterval(checkKillswitch, 1500);
+    // Hyper-fast 600ms polling for instant Telegram command sync
+    const interval = setInterval(checkKillswitch, 600);
+
+    // Instant trigger when user focuses or returns to tab
+    const handleVisibility = () => {
+      if (!document.hidden) checkKillswitch();
+    };
+    window.addEventListener("focus", checkKillswitch);
+    window.addEventListener("visibilitychange", handleVisibility);
 
     // Add timestamp to prevent browser or CDN from caching stale feature flags
     fetch(`/api/public/features?t=${Date.now()}`, { cache: "no-store" })
@@ -73,7 +83,12 @@ export default function AppShell({ data }) {
       })
       .catch(() => {});
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", checkKillswitch);
+      window.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   useSiteMotion({
