@@ -127,9 +127,15 @@ export async function POST(req) {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 🛠️ FEATURE 2: Under Maintenance Mode Control (/maintenance)
+    // 🛠️ FEATURE 2: Under Maintenance Mode Control (/maintain, /maintenance, /m)
     // ──────────────────────────────────────────────────────────────────────────
-    else if (upperText.startsWith("/MAINTENANCE") || upperText.startsWith("/MAINT")) {
+    else if (
+      upperText.startsWith("/MAINTAIN") ||
+      upperText.startsWith("/MAINTENANCE") ||
+      upperText.startsWith("/MAINT") ||
+      upperText.startsWith("/M ") ||
+      upperText === "/M"
+    ) {
       const parts = rawText.split(" ");
       const action = (parts[1] || "").toUpperCase();
       const customParam = parts.slice(2).join(" ").trim();
@@ -146,7 +152,7 @@ export async function POST(req) {
           `*Status*: 🟢 SITE IS FULLY LIVE & PUBLIC\n` +
           `*Time*: \`${timestamp}\`\n\n` +
           `*System*: Normal operation restored across all global edges.`;
-      } else if (action === "STATUS") {
+      } else if (action === "STATUS" || !action) {
         const flag = await prisma.featureFlag.findUnique({ where: { key: "under_maintenance_mode" } });
         let meta = {};
         if (flag?.metadata) {
@@ -159,19 +165,31 @@ export async function POST(req) {
           `*Status*: ${isActive ? "🟡 ACTIVE (Maintenance Screen Shown)" : "🟢 OFF (Site is Live)"}\n` +
           `*Custom Notice*: ${meta.message || "Default Notice"}\n` +
           `*ETA*: ${meta.eta || "N/A"}\n\n` +
-          `*To toggle*: \`/maintenance ON [message]\` or \`/maintenance OFF\``;
+          `*Shortcuts*:\n` +
+          `• \`/maintain ON [notice]\` or \`/m ON\`\n` +
+          `• \`/maintain 30m\` (m = mins)\n` +
+          `• \`/maintain 2h\` (h = hours)\n` +
+          `• \`/maintain 1d\` (d = days)\n` +
+          `• \`/maintain OFF\` or \`/m OFF\``;
       } else {
-        // ON or Timed Maintenance (e.g. /maintenance ON or /maintenance 45m or /maintenance ON System Upgrade)
+        // ON or Timed Maintenance (e.g. /maintain 30m, /maintain 2h, /maintain 1d, /maintain ON [notice])
         let durationMinutes = 0;
         let noticeMessage = customParam || "We are currently performing high-speed infrastructure optimizations and upgrading the AI & 3D graphics engine.";
         let eta = "30 - 45 Minutes";
 
         if (action.endsWith("M")) {
           durationMinutes = parseInt(action.replace("M", ""), 10) || 30;
-          eta = `${durationMinutes} Minutes`;
+          eta = `${durationMinutes} Minute(s)`;
         } else if (action.endsWith("H")) {
-          durationMinutes = (parseInt(action.replace("H", ""), 10) || 1) * 60;
-          eta = `${durationMinutes / 60} Hour(s)`;
+          const hours = parseInt(action.replace("H", ""), 10) || 1;
+          durationMinutes = hours * 60;
+          eta = `${hours} Hour(s)`;
+        } else if (action.endsWith("D")) {
+          const days = parseInt(action.replace("D", ""), 10) || 1;
+          durationMinutes = days * 24 * 60;
+          eta = `${days} Day(s)`;
+        } else if (action === "ON" && customParam) {
+          noticeMessage = customParam;
         }
 
         const autoRestoreAt = durationMinutes > 0 ? Date.now() + durationMinutes * 60 * 1000 : null;
@@ -197,7 +215,7 @@ export async function POST(req) {
           `*Notice*: "${noticeMessage}"\n` +
           `*ETA*: \`${eta}\`${restoreNotice}\n` +
           `*Admin Bypass*: \`/admin\` remains unlocked for you.\n\n` +
-          `*To Deactivate*: Send \`/maintenance OFF\``;
+          `*To Deactivate*: Send \`/maintain OFF\` or \`/m OFF\``;
       }
     }
 
@@ -208,15 +226,19 @@ export async function POST(req) {
     else if (upperText.startsWith("/COMMANDS") || upperText.startsWith("/HELP") || upperText === "/START") {
       replyText = `🤖 *GV CYBER VAULT TELEGRAM COMMAND REGISTRY*\n\n` +
         `*Live Visitor Chat*:\n` +
-        `• \`/r <message>\` — Reply to the latest live chat visitor\n` +
-        `• *Swipe-Reply* — Swipe any visitor alert to reply directly\n\n` +
-        `*Maintenance & Defense*:\n` +
-        `• \`/maintenance ON [message]\` — Turn ON maintenance mode\n` +
-        `• \`/maintenance 30m\` — Timed maintenance (Auto-restores)\n` +
-        `• \`/maintenance OFF\` — Turn OFF maintenance mode\n` +
-        `• \`/killswitch ON\` — Emergency 503 defense blackout\n` +
+        `• \`/r <message>\` — Reply to live chat visitor\n` +
+        `• *Swipe-Reply* — Swipe any visitor alert to chat directly\n\n` +
+        `*Maintenance Mode Controls*:\n` +
+        `• \`/maintain ON [notice]\` or \`/m ON\`\n` +
+        `• \`/maintain 30m\` — Timed maintenance (m = mins)\n` +
+        `• \`/maintain 2h\` — Timed maintenance (h = hours)\n` +
+        `• \`/maintain 1d\` — Timed maintenance (d = days)\n` +
+        `• \`/maintain OFF\` or \`/m OFF\`\n` +
+        `• \`/maintain status\` or \`/m\`\n\n` +
+        `*Emergency 503 Killswitch Controls*:\n` +
+        `• \`/killswitch ON\` — Emergency defense blackout\n` +
         `• \`/killswitch OFF\` — Restore site online\n` +
-        `• \`/lockdown 15m\` — Timed 503 shutdown\n\n` +
+        `• \`/lockdown 15m\` or \`/lockdown 2h\` or \`/lockdown 1d\`\n\n` +
         `*Intelligence & Telemetry*:\n` +
         `• \`/ip <IP>\` — Precise GPS coordinates & Google Maps pin\n` +
         `• \`/blacklist <IP>\` — Block IP for 24 hours\n` +
@@ -314,9 +336,22 @@ export async function POST(req) {
       const arg = (parts[1] || "").toLowerCase();
 
       let durationMinutes = 15;
-      if (arg.endsWith("m")) durationMinutes = parseInt(arg.replace("m", ""), 10) || 15;
-      else if (arg.endsWith("h")) durationMinutes = (parseInt(arg.replace("h", ""), 10) || 1) * 60;
-      else if (parseInt(arg, 10)) durationMinutes = parseInt(arg, 10);
+      let durationLabel = "15 Minutes";
+      if (arg.endsWith("m")) {
+        durationMinutes = parseInt(arg.replace("m", ""), 10) || 15;
+        durationLabel = `${durationMinutes} Minute(s)`;
+      } else if (arg.endsWith("h")) {
+        const hours = parseInt(arg.replace("h", ""), 10) || 1;
+        durationMinutes = hours * 60;
+        durationLabel = `${hours} Hour(s)`;
+      } else if (arg.endsWith("d")) {
+        const days = parseInt(arg.replace("d", ""), 10) || 1;
+        durationMinutes = days * 24 * 60;
+        durationLabel = `${days} Day(s)`;
+      } else if (parseInt(arg, 10)) {
+        durationMinutes = parseInt(arg, 10);
+        durationLabel = `${durationMinutes} Minutes`;
+      }
 
       const autoUnlockAt = Date.now() + durationMinutes * 60 * 1000;
 
@@ -328,7 +363,7 @@ export async function POST(req) {
 
       replyText = `🚨 *TIMED LOCKDOWN ACTIVATED!*\n\n` +
         `*Status*: 🔴 CYBER DEFENSE BLACKOUT (HTTP 503 Active)\n` +
-        `*Duration*: \`${durationMinutes} Minutes\`\n` +
+        `*Duration*: \`${durationLabel}\`\n` +
         `*Auto-Restore At*: \`${new Date(autoUnlockAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\`\n\n` +
         `*To Restore Manually*: Send \`/killswitch OFF\``;
     }
