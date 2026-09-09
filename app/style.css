@@ -1884,3 +1884,25 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
 }
 
+/* AI Co-Pilot Chat Scrollbar */
+.copilot-chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 240, 255, 0.45) rgba(0, 240, 255, 0.05);
+}
+.copilot-chat-scroll::-webkit-scrollbar {
+  width: 6px;
+  display: block;
+}
+.copilot-chat-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 240, 255, 0.05);
+  border-radius: 4px;
+}
+.copilot-chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.45);
+  border-radius: 4px;
+}
+.copilot-chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.8);
+}
+
+

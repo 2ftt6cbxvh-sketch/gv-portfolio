@@ -15,13 +15,17 @@ export default function AgenticCoPilot({ metadata }) {
   ]);
 
   const [isThinking, setIsThinking] = useState(false);
+  const chatLogsRef = useRef(null);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // Auto-scroll chat log
+  // Auto-scroll chat log directly inside container
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (chatLogsRef.current) {
+      chatLogsRef.current.scrollTo({
+        top: chatLogsRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [logs, isThinking]);
 
@@ -190,14 +194,14 @@ export default function AgenticCoPilot({ metadata }) {
             position: "fixed",
             bottom: 80,
             left: 24,
-            width: "360px",
-            maxHeight: "440px",
+            width: "min(390px, calc(100vw - 32px))",
+            height: "min(490px, calc(100vh - 110px))",
             zIndex: 9991,
-            background: "rgba(10, 14, 18, 0.95)",
+            background: "rgba(10, 14, 18, 0.96)",
             backdropFilter: "blur(24px)",
-            border: "1px solid rgba(0, 240, 255, 0.3)",
+            border: "1px solid rgba(0, 240, 255, 0.35)",
             borderRadius: "16px",
-            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.7)",
+            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.8)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
@@ -207,7 +211,7 @@ export default function AgenticCoPilot({ metadata }) {
           {/* Header */}
           <div
             style={{
-              padding: "10px 14px",
+              padding: "11px 14px",
               background: "rgba(0, 240, 255, 0.08)",
               borderBottom: "1px solid rgba(0, 240, 255, 0.2)",
               display: "flex",
@@ -215,32 +219,61 @@ export default function AgenticCoPilot({ metadata }) {
               alignItems: "center",
               fontSize: "0.75rem",
               color: "#00f0ff",
+              userSelect: "none",
+              flexShrink: 0,
             }}
           >
-            <span>🤖 GANESH AI TWIN // AGENTIC CONTROLLER</span>
+            <span style={{ fontWeight: 700, letterSpacing: "0.04em" }}>🤖 GANESH AI TWIN // AGENTIC CONTROLLER</span>
             <button
               onClick={() => setIsOpen(false)}
-              style={{ background: "transparent", border: "none", color: "#00f0ff", cursor: "pointer", fontWeight: "bold" }}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#00f0ff",
+                cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: "0.9rem",
+                padding: "2px 6px",
+              }}
             >
               ✕
             </button>
           </div>
 
-          {/* Chat Logs */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px", display: "flex", flexDirection: "column", gap: 10, maxHeight: "300px" }}>
+          {/* Chat Logs with smooth scrolling and visible cyan scrollbar */}
+          <div
+            ref={chatLogsRef}
+            onWheel={(e) => e.stopPropagation()}
+            style={{
+              flex: "1 1 auto",
+              minHeight: 0,
+              overflowY: "auto",
+              overflowX: "hidden",
+              padding: "14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              overscrollBehavior: "contain",
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
+            }}
+            className="copilot-chat-scroll"
+          >
             {logs.map((msg, i) => (
               <div
                 key={i}
                 style={{
                   alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
-                  maxWidth: "85%",
-                  padding: "8px 12px",
+                  maxWidth: "86%",
+                  padding: "9px 13px",
                   borderRadius: "10px",
                   fontSize: "0.78rem",
-                  lineHeight: 1.5,
+                  lineHeight: 1.55,
                   background: msg.sender === "user" ? "rgba(0, 240, 255, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                  color: msg.sender === "user" ? "#00f0ff" : "rgba(255, 255, 255, 0.9)",
-                  border: msg.sender === "user" ? "1px solid rgba(0, 240, 255, 0.4)" : "1px solid rgba(255, 255, 255, 0.06)",
+                  color: msg.sender === "user" ? "#00f0ff" : "rgba(255, 255, 255, 0.92)",
+                  border: msg.sender === "user" ? "1px solid rgba(0, 240, 255, 0.45)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  wordBreak: "break-word",
+                  userSelect: "text",
                 }}
               >
                 {msg.text}
@@ -250,20 +283,20 @@ export default function AgenticCoPilot({ metadata }) {
               <div
                 style={{
                   alignSelf: "flex-start",
-                  maxWidth: "85%",
-                  padding: "8px 12px",
+                  maxWidth: "86%",
+                  padding: "9px 13px",
                   borderRadius: "10px",
                   fontSize: "0.78rem",
-                  lineHeight: 1.5,
+                  lineHeight: 1.55,
                   background: "rgba(255, 255, 255, 0.05)",
                   color: "#00f0ff",
                   border: "1px dashed rgba(0, 240, 255, 0.4)",
                   display: "flex",
                   alignItems: "center",
-                  gap: 6,
+                  gap: 8,
                 }}
               >
-                <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#00f0ff", animation: "pulse 1s infinite" }}></span>
+                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#00f0ff", animation: "pulse 1s infinite" }}></span>
                 <span>Thinking & querying Ganesh digital twin...</span>
               </div>
             )}

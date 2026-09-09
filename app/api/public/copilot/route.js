@@ -96,94 +96,121 @@ export async function POST(req) {
     }
 
     const cleanKey = getGeminiApiKey();
-    if (!cleanKey) {
-      return NextResponse.json({
-        reply: "Ganesh Varma is an AI & Data Scientist (University of Liverpool MSc) and Full-Stack Systems Engineer. What would you like to explore about his work?",
-      });
-    }
 
-    // Format conversation history for Gemini API
+    // Format conversation history strictly according to Gemini API specification:
+    // 1. Must start with role: "user"
+    // 2. Must alternate strictly between "user" and "model"
+    // 3. Must end with the latest user query
     const contents = [];
     if (Array.isArray(history) && history.length > 0) {
-      history.slice(-6).forEach((h) => {
-        contents.push({
-          role: h.sender === "user" ? "user" : "model",
-          parts: [{ text: h.text || "" }],
-        });
-      });
+      // Find the first user message in history to drop any initial bot greeting
+      const firstUserIdx = history.findIndex((h) => h.sender === "user");
+      if (firstUserIdx !== -1) {
+        let expectedRole = "user";
+        for (let i = firstUserIdx; i < history.length; i++) {
+          const item = history[i];
+          const role = item.sender === "user" ? "user" : "model";
+          if (role === expectedRole && item.text && item.text.trim()) {
+            contents.push({
+              role,
+              parts: [{ text: item.text.trim() }],
+            });
+            expectedRole = expectedRole === "user" ? "model" : "user";
+          }
+        }
+      }
     }
+
+    // Ensure contents list doesn't have two consecutive user turns before appending current message
+    if (contents.length > 0 && contents[contents.length - 1].role === "user") {
+      contents.pop();
+    }
+
     contents.push({
       role: "user",
       parts: [{ text: message.trim() }],
     });
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10.0s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
 
     let replyText = "";
 
-    try {
-      // Primary model: gemini-flash-latest (fastest, current generation)
-      let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${cleanKey}`;
-      let res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          contents,
-          generationConfig: {
-            maxOutputTokens: 512,
-            temperature: 0.7,
-          },
-        }),
-      });
+    if (cleanKey) {
+      // Cascade across verified available Gemini models
+      const candidateModels = [
+        "gemini-3.6-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash-lite",
+        "gemini-flash-latest",
+      ];
 
-      // Secondary fallback model if primary returned non-ok
-      if (!res.ok) {
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${cleanKey}`;
-        res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-            contents,
-            generationConfig: {
-              maxOutputTokens: 512,
-              temperature: 0.7,
-            },
-          }),
-        });
+      for (const modelName of candidateModels) {
+        if (replyText) break;
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${cleanKey}`;
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+              contents,
+              generationConfig: {
+                maxOutputTokens: 1024,
+                temperature: 0.7,
+              },
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const parts = data?.candidates?.[0]?.content?.parts || [];
+            // Extract text from parts, ignoring thought streams
+            const textParts = parts
+              .filter((p) => !p.thought && typeof p.text === "string")
+              .map((p) => p.text.trim())
+              .filter(Boolean);
+
+            if (textParts.length > 0) {
+              replyText = textParts.join("\n\n");
+              break;
+            }
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            console.error(`[Copilot Gemini ${modelName} error ${res.status}]:`, errJson?.error?.message || errJson);
+          }
+        } catch (fetchErr) {
+          console.error(`[Copilot Gemini ${modelName} fetch exception]:`, fetchErr.message);
+        }
       }
-
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        const parts = data?.candidates?.[0]?.content?.parts || [];
-        const part = parts.find((p) => !p.thought && typeof p.text === "string" && p.text.trim().length > 0);
-        replyText = part?.text?.trim() || "";
-      }
-    } catch (e) {
-      clearTimeout(timeoutId);
     }
 
-    // Fast intelligent fallback if Gemini API is slow or rate-limited
+    clearTimeout(timeoutId);
+
+    // Fast domain fallback if Gemini API is unreachable or rate limited
     if (!replyText) {
       const lower = message.toLowerCase();
-      if (lower.includes("developer") || lower.includes("code") || lower.includes("stack")) {
-        replyText = "Ganesh is a full-stack systems engineer skilled in Python, PyTorch, Next.js 14, and C# Unity. Would you like to warp to Developer Mode? <<<ACTION:{\"type\":\"warp\",\"mode\":\"developer\"}>>>";
-      } else if (lower.includes("unity") || lower.includes("game of life")) {
+      if (lower.includes("btech") || lower.includes("b.tech") || lower.includes("undergrad") || lower.includes("college") || lower.includes("kl")) {
+        replyText = "Ganesh completed his Bachelor of Technology (B.Tech) in Computer Science and Engineering from KL University, India (2021–2025) with an outstanding CGPA of 8.87 / 10.";
+      } else if (lower.includes("liverpool") || lower.includes("msc") || lower.includes("master") || lower.includes("postgrad")) {
+        replyText = "Ganesh is pursuing his MSc in Advanced Data Science & Artificial Intelligence at the University of Liverpool, UK (2025–2026), specializing in deep neural architectures, vision transformers, and medical image computing.";
+      } else if (lower.includes("12th") || lower.includes("school") || lower.includes("narayana")) {
+        replyText = "Ganesh completed his Class 12 intermediate education at Narayana Junior College with 91%.";
+      } else if (lower.includes("developer") || lower.includes("code") || lower.includes("stack") || lower.includes("engineering")) {
+        replyText = "Ganesh is a full-stack systems engineer skilled in Python (PyTorch), Next.js 14, PostgreSQL, and C# Unity. Warping to Developer Mode! <<<ACTION:{\"type\":\"warp\",\"mode\":\"developer\"}>>>";
+      } else if (lower.includes("unity") || lower.includes("game") || lower.includes("simulation") || lower.includes("fps")) {
         replyText = "Ganesh engineered a 3D Game of Life running at 294 FPS on Apple Silicon M4 Max using GPU instancing. Let me take you there! <<<ACTION:{\"type\":\"scroll\",\"target\":\"unity\"}>>>";
-      } else if (lower.includes("liverpool") || lower.includes("education") || lower.includes("msc") || lower.includes("university")) {
-        replyText = "Ganesh is pursuing his MSc in Advanced Data Science & AI at the University of Liverpool, UK (2025-2026), and holds a B.Tech in CSE from KL University with an 8.87 CGPA.";
-      } else if (lower.includes("editor") || lower.includes("video") || lower.includes("film")) {
-        replyText = "Ganesh served as Creative Director across 8 national B.Tech fests, mastering DaVinci Resolve, 16mm halation, and pacing. Warping to Editor Mode! <<<ACTION:{\"type\":\"warp\",\"mode\":\"editor\"}>>>";
-      } else if (lower.includes("contact") || lower.includes("hire") || lower.includes("email") || lower.includes("phone")) {
+      } else if (lower.includes("editor") || lower.includes("video") || lower.includes("film") || lower.includes("fest")) {
+        replyText = "Ganesh served as Creative Director and Lead Editor across 8 national-level B.Tech college fests, mastering DaVinci Resolve color grading and cinematic storytelling. Warping to Editor Mode! <<<ACTION:{\"type\":\"warp\",\"mode\":\"editor\"}>>>";
+      } else if (lower.includes("analyst") || lower.includes("data") || lower.includes("manifold") || lower.includes("mri")) {
+        replyText = "Ganesh specializes in medical image computing (99.4% Brain MRI tumor classification) and high-dimensional latent manifolds (t-SNE/UMAP). Warping to Analyst Mode! <<<ACTION:{\"type\":\"warp\",\"mode\":\"analyst\"}>>>";
+      } else if (lower.includes("contact") || lower.includes("hire") || lower.includes("email") || lower.includes("phone") || lower.includes("whatsapp")) {
         replyText = "You can reach Ganesh directly on WhatsApp at +91 85550 21322 or via email at gp61080@gmail.com. Opening live chat for you! <<<ACTION:{\"type\":\"contact\"}>>>";
+      } else if (lower.includes("cert") || lower.includes("aws") || lower.includes("tensorflow") || lower.includes("salesforce")) {
+        replyText = "Ganesh holds the Google TensorFlow Developer Certificate, Salesforce Certified AI Associate, and AWS Certified Cloud Practitioner credentials.";
       } else {
-        replyText = "I am Ganesh's official AI Twin. I can answer anything about his Liverpool MSc research, 294 FPS Unity engine, FarmFreshFarmer production build, or video editing career.";
+        replyText = "Ganesh Varma is an AI & Data Scientist (University of Liverpool MSc) and Full-Stack Systems Engineer with an 8.87 CGPA B.Tech from KL University. Feel free to ask about his research, code, or creative productions!";
       }
     }
 
