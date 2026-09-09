@@ -9,8 +9,15 @@ function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized session" }, { status: 401 });
+    }
+
     const flags = await prisma.featureFlag.findMany({
       orderBy: { key: "asc" },
     });

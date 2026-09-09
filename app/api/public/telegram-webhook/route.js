@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { unblockIp } from "@/lib/rateLimit";
 import { getDetailedTelemetry } from "@/lib/telemetry";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -33,8 +35,15 @@ export async function POST(req) {
       } catch (e) {}
     }
 
-    // Auto-capture & persist telegramChatId if missing or changed
-    if (chatId && chatId !== config.telegramChatId) {
+    // Verify optional Telegram Webhook Secret Token header
+    const secretHeader = req.headers.get("x-telegram-bot-api-secret-token");
+    const configuredSecret = process.env.TELEGRAM_WEBHOOK_SECRET || parsedMeta.webhookSecret;
+    if (configuredSecret && secretHeader !== configuredSecret) {
+      return NextResponse.json({ ok: false, error: "Invalid webhook secret token" }, { status: 403 });
+    }
+
+    // Only allow auto-capturing chat ID once during initial setup if completely empty
+    if (!config.telegramChatId && chatId) {
       config.telegramChatId = chatId;
       parsedMeta.telegramChatId = chatId;
       await prisma.featureFlag.upsert({
@@ -48,7 +57,7 @@ export async function POST(req) {
       });
     }
 
-    // Verify Chat ID authorization
+    // Strict Authorization: Reject any message from non-admin Telegram chat IDs
     if (config.telegramChatId && chatId !== config.telegramChatId) {
       return NextResponse.json({ ok: true, ignored: "unauthorized_chat_id" });
     }

@@ -95,19 +95,43 @@ export default function FloatingChatHub() {
     } catch (e) {}
   };
 
-  // Poll for replies
+  // Poll for replies only when widget is open or when there's an active conversation
   useEffect(() => {
     if (!sessionToken) return;
 
+    // If chat is closed and no messages have been exchanged, don't poll
+    const hasActiveChat = isOpen || messages.length > 0;
+    if (!hasActiveChat) return;
+
     syncMessages(sessionToken);
 
-    // Poll every 3 seconds for live replies
-    pollIntervalRef.current = setInterval(() => {
-      syncMessages(sessionToken);
-    }, 3000);
+    const startPoll = () => {
+      if (!pollIntervalRef.current) {
+        pollIntervalRef.current = setInterval(() => {
+          if (typeof document !== "undefined" && !document.hidden) {
+            syncMessages(sessionToken);
+          }
+        }, 3000);
+      }
+    };
 
-    return () => clearInterval(pollIntervalRef.current);
-  }, [sessionToken, isOpen]);
+    startPoll();
+
+    const handleVisibility = () => {
+      if (!document.hidden && hasActiveChat) {
+        syncMessages(sessionToken);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [sessionToken, isOpen, messages.length]);
 
   // Scroll to bottom of chat
   useEffect(() => {

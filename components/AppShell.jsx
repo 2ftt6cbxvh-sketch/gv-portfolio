@@ -65,12 +65,30 @@ export default function AppShell({ data }) {
     };
 
     checkKillswitch();
-    // Hyper-fast 600ms polling for instant Telegram command sync
-    const interval = setInterval(checkKillswitch, 600);
 
-    // Instant trigger when user focuses or returns to tab
+    let interval = null;
+    const startPolling = () => {
+      if (!interval) {
+        interval = setInterval(checkKillswitch, 2000);
+      }
+    };
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    startPolling();
+
+    // Instant trigger when user returns to tab, pause when hidden
     const handleVisibility = () => {
-      if (!document.hidden) checkKillswitch();
+      if (!document.hidden) {
+        checkKillswitch();
+        startPolling();
+      } else {
+        stopPolling();
+      }
     };
     window.addEventListener("focus", checkKillswitch);
     window.addEventListener("visibilitychange", handleVisibility);
@@ -85,7 +103,7 @@ export default function AppShell({ data }) {
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      stopPolling();
       window.removeEventListener("focus", checkKillswitch);
       window.removeEventListener("visibilitychange", handleVisibility);
     };

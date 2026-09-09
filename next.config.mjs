@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   generateBuildId: async () => {
-    return `build-v6.5.1-${Date.now()}`;
+    return `build-v7.5.0-${Date.now()}`;
   },
   async headers() {
     return [
@@ -13,6 +13,8 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
         ],
       },
       {

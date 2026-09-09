@@ -4,7 +4,23 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// In-memory cache to prevent overwhelming PostgreSQL connection pools
+let cachedStatus = null;
+let cacheExpiry = 0;
+
 export async function GET() {
+  const now = Date.now();
+
+  // Return cached result if still within 1.5s window
+  if (cachedStatus && now < cacheExpiry) {
+    const cachedResponse = NextResponse.json(cachedStatus);
+    cachedResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    cachedResponse.headers.set("Pragma", "no-cache");
+    cachedResponse.headers.set("Expires", "0");
+    cachedResponse.headers.set("X-Cache", "HIT");
+    return cachedResponse;
+  }
+
   try {
     // 1. Check Emergency Killswitch
     const killFlag = await prisma.featureFlag.findUnique({
@@ -17,7 +33,7 @@ export async function GET() {
     if (killActive && killFlag?.metadata) {
       try {
         const parsed = typeof killFlag.metadata === "string" ? JSON.parse(killFlag.metadata) : killFlag.metadata;
-        if (parsed.autoUnlockAt && Date.now() > parsed.autoUnlockAt) {
+        if (parsed.autoUnlockAt && now > parsed.autoUnlockAt) {
           killActive = false;
           await prisma.featureFlag.upsert({
             where: { key: "emergency_killswitch" },
@@ -40,7 +56,7 @@ export async function GET() {
       try {
         maintMeta = typeof maintFlag.metadata === "string" ? JSON.parse(maintFlag.metadata) : maintFlag.metadata;
         // Check timed auto-restore expiration if set
-        if (maintMeta.autoRestoreAt && Date.now() > maintMeta.autoRestoreAt) {
+        if (maintMeta.autoRestoreAt && now > maintMeta.autoRestoreAt) {
           maintActive = false;
           await prisma.featureFlag.upsert({
             where: { key: "under_maintenance_mode" },
@@ -51,17 +67,20 @@ export async function GET() {
       } catch (e) {}
     }
 
-    const response = NextResponse.json({
+    cachedStatus = {
       active: killActive,
       maintenance: {
         active: maintActive,
         metadata: maintMeta,
       },
-    });
+    };
+    cacheExpiry = now + 1500; // 1.5s cache window
 
+    const response = NextResponse.json(cachedStatus);
     response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
+    response.headers.set("X-Cache", "MISS");
     return response;
   } catch (err) {
     return NextResponse.json({ active: false, maintenance: { active: false, metadata: null } });

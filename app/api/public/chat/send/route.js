@@ -20,8 +20,48 @@ function validateIndianPhoneNumber(phone) {
   return null;
 }
 
+export const dynamic = "force-dynamic";
+
+// In-memory sliding-window rate limiter (Max 5 messages per 30s per IP)
+const chatRateLimits = new Map();
+let lastPruneTime = 0;
+
+function checkChatRateLimit(identifier) {
+  const now = Date.now();
+  const windowMs = 30 * 1000;
+  const maxMessages = 5;
+
+  let record = chatRateLimits.get(identifier);
+  if (!record || now - record.startTime > windowMs) {
+    record = { count: 1, startTime: now };
+    chatRateLimits.set(identifier, record);
+    return true;
+  }
+
+  if (record.count >= maxMessages) {
+    return false;
+  }
+
+  record.count += 1;
+  return true;
+}
+
 export async function POST(req) {
   try {
+    const forwarded = req.headers.get("x-forwarded-for");
+    const cfIp = req.headers.get("cf-connecting-ip");
+    const realIp = req.headers.get("x-real-ip");
+    const userAgent = req.headers.get("user-agent") || "Unknown Device";
+    let ip = cfIp || realIp || (forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1");
+
+    // Rate Limiting check per IP
+    if (!checkChatRateLimit(ip)) {
+      return NextResponse.json(
+        { ok: false, error: "Too many messages sent. Please wait a moment before sending another message." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { sessionToken, visitorName, visitorPhone, visitorEmail, text, currentMode } = body;
 
@@ -46,18 +86,15 @@ export async function POST(req) {
     const cleanEmail = (visitorEmail || "").trim().slice(0, 120);
     const cleanMode = (currentMode || "Landing").trim().slice(0, 50);
 
-    // Auto-prune old sessions older than 24 hours to save DB space and prevent clutter
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    prisma.chatSession.deleteMany({
-      where: { lastActiveAt: { lt: twentyFourHoursAgo } },
-    }).catch(() => {});
-
-    // Extract visitor IP and User-Agent from headers
-    const forwarded = req.headers.get("x-forwarded-for");
-    const cfIp = req.headers.get("cf-connecting-ip");
-    const realIp = req.headers.get("x-real-ip");
-    const userAgent = req.headers.get("user-agent") || "Unknown Device";
-    let ip = cfIp || realIp || (forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1");
+    // Throttled Auto-prune (at most once every 30 minutes to eliminate DB lock contention)
+    const now = Date.now();
+    if (now - lastPruneTime > 30 * 60 * 1000) {
+      lastPruneTime = now;
+      const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+      prisma.chatSession.deleteMany({
+        where: { lastActiveAt: { lt: twentyFourHoursAgo } },
+      }).catch(() => {});
+    }
 
     const telemetry = await getDetailedTelemetry(ip, userAgent);
 
