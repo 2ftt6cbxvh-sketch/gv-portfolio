@@ -315,6 +315,7 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
             className="portal"
             data-target={mode.id}
             data-mode-id={mode.id}
+            data-mode={mode.id}
             role="listitem"
             tabIndex={0}
             style={{ opacity: 0, "--portal-accent": mode.accent, "--portal-delay": `${idx * 0.12}s` }}

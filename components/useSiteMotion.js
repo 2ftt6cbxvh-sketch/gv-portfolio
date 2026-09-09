@@ -294,6 +294,13 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
     document.querySelectorAll(".portal").forEach((portal) => {
       portal.addEventListener("click", (e) => enterMode(portal.dataset.target, e));
     });
+
+    const handleRemoteEnterMode = (e) => {
+      const mode = e.detail?.mode;
+      if (mode) enterMode(mode);
+    };
+    window.addEventListener("enterUniverseMode", handleRemoteEnterMode);
+
     navBackRef.current?.addEventListener("click", exitToSelector);
     const navLogoEl = document.getElementById("nav-logo");
     const onNavLogoClick = () => {
@@ -307,6 +314,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
     return () => {
       lenisRef.current?.destroy();
       navLogoEl?.removeEventListener("click", onNavLogoClick);
+      window.removeEventListener("enterUniverseMode", handleRemoteEnterMode);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -82,12 +82,19 @@ export default function RecruiterLens({ metadata, onWarpMode }) {
 
   const handleWarp = () => {
     if (!current?.targetMode) return;
+    const target = current.targetMode;
     if (typeof onWarpMode === "function") {
-      onWarpMode(current.targetMode);
+      onWarpMode(target);
     } else {
-      // Trigger native click on portal card
-      const portal = document.querySelector(`.portal[data-mode="${current.targetMode}"]`);
-      if (portal) portal.click();
+      const portal =
+        document.querySelector(`.portal[data-target="${target}"]`) ||
+        document.querySelector(`.portal[data-mode="${target}"]`) ||
+        document.querySelector(`.portal[data-mode-id="${target}"]`);
+      if (portal) {
+        portal.click();
+      } else {
+        window.dispatchEvent(new CustomEvent("enterUniverseMode", { detail: { mode: target } }));
+      }
     }
   };
 

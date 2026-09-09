@@ -110,11 +110,19 @@ export default function AgenticCoPilot({ metadata }) {
         try {
           const action = JSON.parse(actionMatch[1]);
           if (action.type === "warp" && action.mode) {
-            const portal = document.querySelector(`.portal[data-mode="${action.mode}"]`);
+            const portal =
+              document.querySelector(`.portal[data-target="${action.mode}"]`) ||
+              document.querySelector(`.portal[data-mode="${action.mode}"]`) ||
+              document.querySelector(`.portal[data-mode-id="${action.mode}"]`);
             if (portal) portal.click();
+            else window.dispatchEvent(new CustomEvent("enterUniverseMode", { detail: { mode: action.mode } }));
           } else if (action.type === "scroll" && action.target === "unity") {
-            const portal = document.querySelector(`.portal[data-mode="developer"]`);
+            const portal =
+              document.querySelector(`.portal[data-target="developer"]`) ||
+              document.querySelector(`.portal[data-mode="developer"]`) ||
+              document.querySelector(`.portal[data-mode-id="developer"]`);
             if (portal) portal.click();
+            else window.dispatchEvent(new CustomEvent("enterUniverseMode", { detail: { mode: "developer" } }));
             setTimeout(() => {
               const gameSection = document.getElementById("unity-game-section") || document.querySelector(".unity-game");
               if (gameSection) gameSection.scrollIntoView({ behavior: "smooth" });
