@@ -12,6 +12,8 @@ import AdminSecretGatewayModal from "./AdminSecretGatewayModal";
 import CyberLockdownModal from "./CyberLockdownModal";
 import EmergencyKillswitchOverlay from "./EmergencyKillswitchOverlay";
 import MaintenanceOverlay from "./MaintenanceOverlay";
+import CyberMatrixOverlay from "./CyberMatrixOverlay";
+import AgenticCoPilot from "./AgenticCoPilot";
 import { useSiteMotion } from "./useSiteMotion";
 
 export default function AppShell({ data }) {
@@ -30,22 +32,44 @@ export default function AppShell({ data }) {
   const [lockdownSec, setLockdownSec] = useState(30);
   const [isKillswitchActive, setIsKillswitchActive] = useState(!!data?.initialKillswitch);
   const [maintenanceState, setMaintenanceState] = useState(data?.initialMaintenance || { active: false, metadata: null });
+  const [isMatrixActive, setIsMatrixActive] = useState(false);
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
   }, []);
 
   useEffect(() => {
+    // Console CTF Invitation for Engineers
+    console.log(
+      "%c[!] GV CYBER PROTOCOL ACTIVE%c\nLooking under the hood? Solve the Level-1 developer cipher at /api/public/challenge\nPress [~] (tilde) or [F2] to toggle Matrix Mode.",
+      "color:#39ff88;font-family:monospace;font-size:14px;font-weight:bold;",
+      "color:#00f0ff;font-family:monospace;font-size:11px;"
+    );
+
     const handleOpenGateway = () => setShowAdminGateway(true);
     const handleLockdown = (e) => {
       if (e.detail?.seconds) setLockdownSec(e.detail.seconds);
       setIsLockdownOpen(true);
     };
+    const handleToggleMatrix = () => setIsMatrixActive((prev) => !prev);
+
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "`" || e.key === "~" || e.key === "F2") {
+        setIsMatrixActive((prev) => !prev);
+      }
+    };
+
     window.addEventListener("openAdminSecretGateway", handleOpenGateway);
     window.addEventListener("triggerCyberLockdown", handleLockdown);
+    window.addEventListener("toggleCyberMatrix", handleToggleMatrix);
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       window.removeEventListener("openAdminSecretGateway", handleOpenGateway);
       window.removeEventListener("triggerCyberLockdown", handleLockdown);
+      window.removeEventListener("toggleCyberMatrix", handleToggleMatrix);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -215,6 +239,17 @@ export default function AppShell({ data }) {
         onClose={() => setIsLockdownOpen(false)}
         seconds={lockdownSec}
       />
+
+      {/* Retro Phosphor Green Cyber Matrix CRT Scanlines Overlay */}
+      <CyberMatrixOverlay
+        isActive={isMatrixActive}
+        onClose={() => setIsMatrixActive(false)}
+      />
+
+      {/* Agentic Voice & Natural Command AI Co-Pilot */}
+      {features?.flags?.agentic_copilot?.enabled !== false && (
+        <AgenticCoPilot metadata={features?.flags?.agentic_copilot?.metadata} />
+      )}
     </div>
   );
 }

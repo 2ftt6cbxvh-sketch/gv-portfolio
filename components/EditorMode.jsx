@@ -15,6 +15,7 @@ import EditorAudioWave from "./EditorAudioWave";
 import EditorFilmGrainToggle from "./EditorFilmGrainToggle";
 import CertModal from "./CertModal";
 import KineticHeroTitle from "./KineticHeroTitle";
+import EditorColorGradingLab from "./EditorColorGradingLab";
 
 // Not admin-editable this phase (per "do not overengineer" — cinematic
 // flavor text, not core content). Keyed by mode id so this file stays
@@ -86,6 +87,10 @@ export default function EditorMode({ data, features }) {
 
       {features?.flags?.video_reel?.enabled !== false && (
         <EditorVideoReel metadata={features?.flags?.video_reel?.metadata} accent={d.accent || "#a56ce8"} />
+      )}
+
+      {features?.flags?.editor_grading_lab?.enabled !== false && (
+        <EditorColorGradingLab metadata={features?.flags?.editor_grading_lab?.metadata} />
       )}
 
       {showProjects && d.projects.length > 0 && (

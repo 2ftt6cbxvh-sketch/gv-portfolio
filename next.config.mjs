@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   generateBuildId: async () => {
-    return `build-v7.5.0-${Date.now()}`;
+    return `build-v7.6.0-${Date.now()}`;
   },
   async headers() {
     return [

@@ -12,6 +12,7 @@ import CertModal from "./CertModal";
 import AnalystNeuralNet from "./AnalystNeuralNet";
 import AnalystHologramCube from "./AnalystHologramCube";
 import KineticHeroTitle from "./KineticHeroTitle";
+import AnalystLatentSpace from "./AnalystLatentSpace";
 
 // KPI strip — not DB-modeled (would be overengineering per the brief), but
 // each value is derived from real content already in the database (project
@@ -111,6 +112,9 @@ export default function AnalystMode({ data, features }) {
           </div>
           <AnalystNeuralNet metadata={features?.flags?.analyst_ai_sandbox?.metadata} accent={d.accent || "#33c7b0"} />
           <AnalystHologramCube metadata={features?.flags?.analyst_ai_sandbox?.metadata} accent={d.accent || "#33c7b0"} />
+          {features?.flags?.analyst_latent_space?.enabled !== false && (
+            <AnalystLatentSpace data={d} metadata={features?.flags?.analyst_latent_space?.metadata} />
+          )}
         </section>
       )}
 

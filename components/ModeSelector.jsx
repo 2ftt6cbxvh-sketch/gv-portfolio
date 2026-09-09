@@ -5,6 +5,7 @@ import LandingConstellation from "./LandingConstellation";
 import KineticHeadline from "./KineticHeadline";
 import LandingStatusPill from "./LandingStatusPill";
 import VpnBlockModal from "./VpnBlockModal";
+import RecruiterLens from "./RecruiterLens";
 
 // Per-mode animated SVG cues shown inside each portal card
 function EditorCue({ accent }) {
@@ -89,6 +90,7 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
   const statusPillFlag = flags.status_pill;
   const kineticFlag = flags.kinetic_headline;
   const hotkeyFlag = flags.hotkey_hints;
+  const recruiterLensFlag = flags.recruiter_lens;
 
   // Parse status pill metadata
   let statusPillData = {};
@@ -301,6 +303,11 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
 
         <div className="selector__divider" aria-hidden="true" />
       </div>
+
+      {/* Dynamic Adaptive Recruiter Lens (Controlled by Admin Toggle & Metadata) */}
+      {recruiterLensFlag?.enabled !== false && (
+        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
+      )}
 
       <div className="portals" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2 }}>
         {modes.map((mode, idx) => (
