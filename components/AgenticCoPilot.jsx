@@ -14,7 +14,16 @@ export default function AgenticCoPilot({ metadata }) {
     },
   ]);
 
+  const [isThinking, setIsThinking] = useState(false);
+  const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // Auto-scroll chat log
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, isThinking]);
 
   // Initialize Web Speech API if supported
   useEffect(() => {
@@ -72,53 +81,65 @@ export default function AgenticCoPilot({ metadata }) {
     }
   };
 
-  // Agentic Action Dispatcher
-  const handleExecuteCommand = (rawQuery) => {
-    const query = (rawQuery || inputText).trim().toLowerCase();
-    if (!query) return;
+  // Agentic Action Dispatcher backed by Google Gemini API
+  const handleExecuteCommand = async (rawQuery) => {
+    const query = (rawQuery || inputText).trim();
+    if (!query || isThinking) return;
 
-    setLogs((prev) => [...prev, { sender: "user", text: rawQuery || inputText }]);
+    const currentLogs = [...logs, { sender: "user", text: query }];
+    setLogs(currentLogs);
     setInputText("");
+    setIsThinking(true);
 
-    let reply = "";
+    try {
+      const res = await fetch("/api/public/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: query,
+          history: logs.slice(-6),
+        }),
+      });
 
-    if (query.includes("developer") || query.includes("dev mode") || query.includes("coding")) {
-      reply = "Warping to Developer Universe. Initializing system architectures and GPU shaders.";
-      const portal = document.querySelector(`.portal[data-mode="developer"]`);
-      if (portal) portal.click();
-    } else if (query.includes("unity") || query.includes("game of life") || query.includes("3d game")) {
-      reply = "Deploying 3D Game of Life. Warping to Developer Mode and scrolling to Unity Engine canvas.";
-      const portal = document.querySelector(`.portal[data-mode="developer"]`);
-      if (portal) {
-        portal.click();
-        setTimeout(() => {
-          const gameSection = document.getElementById("unity-game-section") || document.querySelector(".unity-game");
-          if (gameSection) gameSection.scrollIntoView({ behavior: "smooth" });
-        }, 600);
+      const data = await res.json();
+      let rawReply = data?.reply || "Ganesh Varma is an AI & Data Science scholar and full-stack systems engineer.";
+
+      // Extract & Execute Agentic Actions
+      const actionMatch = rawReply.match(/<<<ACTION:(.*?)>>>/);
+      if (actionMatch && actionMatch[1]) {
+        try {
+          const action = JSON.parse(actionMatch[1]);
+          if (action.type === "warp" && action.mode) {
+            const portal = document.querySelector(`.portal[data-mode="${action.mode}"]`);
+            if (portal) portal.click();
+          } else if (action.type === "scroll" && action.target === "unity") {
+            const portal = document.querySelector(`.portal[data-mode="developer"]`);
+            if (portal) portal.click();
+            setTimeout(() => {
+              const gameSection = document.getElementById("unity-game-section") || document.querySelector(".unity-game");
+              if (gameSection) gameSection.scrollIntoView({ behavior: "smooth" });
+            }, 600);
+          } else if (action.type === "contact") {
+            const chatBtn = document.querySelector(".floating-chat-trigger");
+            if (chatBtn) chatBtn.click();
+          }
+        } catch (actErr) {
+          console.error("Action execution error:", actErr);
+        }
       }
-    } else if (query.includes("editor") || query.includes("video") || query.includes("film") || query.includes("davinci")) {
-      reply = "Warping to Editor Universe. Activating 16mm halation engine and cinematic showreel.";
-      const portal = document.querySelector(`.portal[data-mode="editor"]`);
-      if (portal) portal.click();
-    } else if (query.includes("analyst") || query.includes("data") || query.includes("ai") || query.includes("machine learning")) {
-      reply = "Warping to Analyst Universe. Loading 3D Latent Space Galaxy and neural manifolds.";
-      const portal = document.querySelector(`.portal[data-mode="analyst"]`);
-      if (portal) portal.click();
-    } else if (query.includes("liverpool") || query.includes("education") || query.includes("degree") || query.includes("msc") || query.includes("gpa")) {
-      reply = "Ganesh is pursuing his MSc in Advanced Data Science & AI at the University of Liverpool, UK (2025-2026), and holds a B.Tech in CSE from KL University with 8.87 GPA.";
-    } else if (query.includes("matrix") || query.includes("cyber") || query.includes("ctf") || query.includes("hack")) {
-      reply = "Triggering Cyber Matrix Mode. Phosphor CRT scanlines engaged!";
-      window.dispatchEvent(new CustomEvent("toggleCyberMatrix"));
-    } else if (query.includes("contact") || query.includes("hire") || query.includes("meet") || query.includes("phone")) {
-      reply = "Opening Ganesh's direct live chat channel. Dispatched to Telegram alerts.";
-      const chatBtn = document.querySelector(".floating-chat-trigger");
-      if (chatBtn) chatBtn.click();
-    } else {
-      reply = `Understood: "${query}". I am Ganesh's digital co-pilot. I can warp across Editor, Analyst, Developer modes, trigger 3D Unity demos, or initiate live contact.`;
-    }
 
-    setLogs((prev) => [...prev, { sender: "bot", text: reply }]);
-    speakReply(reply);
+      // Clean stripped text for display and speech synthesis
+      const cleanReply = rawReply.replace(/<<<ACTION:.*?>>>/g, "").trim();
+
+      setLogs((prev) => [...prev, { sender: "bot", text: cleanReply }]);
+      speakReply(cleanReply);
+    } catch (err) {
+      const fallback = "Ganesh Varma is an AI scholar and engineer. Feel free to ask about his Liverpool MSc or projects.";
+      setLogs((prev) => [...prev, { sender: "bot", text: fallback }]);
+      speakReply(fallback);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   return (
@@ -217,6 +238,28 @@ export default function AgenticCoPilot({ metadata }) {
                 {msg.text}
               </div>
             ))}
+            {isThinking && (
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  maxWidth: "85%",
+                  padding: "8px 12px",
+                  borderRadius: "10px",
+                  fontSize: "0.78rem",
+                  lineHeight: 1.5,
+                  background: "rgba(255, 255, 255, 0.05)",
+                  color: "#00f0ff",
+                  border: "1px dashed rgba(0, 240, 255, 0.4)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#00f0ff", animation: "pulse 1s infinite" }}></span>
+                <span>Thinking & querying Ganesh digital twin...</span>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Voice & Input Row */}

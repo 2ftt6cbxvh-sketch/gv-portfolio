@@ -112,7 +112,7 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
   }
 
   // Parse constellation metadata
-  let constellationAccent = "#00f0ff";
+  let constellationAccent = "#ffd700";
   if (constellationFlag?.metadata) {
     try {
       const parsed = typeof constellationFlag.metadata === "string" ? JSON.parse(constellationFlag.metadata) : constellationFlag.metadata;
@@ -270,45 +270,45 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
         <LandingConstellation accentColor={constellationAccent} metadata={features?.flags?.admin_secret_gateway?.metadata} />
       )}
 
-      <div className="selector__intro reveal" style={{ opacity: 0, position: "relative", zIndex: 2 }}>
+      <div className="selector__intro reveal" style={{ opacity: 0, position: "relative", zIndex: 2, maxWidth: 660, textAlign: "center" }}>
         {/* Status Pill (Controlled by Admin toggle & customizable text) */}
         {statusPillFlag?.enabled !== false && (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
             <LandingStatusPill status={statusPillData.status} location={statusPillData.location} />
           </div>
         )}
 
-        <span className="label-mono selector__eyebrow">{person.name} / {person.initials}</span>
+        <span className="label-mono selector__eyebrow" style={{ display: "block", marginBottom: 6, letterSpacing: "1.5px", fontSize: "0.78rem" }}>
+          {person.name} / {person.initials}
+        </span>
         
-        <h1 className="selector__title">
+        <h1 className="selector__title" style={{ margin: "4px 0" }}>
           <span className="selector__title-line">Three disciplines.</span>
           <span className="selector__title-line selector__title-line--accent">One line of work.</span>
         </h1>
 
         {/* Dynamic Kinetic Scramble Subheadline (Controlled by Admin toggle & custom roles) */}
         {kineticFlag?.enabled !== false && (
-          <div style={{ margin: "12px 0 16px 0", fontSize: "1.05rem", color: "var(--color-fg-muted)" }}>
+          <div style={{ margin: "8px 0 10px 0", fontSize: "0.95rem", color: "var(--color-fg-muted)" }}>
             <KineticHeadline roles={kineticRoles} />
           </div>
         )}
 
-        <p className="selector__sub">Choose how you&apos;d like to explore — each mode is a distinct world, built from the same person.</p>
+        <p className="selector__sub" style={{ margin: "4px 0 8px 0", fontSize: "0.85rem", opacity: 0.85 }}>
+          Choose how you&apos;d like to explore — each mode is a distinct universe, built from the same person.
+        </p>
         
         {/* Hotkey hint pill (Controlled by Admin toggle) */}
         {hotkeyFlag?.enabled !== false && (
-          <div className="hotkey-hint-row" style={{ marginTop: 12, fontSize: "0.78rem", opacity: 0.7, fontFamily: "var(--font-mono)" }}>
+          <div className="hotkey-hint-row" style={{ marginTop: 6, fontSize: "0.75rem", opacity: 0.65, fontFamily: "var(--font-mono)" }}>
             <span>Press <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>1</kbd> Editor &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>2</kbd> Analyst &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>3</kbd> Developer</span>
           </div>
         )}
 
-        <div className="selector__divider" aria-hidden="true" />
+        <div className="selector__divider" aria-hidden="true" style={{ margin: "10px auto 0" }} />
       </div>
 
-      {/* Dynamic Adaptive Recruiter Lens (Controlled by Admin Toggle & Metadata) */}
-      {recruiterLensFlag?.enabled !== false && (
-        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
-      )}
-
+      {/* Primary Navigation Portals (Mode Entering Options ON TOP) */}
       <div className="portals" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2 }}>
         {modes.map((mode, idx) => (
           <article
@@ -359,6 +359,11 @@ export default function ModeSelector({ selectorRef, person, modes, features = {}
           </article>
         ))}
       </div>
+
+      {/* Dynamic Adaptive Recruiter Lens (Minimized by default, expandable on click) */}
+      {recruiterLensFlag?.enabled !== false && (
+        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
+      )}
 
       <footer className="selector__footer" style={{ position: "relative", zIndex: 2 }}>
         <span className="selector__footer-brand">{person.name} / {person.initials}</span>

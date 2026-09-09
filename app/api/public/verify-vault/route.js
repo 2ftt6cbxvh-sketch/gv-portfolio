@@ -7,19 +7,11 @@ import { verifyTOTP } from "@/lib/totp";
 import { check24HourRateLimit } from "@/lib/rateLimit";
 import { isVpnOrProxy } from "@/lib/vpnCheck";
 
-import { generatePoWChallenge, verifyPoW } from "@/lib/pow";
-
 function sha256(text) {
   return crypto.createHash("sha256").update(String(text)).digest("hex");
 }
 
 export const dynamic = "force-dynamic";
-
-// Issue dynamic cryptographic PoW challenge to client
-export async function GET() {
-  const challenge = generatePoWChallenge();
-  return NextResponse.json({ challenge, difficulty: 3 });
-}
 
 const DEFAULT_PIN_BCRYPT = "$2a$12$AkbYufs5usIjQfUosWHjZO2/7VuFUbSc6f4GCWZJnR.Yd5eDyx7H.";
 const DEFAULT_KEY_HASH = sha256("134214");
@@ -101,18 +93,7 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { type, payload, totpCode, powChallenge, powNonce } = body;
-
-    // Cryptographic Proof-of-Work Verification (Blocks automated brute-force scripts)
-    if (powChallenge) {
-      const isPoWValid = verifyPoW(powChallenge, powNonce, 3);
-      if (!isPoWValid) {
-        return NextResponse.json(
-          { success: false, error: "Cryptographic proof-of-work verification failed. Please try again." },
-          { status: 403 }
-        );
-      }
-    }
+    const { type, payload, totpCode } = body;
 
     // Test Alert Handler
     if (type === "test_telegram_alert") {

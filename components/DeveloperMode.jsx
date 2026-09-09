@@ -12,7 +12,6 @@ import CertModal from "./CertModal";
 import TextScramble from "./TextScramble";
 import DeveloperInteractiveSuite from "./DeveloperInteractiveSuite";
 import KineticHeroTitle from "./KineticHeroTitle";
-import DeveloperChaosSim from "./DeveloperChaosSim";
 
 export default function DeveloperMode({ data, features }) {
   const d = data;
@@ -60,13 +59,6 @@ export default function DeveloperMode({ data, features }) {
       <section className="section wrap">
         <DeveloperInteractiveSuite accent={d.accent || "#39ff88"} />
       </section>
-
-      {/* Distributed Architecture Chaos Simulator */}
-      {features?.flags?.developer_chaos_sim?.enabled !== false && (
-        <section className="section wrap">
-          <DeveloperChaosSim />
-        </section>
-      )}
 
       <section className="section wrap" aria-labelledby="dev-sim-title">
         <div className="section-head">

@@ -14,10 +14,7 @@ const REQUIRED_FLAGS = [
   { key: "video_reel", name: "Editor Video Showreel Player", defaultEnabled: true },
   { key: "recruiter_lens", name: "Dynamic Adaptive Recruiter Lens (AI, Editor, Systems, Founder)", defaultEnabled: true },
   { key: "editor_grading_lab", name: "Editor Real-Time WebGL Neural Color Grading Lab (60 FPS Shaders)", defaultEnabled: true },
-  { key: "analyst_latent_space", name: "Analyst 3D Latent Space Galaxy (t-SNE / UMAP / PCA)", defaultEnabled: true },
-  { key: "developer_chaos_sim", name: "Developer Distributed Architecture Chaos Simulator", defaultEnabled: true },
-  { key: "agentic_copilot", name: "Agentic Voice & Command AI Co-Pilot (Ganesh Digital Twin)", defaultEnabled: true },
-  { key: "cyber_matrix_ctf", name: "Developer Cyber Matrix CTF Challenge (/api/public/challenge)", defaultEnabled: true },
+  { key: "agentic_copilot", name: "Agentic Voice & Command AI Co-Pilot (Ganesh Digital Twin with Gemini AI)", defaultEnabled: true },
 ];
 
 export default function FeaturesAdminPage() {

@@ -76,6 +76,7 @@ export default function RecruiterLens({ metadata, onWarpMode }) {
     } catch (e) {}
   }
 
+  const [isExpanded, setIsExpanded] = useState(false);
   const [activePersonaId, setActivePersonaId] = useState(personas[0]?.id || "ai");
   const current = personas.find((p) => p.id === activePersonaId) || personas[0];
 
@@ -90,21 +91,79 @@ export default function RecruiterLens({ metadata, onWarpMode }) {
     }
   };
 
+  // Minimized Trigger Pill State
+  if (!isExpanded) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", margin: "14px auto 8px auto", position: "relative", zIndex: 10 }}>
+        <button
+          onClick={() => setIsExpanded(true)}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "8px 18px",
+            borderRadius: "30px",
+            background: "rgba(18, 16, 26, 0.8)",
+            backdropFilter: "blur(14px)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            color: "#ffffff",
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: "0.78rem",
+            cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.35)",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = current.accent;
+            e.currentTarget.style.transform = "scale(1.02)";
+            e.currentTarget.style.boxShadow = `0 4px 24px ${current.accent}33`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.35)";
+          }}
+          title="Click to open recruiter lens"
+        >
+          <span style={{ fontSize: "0.9rem" }}>🎯</span>
+          <span style={{ fontWeight: 600, letterSpacing: "0.04em" }}>RECRUITER LENS</span>
+          <span style={{ opacity: 0.3 }}>|</span>
+          <span style={{ color: current.accent, fontSize: "0.75rem" }}>
+            {current.title}
+          </span>
+          <span
+            style={{
+              fontSize: "0.7rem",
+              color: "var(--color-fg-muted)",
+              padding: "2px 8px",
+              borderRadius: "10px",
+              background: "rgba(255, 255, 255, 0.08)",
+              marginLeft: 4,
+            }}
+          >
+            ▼ Open
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className="recruiter-lens"
       style={{
-        margin: "24px auto 32px auto",
+        margin: "16px auto 20px auto",
         maxWidth: "840px",
         width: "92%",
-        background: "rgba(18, 16, 26, 0.75)",
-        backdropFilter: "blur(16px)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        background: "rgba(18, 16, 26, 0.85)",
+        backdropFilter: "blur(20px)",
+        border: `1px solid ${current.accent}44`,
         borderRadius: "16px",
-        padding: "20px 24px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+        padding: "18px 22px",
+        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px ${current.accent}22`,
         position: "relative",
         zIndex: 10,
+        transition: "border-color 0.3s ease, box-shadow 0.3s ease",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
@@ -116,6 +175,26 @@ export default function RecruiterLens({ metadata, onWarpMode }) {
             {current.badge}
           </span>
         </div>
+        <button
+          onClick={() => setIsExpanded(false)}
+          style={{
+            background: "rgba(255, 255, 255, 0.06)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "14px",
+            padding: "4px 10px",
+            color: "var(--color-fg-muted)",
+            fontSize: "0.72rem",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontFamily: "var(--font-mono, monospace)",
+          }}
+          title="Minimize Recruiter Lens"
+        >
+          <span>▴</span>
+          <span>Minimize</span>
+        </button>
       </div>
 
       {/* Persona Tabs */}

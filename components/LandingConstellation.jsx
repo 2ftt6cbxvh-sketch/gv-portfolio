@@ -43,13 +43,12 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
     if (!ctx) return;
 
     let animFrameId;
-    let width = (canvas.width = canvas.parentElement?.offsetWidth || window.innerWidth);
-    let height = (canvas.height = canvas.parentElement?.offsetHeight || window.innerHeight);
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
 
     const handleResize = () => {
-      if (!canvas.parentElement) return;
-      width = canvas.width = canvas.parentElement.offsetWidth;
-      height = canvas.height = canvas.parentElement.offsetHeight;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
     };
     window.addEventListener("resize", handleResize);
 
@@ -67,73 +66,84 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
 
     // Line Animation State (Smooth Lerp Interpolation)
     let animLineProgress = 0;
-    let linePoints = [];
 
-    // 1. 65 Ambient Constellation Particles (Background Stars & Vector Lines)
-    const particleCount = width < 768 ? 40 : 65;
+    // 1. 75 Ambient Constellation Particles (Mix of Golden Yellow & Cyan Stars)
+    const particleCount = width < 768 ? 45 : 75;
     const particles = [];
 
     for (let i = 0; i < particleCount; i++) {
+      const isGold = Math.random() > 0.45;
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.55,
-        vy: (Math.random() - 0.5) * 0.55,
-        radius: Math.random() * 1.8 + 1.0,
-        alpha: Math.random() * 0.55 + 0.25,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 1.8 + 0.9,
+        alpha: Math.random() * 0.6 + 0.25,
+        isGold,
+        twinklePhase: Math.random() * Math.PI * 2,
       });
     }
 
-    // 2. 4 Randomly Floating Secret Magic Stars in Outer Safe Floating Zones
-    const bottomMinY = Math.max(height - 150, height * 0.76);
-    const bottomMaxY = height - 40;
-
-    const secretStarsMap = {
-      1: { id: 1, x: Math.random() * (width * 0.22) + 40, y: Math.random() * (height * 0.25) + 60, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: 35, maxX: width * 0.3, minY: 50, maxY: height * 0.38 },
-      2: { id: 2, x: Math.random() * (width * 0.22) + width * 0.7, y: Math.random() * (height * 0.25) + 60, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: width * 0.7, maxX: width - 35, minY: 50, maxY: height * 0.38 },
-      3: { id: 3, x: Math.random() * (width * 0.22) + 40, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: 35, maxX: width * 0.32, minY: bottomMinY, maxY: bottomMaxY },
-      4: { id: 4, x: Math.random() * (width * 0.22) + width * 0.7, y: Math.random() * (bottomMaxY - bottomMinY) + bottomMinY, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, minX: width * 0.68, maxX: width - 35, minY: bottomMinY, maxY: bottomMaxY },
+    // 2. 4 Floating Big Yellow Magic Stars in Screen Corners (Safe Viewport Bounds)
+    const updateCornerBounds = () => {
+      const safeMarginX = Math.min(width * 0.22, 240);
+      const safeMarginY = Math.min(height * 0.25, 220);
+      return {
+        1: { id: 1, x: Math.random() * (safeMarginX - 50) + 50, y: Math.random() * (safeMarginY - 60) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, minX: 45, maxX: safeMarginX + 30, minY: 55, maxY: safeMarginY + 20 },
+        2: { id: 2, x: width - safeMarginX + Math.random() * (safeMarginX - 60), y: Math.random() * (safeMarginY - 60) + 60, vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, minX: width - safeMarginX - 30, maxX: width - 45, minY: 55, maxY: safeMarginY + 20 },
+        3: { id: 3, x: Math.random() * (safeMarginX - 50) + 50, y: height - safeMarginY + Math.random() * (safeMarginY - 60), vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, minX: 45, maxX: safeMarginX + 30, minY: height - safeMarginY - 20, maxY: height - 55 },
+        4: { id: 4, x: width - safeMarginX + Math.random() * (safeMarginX - 60), y: height - safeMarginY + Math.random() * (safeMarginY - 60), vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4, minX: width - safeMarginX - 30, maxX: width - 45, minY: height - safeMarginY - 20, maxY: height - 55 },
+      };
     };
 
-    const updatePointerPos = (clientX, clientY) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = clientX - rect.left;
-      mouse.y = clientY - rect.top;
+    const secretStarsMap = updateCornerBounds();
 
-      for (let i = 0; i < 2; i++) {
+    // Spawn sparks on mouse movement
+    const updatePointerPos = (clientX, clientY) => {
+      mouse.x = clientX;
+      mouse.y = clientY;
+
+      // Spawn bright trailing sparks around mouse (Golden Yellow, Warm Amber, Starlight Cyan)
+      for (let i = 0; i < 3; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 2.2 + 0.4;
+        const color = Math.random() > 0.35 ? "#ffd700" : (Math.random() > 0.5 ? "#fff6a0" : "#00f0ff");
         sparks.push({
-          x: mouse.x,
-          y: mouse.y,
-          vx: (Math.random() - 0.5) * 1.8,
-          vy: (Math.random() - 0.5) * 1.8 - 0.4,
+          x: mouse.x + (Math.random() - 0.5) * 6,
+          y: mouse.y + (Math.random() - 0.5) * 6,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - Math.random() * 0.6,
           life: 1.0,
-          decay: Math.random() * 0.03 + 0.025,
-          size: Math.random() * 2.5 + 1,
+          decay: Math.random() * 0.035 + 0.02,
+          size: Math.random() * 2.6 + 1.2,
+          color,
         });
       }
     };
 
     const handleMouseMove = (e) => updatePointerPos(e.clientX, e.clientY);
 
+    // Process Tap on Big Yellow Stars
     const processTapAtCoordinates = (clickX, clickY) => {
       if (isLockedDown) return;
 
       const now = Date.now();
-      if (now - lastTapTimestamp < 250) return; // Prevent double-triggering from touchstart + synthetic click!
+      if (now - lastTapTimestamp < 250) return; // Prevent double-triggering
       lastTapTimestamp = now;
 
-      // Precise Star Hit Testing (38px Touch Radius directly around floating magic star center)
+      // Hit Testing (44px Radius directly around the big glowing star center)
       let tappedStarId = 0;
       Object.values(secretStarsMap).forEach((star) => {
         const dx = clickX - star.x;
         const dy = clickY - star.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist <= 38) {
+        if (dist <= 44) {
           tappedStarId = star.id;
         }
       });
 
-      // Ignore tap completely if tap was NOT directly on a magic star!
+      // Ignore tap if not on a star
       if (tappedStarId === 0) return;
 
       // Dynamic sequence check (Default: 1,2,3,4,1,3)
@@ -154,16 +164,16 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
       // Check step match
       if (targetSeq[nextIndex] === tappedStarId) {
         tappedSequence.push(tappedStarId);
-        animLineProgress = 0; // Trigger line drawing animation!
+        animLineProgress = 0; // Trigger animated golden rune drawing
 
         const starObj = secretStarsMap[tappedStarId];
         const spawnX = starObj ? starObj.x : clickX;
         const spawnY = starObj ? starObj.y : clickY;
 
-        // Golden Spell Burst Fireworks on Tapped Star Location
-        for (let m = 0; m < 45; m++) {
+        // Golden Spell Burst Fireworks on Tapped Star
+        for (let m = 0; m < 50; m++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = Math.random() * 7 + 2.5;
+          const speed = Math.random() * 8 + 2.5;
           magicSpells.push({
             x: spawnX,
             y: spawnY,
@@ -171,24 +181,24 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
             vy: Math.sin(angle) * speed,
             life: 1.0,
             decay: Math.random() * 0.025 + 0.015,
-            size: Math.random() * 5 + 2.5,
-            color: "#ffd700",
+            size: Math.random() * 5.5 + 2.5,
+            color: Math.random() > 0.3 ? "#ffd700" : "#fff8b0",
           });
         }
 
-        // Full sequence completed!
+        // Full sequence completed! Trigger Admin Secret Gateway
         if (tappedSequence.length === targetSeq.length) {
-          for (let m = 0; m < 85; m++) {
+          for (let m = 0; m < 90; m++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 11 + 4;
+            const speed = Math.random() * 12 + 4;
             magicSpells.push({
               x: width / 2,
               y: height / 2,
               vx: Math.cos(angle) * speed,
               vy: Math.sin(angle) * speed,
-              life: 1.5,
-              decay: 0.01,
-              size: Math.random() * 7.5 + 3,
+              life: 1.6,
+              decay: 0.009,
+              size: Math.random() * 8 + 3,
               color: "#ffd700",
             });
           }
@@ -202,7 +212,7 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
           }, 450);
         }
       } else {
-        // Sequence mismatch! Store red fracture lines
+        // Sequence mismatch! Red fracture lines
         failedAttempts += 1;
         isSpellFracture = true;
         fractureSequence = [...tappedSequence, tappedStarId];
@@ -211,8 +221,7 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
         const spawnX = starObj ? starObj.x : clickX;
         const spawnY = starObj ? starObj.y : clickY;
 
-        // Red spell fracture burst particles
-        for (let m = 0; m < 40; m++) {
+        for (let m = 0; m < 45; m++) {
           const angle = Math.random() * Math.PI * 2;
           const speed = Math.random() * 7 + 2;
           magicSpells.push({
@@ -264,23 +273,111 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
       }
     };
 
-    const handleCanvasClick = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      processTapAtCoordinates(e.clientX - rect.left, e.clientY - rect.top);
+    const handleWindowClick = (e) => {
+      processTapAtCoordinates(e.clientX, e.clientY);
     };
 
     const handleTouchStart = (e) => {
       if (e.touches.length > 0) {
         const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
         updatePointerPos(touch.clientX, touch.clientY);
-        processTapAtCoordinates(touch.clientX - rect.left, touch.clientY - rect.top);
+        processTapAtCoordinates(touch.clientX, touch.clientY);
       }
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    canvas.addEventListener("click", handleCanvasClick);
+    window.addEventListener("click", handleWindowClick, { passive: true });
+
+    // Helper: Draw Majestic Big Yellow Glowing Star with Diamond Flare Rays
+    const drawBigYellowStar = (starX, starY, starId, isRed) => {
+      const starColor = isRed ? "#ff003c" : "#ffd700";
+      const glowColor = isRed ? "#ff003c" : "#ffcc00";
+      const pulse = Math.sin(pulseTime * 2.5 + starId) * 2;
+      const baseRadius = 10 + pulse;
+      const rotationAngle = pulseTime * 0.4 + starId;
+
+      ctx.save();
+      ctx.translate(starX, starY);
+
+      // 1. Outer Soft Golden Halo
+      ctx.beginPath();
+      ctx.arc(0, 0, baseRadius * 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = isRed ? "rgba(255, 0, 60, 0.12)" : "rgba(255, 215, 0, 0.12)";
+      ctx.fill();
+
+      // 2. Pulsing Thin Corona Ring
+      ctx.beginPath();
+      ctx.arc(0, 0, baseRadius * 1.6, 0, Math.PI * 2);
+      ctx.strokeStyle = isRed ? "rgba(255, 0, 60, 0.4)" : "rgba(255, 215, 0, 0.35)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // 3. Rotating 4-Point Golden Diamond Flare Rays
+      ctx.save();
+      ctx.rotate(rotationAngle);
+      const rayLen = baseRadius * 2.8;
+      const rayWidth = baseRadius * 0.38;
+
+      ctx.beginPath();
+      // Vertical ray
+      ctx.moveTo(0, -rayLen);
+      ctx.lineTo(rayWidth, 0);
+      ctx.lineTo(0, rayLen);
+      ctx.lineTo(-rayWidth, 0);
+      ctx.closePath();
+      // Horizontal ray
+      ctx.moveTo(-rayLen, 0);
+      ctx.lineTo(0, rayWidth);
+      ctx.lineTo(rayLen, 0);
+      ctx.lineTo(0, -rayWidth);
+      ctx.closePath();
+
+      ctx.fillStyle = isRed ? "rgba(255, 60, 80, 0.85)" : "rgba(255, 235, 120, 0.9)";
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 18;
+      ctx.fill();
+      ctx.restore();
+
+      // 4. Secondary 45° Cross Rays
+      ctx.save();
+      ctx.rotate(-rotationAngle * 0.8 + Math.PI / 4);
+      const diagLen = baseRadius * 1.7;
+      const diagWidth = baseRadius * 0.24;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -diagLen);
+      ctx.lineTo(diagWidth, 0);
+      ctx.lineTo(0, diagLen);
+      ctx.lineTo(-diagWidth, 0);
+      ctx.closePath();
+      ctx.moveTo(-diagLen, 0);
+      ctx.lineTo(0, diagWidth);
+      ctx.lineTo(diagLen, 0);
+      ctx.lineTo(0, -diagWidth);
+      ctx.closePath();
+
+      ctx.fillStyle = isRed ? "rgba(255, 80, 100, 0.6)" : "rgba(255, 215, 0, 0.65)";
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.restore();
+
+      // 5. Intense White-Gold Center Core
+      ctx.beginPath();
+      ctx.arc(0, 0, baseRadius, 0, Math.PI * 2);
+      ctx.fillStyle = starColor;
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 24;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, baseRadius * 0.55, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+
+      ctx.restore();
+    };
 
     // Render Loop
     const draw = () => {
@@ -288,7 +385,14 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
       pulseTime += 0.035;
       if (animLineProgress < 1.0) animLineProgress += 0.08;
 
-      // 1. Draw 65 Ambient Constellation Particles & Vector Lines
+      // Check if user is currently inside a mode view (e.g. Editor, Developer, Analyst)
+      const stageMode = document.getElementById("stage")?.getAttribute("data-mode");
+      if (stageMode && stageMode.trim() !== "") {
+        animFrameId = requestAnimationFrame(draw);
+        return;
+      }
+
+      // 1. Draw 75 Ambient Constellation Particles & Vector Lines
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -297,10 +401,23 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
+        // Twinkle factor
+        const twinkle = Math.sin(pulseTime * 2 + p.twinklePhase) * 0.25;
+        const currentAlpha = Math.max(0.15, Math.min(0.9, p.alpha + twinkle));
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha * 0.7})`;
+        if (p.isGold) {
+          ctx.fillStyle = `rgba(255, 215, 0, ${currentAlpha})`;
+          ctx.shadowColor = "#ffd700";
+          ctx.shadowBlur = 6;
+        } else {
+          ctx.fillStyle = `rgba(0, 240, 255, ${currentAlpha * 0.8})`;
+          ctx.shadowColor = "#00f0ff";
+          ctx.shadowBlur = 4;
+        }
         ctx.fill();
+        ctx.shadowBlur = 0;
 
         // Vector connection lines to nearby particles (d < 160px)
         for (let j = i + 1; j < particles.length; j++) {
@@ -314,28 +431,32 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(0, 240, 255, ${lineAlpha})`;
+            if (p.isGold || p2.isGold) {
+              ctx.strokeStyle = `rgba(255, 215, 0, ${lineAlpha * 0.9})`;
+            } else {
+              ctx.strokeStyle = `rgba(0, 240, 255, ${lineAlpha})`;
+            }
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
 
-        // Vector connection to mouse cursor
+        // Vector connection lines to mouse cursor (mdist < 180px)
         const mdx = p.x - mouse.x;
         const mdy = p.y - mouse.y;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (mdist < 170) {
-          const mlineAlpha = (1 - mdist / 170) * 0.45;
+        if (mdist < 180) {
+          const mlineAlpha = (1 - mdist / 180) * 0.48;
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = `rgba(0, 240, 255, ${mlineAlpha})`;
+          ctx.strokeStyle = p.isGold ? `rgba(255, 215, 0, ${mlineAlpha})` : `rgba(0, 240, 255, ${mlineAlpha})`;
           ctx.lineWidth = 1.0;
           ctx.stroke();
         }
       }
 
-      // 2. Update Randomly Floating Secret Magic Stars Velocity Motion
+      // 2. Update Floating Motion for 4 Big Yellow Magic Stars
       Object.values(secretStarsMap).forEach((star) => {
         star.x += star.vx;
         star.y += star.vy;
@@ -344,7 +465,7 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
         if (star.y <= star.minY || star.y >= star.maxY) star.vy *= -1;
       });
 
-      // 3. Draw Animated Connecting Magic Spell Rune Lines Between Tapped Stars!
+      // 3. Draw Connecting Golden Rune Lines Between Tapped Stars!
       const activeLineSeq = isSpellFracture ? fractureSequence : tappedSequence;
 
       if (activeLineSeq.length > 1) {
@@ -360,7 +481,6 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
 
           if (prevStar && nextStar) {
             if (k === activeLineSeq.length - 1 && animLineProgress < 1.0) {
-              // Smooth animated drawing lerp for the latest line segment!
               const currentX = prevStar.x + (nextStar.x - prevStar.x) * Math.min(1.0, animLineProgress);
               const currentY = prevStar.y + (nextStar.y - prevStar.y) * Math.min(1.0, animLineProgress);
               ctx.lineTo(currentX, currentY);
@@ -370,38 +490,21 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
           }
         }
 
-        // Golden Yellow (#ffd700) when drawing correctly, Vivid Red (#ff003c) on wrong pattern mismatch!
         const lineColor = isSpellFracture ? "#ff003c" : "#ffd700";
         ctx.strokeStyle = lineColor;
         ctx.shadowColor = lineColor;
-        ctx.shadowBlur = isSpellFracture ? 26 : 20;
+        ctx.shadowBlur = isSpellFracture ? 26 : 22;
         ctx.lineWidth = isSpellFracture ? 3.8 : 2.8;
         ctx.stroke();
         ctx.restore();
       }
 
-      // 4. Draw 4 Randomly Floating Magic Secret Stars (Golden Yellow #ffd700, Pulsing Aura, Original Style)
+      // 4. Render 4 Big Yellow Glowing Stars
       Object.values(secretStarsMap).forEach((star) => {
-        const starColor = isSpellFracture ? "#ff003c" : "#ffd700";
-        const pulseRadius = 8.5 + Math.sin(pulseTime * 2 + star.id) * 2.5;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, pulseRadius + 6, 0, Math.PI * 2);
-        ctx.strokeStyle = isSpellFracture ? "rgba(255, 0, 60, 0.5)" : "rgba(255, 215, 0, 0.4)";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, pulseRadius, 0, Math.PI * 2);
-        ctx.fillStyle = starColor;
-        ctx.shadowColor = starColor;
-        ctx.shadowBlur = 24;
-        ctx.fill();
-        ctx.restore();
+        drawBigYellowStar(star.x, star.y, star.id, isSpellFracture);
       });
 
-      // 5. Render Magic Spells & Cursor Sparks
+      // 5. Render Magic Fireworks Spells
       for (let i = magicSpells.length - 1; i >= 0; i--) {
         const p = magicSpells[i];
         p.x += p.vx;
@@ -424,6 +527,7 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
         ctx.restore();
       }
 
+      // 6. Render Magical Mouse Sparks
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
         s.x += s.vx;
@@ -438,8 +542,10 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
         ctx.save();
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
-        ctx.fillStyle = accentColor;
-        ctx.globalAlpha = s.life * 0.75;
+        ctx.fillStyle = s.color;
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = s.life * 0.85;
         ctx.fill();
         ctx.restore();
       }
@@ -453,7 +559,7 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchstart", handleTouchStart);
-      canvas.removeEventListener("click", handleCanvasClick);
+      window.removeEventListener("click", handleWindowClick);
       cancelAnimationFrame(animFrameId);
       if (lockdownTimer) clearTimeout(lockdownTimer);
     };
@@ -463,11 +569,11 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
     <canvas
       ref={canvasRef}
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "auto",
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
         zIndex: 1,
       }}
     />
