@@ -5,7 +5,6 @@ import LandingConstellation from "./LandingConstellation";
 import KineticHeadline from "./KineticHeadline";
 import LandingStatusPill from "./LandingStatusPill";
 import VpnBlockModal from "./VpnBlockModal";
-import RecruiterLens from "./RecruiterLens";
 
 // Elegant Frosted Glass Cues for the 3 Polymath Universes
 function GlassEditorCue({ accent = "#b072ff" }) {
@@ -99,7 +98,6 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
   const statusPillFlag = flags.status_pill;
   const kineticFlag = flags.kinetic_headline;
   const hotkeyFlag = flags.hotkey_hints;
-  const recruiterLensFlag = flags.recruiter_lens;
 
   // Status pill metadata
   let statusPillData = {};
@@ -253,12 +251,6 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
           </div>
         )}
 
-        <div className="glass-identity-badge">
-          <span className="glass-identity-tag">{person.name}</span>
-          <span className="glass-identity-divider">/</span>
-          <span className="glass-identity-sub">{person.initials}</span>
-        </div>
-
         <h1 className="glass-title">
           <span className="glass-title-main">Three Disciplines.</span>
           <span className="glass-title-accent">One Line of Work.</span>
@@ -268,25 +260,6 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
         {kineticFlag?.enabled !== false && (
           <div className="glass-kinetic-wrapper">
             <KineticHeadline roles={kineticRoles} />
-          </div>
-        )}
-
-        <p className="glass-subtitle">
-          Choose a universe to explore — each mode is an autonomous dimension engineered from the same polymath.
-        </p>
-
-        {/* Tactile Glass Keycaps */}
-        {hotkeyFlag?.enabled !== false && (
-          <div className="glass-hotkeys">
-            <span>Press</span>
-            <kbd className="glass-kbd">1</kbd>
-            <span className="glass-kbd-label">Editor</span>
-            <span className="glass-kbd-dot">•</span>
-            <kbd className="glass-kbd">2</kbd>
-            <span className="glass-kbd-label">Analyst</span>
-            <span className="glass-kbd-dot">•</span>
-            <kbd className="glass-kbd">3</kbd>
-            <span className="glass-kbd-label">Developer</span>
           </div>
         )}
       </div>
@@ -323,8 +296,13 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
             <div className="glass-slab-rim-glow" aria-hidden="true" />
 
             <div className="glass-slab-header">
-              <span className="glass-slab-index">0{idx + 1}</span>
-              <span className="glass-slab-tag">{mode.id.toUpperCase()}</span>
+              <div className="glass-slab-header-left">
+                <span className="glass-slab-index">0{idx + 1}</span>
+                <span className="glass-slab-tag">{mode.id.toUpperCase()}</span>
+              </div>
+              <kbd className="glass-card-kbd" title={`Press ${idx + 1} to enter`}>
+                {idx + 1}
+              </kbd>
             </div>
 
             <div className="glass-slab-body">
@@ -347,11 +325,6 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
           </article>
         ))}
       </div>
-
-      {/* Recruiter Lens Floating Pill */}
-      {recruiterLensFlag?.enabled !== false && (
-        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
-      )}
 
       {/* Floating Glass Footer */}
       <footer className="selector__footer glass-footer" style={{ position: "relative", zIndex: 2 }}>

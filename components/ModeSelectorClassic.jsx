@@ -5,7 +5,6 @@ import LandingConstellation from "./LandingConstellation";
 import KineticHeadline from "./KineticHeadline";
 import LandingStatusPill from "./LandingStatusPill";
 import VpnBlockModal from "./VpnBlockModal";
-import RecruiterLens from "./RecruiterLens";
 
 // Per-mode animated SVG cues shown inside each portal card
 function EditorCue({ accent }) {
@@ -90,7 +89,6 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
   const statusPillFlag = flags.status_pill;
   const kineticFlag = flags.kinetic_headline;
   const hotkeyFlag = flags.hotkey_hints;
-  const recruiterLensFlag = flags.recruiter_lens;
 
   // Parse status pill metadata
   let statusPillData = {};
@@ -273,15 +271,11 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
       <div className="selector__intro reveal" style={{ position: "relative", zIndex: 2, maxWidth: 660, textAlign: "center" }}>
         {/* Status Pill (Controlled by Admin toggle & customizable text) */}
         {statusPillFlag?.enabled !== false && (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
             <LandingStatusPill status={statusPillData.status} location={statusPillData.location} />
           </div>
         )}
 
-        <span className="label-mono selector__eyebrow" style={{ display: "block", marginBottom: 6, letterSpacing: "1.5px", fontSize: "0.78rem" }}>
-          {person.name} / {person.initials}
-        </span>
-        
         <h1 className="selector__title" style={{ margin: "4px 0" }}>
           <span className="selector__title-line">Three disciplines.</span>
           <span className="selector__title-line selector__title-line--accent">One line of work.</span>
@@ -293,19 +287,6 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
             <KineticHeadline roles={kineticRoles} />
           </div>
         )}
-
-        <p className="selector__sub" style={{ margin: "4px 0 8px 0", fontSize: "0.85rem", opacity: 0.85 }}>
-          Choose how you&apos;d like to explore — each mode is a distinct universe, built from the same person.
-        </p>
-        
-        {/* Hotkey hint pill (Controlled by Admin toggle) */}
-        {hotkeyFlag?.enabled !== false && (
-          <div className="hotkey-hint-row" style={{ marginTop: 6, fontSize: "0.75rem", opacity: 0.65, fontFamily: "var(--font-mono)" }}>
-            <span>Press <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>1</kbd> Editor &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>2</kbd> Analyst &nbsp;•&nbsp; <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4 }}>3</kbd> Developer</span>
-          </div>
-        )}
-
-        <div className="selector__divider" aria-hidden="true" style={{ margin: "10px auto 0" }} />
       </div>
 
       {/* Primary Navigation Portals (Mode Entering Options ON TOP) */}
@@ -338,8 +319,13 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
             <div className="portal__tint" />
 
             <div className="portal__top">
-              <span className="portal__index">0{idx + 1}</span>
-              <span className="portal__mode-tag">{mode.id}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="portal__index">0{idx + 1}</span>
+                <span className="portal__mode-tag">{mode.id}</span>
+              </div>
+              <kbd className="portal-card-kbd" title={`Press ${idx + 1} to enter`}>
+                {idx + 1}
+              </kbd>
             </div>
 
             <div className="portal__body">
@@ -360,11 +346,6 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
           </article>
         ))}
       </div>
-
-      {/* Dynamic Adaptive Recruiter Lens (Minimized by default, expandable on click) */}
-      {recruiterLensFlag?.enabled !== false && (
-        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
-      )}
 
       <footer className="selector__footer" style={{ position: "relative", zIndex: 2 }}>
         <span className="selector__footer-brand">{person.name} / {person.initials}</span>

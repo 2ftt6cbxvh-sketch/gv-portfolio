@@ -5,7 +5,6 @@ import LandingConstellation from "./LandingConstellation";
 import KineticHeadline from "./KineticHeadline";
 import LandingStatusPill from "./LandingStatusPill";
 import VpnBlockModal from "./VpnBlockModal";
-import RecruiterLens from "./RecruiterLens";
 
 // Liquid Glass Refractive Optical Cues
 function LiquidEditorCue({ accent = "#b072ff" }) {
@@ -110,7 +109,6 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
   const statusPillFlag = flags.status_pill;
   const kineticFlag = flags.kinetic_headline;
   const hotkeyFlag = flags.hotkey_hints;
-  const recruiterLensFlag = flags.recruiter_lens;
 
   let statusPillData = {};
   if (statusPillFlag?.metadata) {
@@ -258,13 +256,6 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
           </div>
         )}
 
-        <div className="liquid-identity-capsule">
-          <span className="liquid-identity-dot" />
-          <span className="liquid-identity-name">{person.name}</span>
-          <span className="liquid-identity-slash">/</span>
-          <span className="liquid-identity-initials">{person.initials}</span>
-        </div>
-
         <h1 className="liquid-title">
           <span className="liquid-title-top">Three Disciplines.</span>
           <span className="liquid-title-gradient">One Line of Work.</span>
@@ -273,24 +264,6 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
         {kineticFlag?.enabled !== false && (
           <div className="liquid-kinetic-wrapper">
             <KineticHeadline roles={kineticRoles} />
-          </div>
-        )}
-
-        <p className="liquid-subtitle">
-          An adaptive polymath digital universe engineered across film direction, neural machine intelligence, and high-FPS graphics engines.
-        </p>
-
-        {hotkeyFlag?.enabled !== false && (
-          <div className="liquid-hotkey-bar">
-            <span className="liquid-hotkey-hint">Press</span>
-            <kbd className="liquid-kbd">1</kbd>
-            <span className="liquid-kbd-txt">Editor</span>
-            <span className="liquid-kbd-sep">•</span>
-            <kbd className="liquid-kbd">2</kbd>
-            <span className="liquid-kbd-txt">Analyst</span>
-            <span className="liquid-kbd-sep">•</span>
-            <kbd className="liquid-kbd">3</kbd>
-            <span className="liquid-kbd-txt">Developer</span>
           </div>
         )}
       </div>
@@ -328,8 +301,13 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
             <div className="liquid-slab-ambient-lens" aria-hidden="true" />
 
             <div className="liquid-slab-header">
-              <span className="liquid-slab-index">0{idx + 1}</span>
-              <span className="liquid-slab-mode-badge">{mode.id.toUpperCase()}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="liquid-slab-index">0{idx + 1}</span>
+                <span className="liquid-slab-mode-badge">{mode.id.toUpperCase()}</span>
+              </div>
+              <kbd className="liquid-card-kbd" title={`Press ${idx + 1} to enter`}>
+                {idx + 1}
+              </kbd>
             </div>
 
             <div className="liquid-slab-body">
@@ -353,10 +331,6 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
           </article>
         ))}
       </div>
-
-      {recruiterLensFlag?.enabled !== false && (
-        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
-      )}
 
       <footer className="selector__footer liquid-footer" style={{ position: "relative", zIndex: 2 }}>
         <span className="liquid-footer-brand">{person.name} / {person.initials}</span>

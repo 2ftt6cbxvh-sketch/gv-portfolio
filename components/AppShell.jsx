@@ -11,6 +11,7 @@ import AnalystMode from "./AnalystMode";
 import CursorGlow from "./CursorGlow";
 import SignatureIntro from "./SignatureIntro";
 import ThemeMoodSwitcher from "./ThemeMoodSwitcher";
+import RecruiterLens from "./RecruiterLens";
 import AdminSecretGatewayModal from "./AdminSecretGatewayModal";
 import CyberLockdownModal from "./CyberLockdownModal";
 import EmergencyKillswitchOverlay from "./EmergencyKillswitchOverlay";
@@ -68,19 +69,43 @@ export default function AppShell({ data }) {
     setShowSignatureIntro(false);
   }, []);
 
+  const logoClickCountRef = useRef(0);
+  const logoClickTimerRef = useRef(null);
+
+  const handleLogoSecretClick = useCallback(() => {
+    logoClickCountRef.current += 1;
+    if (logoClickTimerRef.current) clearTimeout(logoClickTimerRef.current);
+    if (logoClickCountRef.current >= 5) {
+      logoClickCountRef.current = 0;
+      setShowAdminGateway(true);
+      return;
+    }
+    logoClickTimerRef.current = setTimeout(() => {
+      logoClickCountRef.current = 0;
+    }, 2500);
+  }, []);
+
   useEffect(() => {
     const handleOpenGateway = () => setShowAdminGateway(true);
     const handleLockdown = (e) => {
       if (e.detail?.seconds) setLockdownSec(e.detail.seconds);
       setIsLockdownOpen(true);
     };
+    const handleHotKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "A" || e.key === "a")) {
+        e.preventDefault();
+        setShowAdminGateway(true);
+      }
+    };
 
     window.addEventListener("openAdminSecretGateway", handleOpenGateway);
     window.addEventListener("triggerCyberLockdown", handleLockdown);
+    window.addEventListener("keydown", handleHotKey);
 
     return () => {
       window.removeEventListener("openAdminSecretGateway", handleOpenGateway);
       window.removeEventListener("triggerCyberLockdown", handleLockdown);
+      window.removeEventListener("keydown", handleHotKey);
     };
   }, []);
 
@@ -186,17 +211,25 @@ export default function AppShell({ data }) {
       <CursorGlow />
 
       <nav className="nav" id="nav" ref={navRef} aria-label="Site">
-        <GVLogo
-          id="nav-logo"
-          size={40}
-          engineRef={navLogoEngineRef}
-          opts={{ radius: 120, maxOffset: 8 }}
-          role="button"
-          tabIndex={0}
-          aria-label="GV — return to mode select"
-        />
+        <div onClick={handleLogoSecretClick} style={{ display: "inline-flex", cursor: "pointer" }}>
+          <GVLogo
+            id="nav-logo"
+            size={40}
+            engineRef={navLogoEngineRef}
+            opts={{ radius: 120, maxOffset: 8 }}
+            role="button"
+            tabIndex={0}
+            aria-label="GV — return to mode select"
+          />
+        </div>
         <span className="nav__mode-label" id="nav-mode-label" ref={navModeLabelRef} />
         <div className="nav__right-group">
+          {features?.flags?.recruiter_lens?.enabled !== false && (
+            <RecruiterLens
+              metadata={features?.flags?.recruiter_lens?.metadata}
+              inNav={true}
+            />
+          )}
           <ThemeMoodSwitcher
             metadata={features?.flags?.theme_moods?.metadata}
             enabled={features?.flags?.theme_moods?.enabled !== false}

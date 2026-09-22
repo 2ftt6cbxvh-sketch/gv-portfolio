@@ -5,7 +5,6 @@ import LandingConstellation from "./LandingConstellation";
 import KineticHeadline from "./KineticHeadline";
 import LandingStatusPill from "./LandingStatusPill";
 import VpnBlockModal from "./VpnBlockModal";
-import RecruiterLens from "./RecruiterLens";
 
 // High-Contrast Structural Frosted Aero Cues
 function AeroEditorCue({ accent = "#a56ce8" }) {
@@ -73,7 +72,6 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
   const statusPillFlag = flags.status_pill;
   const kineticFlag = flags.kinetic_headline;
   const hotkeyFlag = flags.hotkey_hints;
-  const recruiterLensFlag = flags.recruiter_lens;
 
   let statusPillData = {};
   if (statusPillFlag?.metadata) {
@@ -133,13 +131,6 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
           </div>
         )}
 
-        <div className="aero-identity-bar">
-          <span className="aero-badge-dot" />
-          <span className="aero-identity-name">{person.name}</span>
-          <span className="aero-identity-sep">/</span>
-          <span className="aero-identity-initials">{person.initials}</span>
-        </div>
-
         <h1 className="aero-title">
           <span className="aero-title-primary">Three Disciplines.</span>
           <span className="aero-title-accent">One Line of Work.</span>
@@ -148,24 +139,6 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
         {kineticFlag?.enabled !== false && (
           <div className="aero-kinetic-wrapper">
             <KineticHeadline roles={kineticRoles} />
-          </div>
-        )}
-
-        <p className="aero-subtitle">
-          Engineered system chrome providing direct structural navigation across creative direction, machine learning, and systems architecture.
-        </p>
-
-        {hotkeyFlag?.enabled !== false && (
-          <div className="aero-hotkeys">
-            <span>Press</span>
-            <kbd className="aero-kbd">1</kbd>
-            <span className="aero-kbd-txt">Editor</span>
-            <span className="aero-kbd-sep">•</span>
-            <kbd className="aero-kbd">2</kbd>
-            <span className="aero-kbd-txt">Analyst</span>
-            <span className="aero-kbd-sep">•</span>
-            <kbd className="aero-kbd">3</kbd>
-            <span className="aero-kbd-txt">Developer</span>
           </div>
         )}
       </div>
@@ -198,8 +171,13 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
             }}
           >
             <div className="aero-panel-header">
-              <span className="aero-panel-idx">0{idx + 1}</span>
-              <span className="aero-panel-tag">{mode.id.toUpperCase()}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="aero-panel-idx">0{idx + 1}</span>
+                <span className="aero-panel-tag">{mode.id.toUpperCase()}</span>
+              </div>
+              <kbd className="aero-card-kbd" title={`Press ${idx + 1} to enter`}>
+                {idx + 1}
+              </kbd>
             </div>
 
             <div className="aero-panel-body">
@@ -223,10 +201,6 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
           </article>
         ))}
       </div>
-
-      {recruiterLensFlag?.enabled !== false && (
-        <RecruiterLens metadata={recruiterLensFlag?.metadata} />
-      )}
 
       <footer className="selector__footer aero-footer" style={{ position: "relative", zIndex: 2 }}>
         <span className="aero-footer-brand">{person.name} / {person.initials}</span>
