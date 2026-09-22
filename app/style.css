@@ -104,11 +104,9 @@ html[data-theme-mood="light"] #stage {
   opacity: 0.02 !important;
 }
 
-/* Ambient Aurora in light mode: subtle ethereal pastel glow */
+/* Ambient Aurora in light mode: soft ethereal pastel glow without GPU lag */
 [data-theme-mood="light"] .ambient-aurora {
-  opacity: 0.25 !important;
-  filter: saturate(1.4) brightness(1.08);
-  mix-blend-mode: multiply;
+  opacity: 0.35 !important;
 }
 
 /* Nav bar in light mode */
@@ -194,22 +192,30 @@ html[data-theme-mood="light"] #stage {
   color: #0284c7 !important;
 }
 
-/* Kinetic Rotating Subheadline */
+/* Kinetic Rotating Subheadline - High Contrast Obsidian/Sapphire */
 [data-theme-mood="light"] .kinetic-headline,
 [data-theme-mood="light"] .glass-kinetic-wrapper,
 [data-theme-mood="light"] .liquid-kinetic-wrapper,
 [data-theme-mood="light"] .aero-kinetic-wrapper {
-  color: #0284c7 !important;
-  font-weight: 600 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
 }
 
-[data-theme-mood="light"] .kinetic-headline__text {
+[data-theme-mood="light"] .kinetic-headline__text,
+[data-theme-mood="light"] .kinetic-headline span {
+  background: linear-gradient(90deg, #0284c7 0%, #0f172a 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
   color: #0284c7 !important;
   text-shadow: none !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
-[data-theme-mood="light"] .kinetic-headline.is-scrambling .kinetic-headline__text {
+[data-theme-mood="light"] .kinetic-headline.is-scrambling .kinetic-headline__text,
+[data-theme-mood="light"] .kinetic-headline.is-scrambling span {
+  background: linear-gradient(90deg, #7c3aed 0%, #0284c7 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
   color: #7c3aed !important;
   text-shadow: 0 0 12px rgba(124, 58, 237, 0.25) !important;
 }
@@ -224,7 +230,7 @@ html[data-theme-mood="light"] #stage {
 
 [data-theme-mood="light"] .landing-status-pill__text {
   color: #0f172a !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 [data-theme-mood="light"] .landing-status-pill__sep {
@@ -234,8 +240,8 @@ html[data-theme-mood="light"] #stage {
 
 [data-theme-mood="light"] .landing-status-pill__clocks,
 [data-theme-mood="light"] .landing-status-pill div {
-  color: #475569 !important;
-  font-weight: 500 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
 }
 
 [data-theme-mood="light"] .landing-status-pill__dot-sep {
@@ -678,13 +684,20 @@ html[data-theme-mood="light"] #stage {
 /* ============ MODE-SELECT ============ */
 .selector {
   position: relative; z-index: 3;
-  min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   gap: clamp(14px, 2.2vh, 26px);
-  padding-block: clamp(24px, 4vh, 44px);
+  padding-top: max(88px, 12vh) !important;
+  padding-bottom: clamp(24px, 4vh, 48px);
   padding-inline: clamp(16px, 3vw, 32px);
   opacity: 1;
   overflow-x: hidden;
   transition: opacity 400ms var(--ease-out);
+}
+@media (min-height: 900px) {
+  .selector {
+    justify-content: center;
+    padding-top: max(76px, 8vh) !important;
+  }
 }
 .selector.is-visible { opacity: 1; }
 
@@ -2197,7 +2210,7 @@ body.is-cinematic-mode .mode-view--editor .hero-mode--editor {
   50% { opacity: 0.4; transform: scale(0.85); }
 }
 
-.kinetic-headline__text {
+:root:not([data-theme-mood="light"]) .kinetic-headline__text {
   letter-spacing: 0.04em;
   background: linear-gradient(90deg, #ffffff 0%, var(--logo-color, #00f0ff) 100%);
   -webkit-background-clip: text;
@@ -2278,6 +2291,167 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   background: rgba(0, 240, 255, 0.8);
 }
 
+/* ============ AI CO-PILOT HUD & TERMINAL ============ */
+.copilot-trigger-btn {
+  background: rgba(10, 15, 20, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+}
+.copilot-window {
+  background: rgba(10, 14, 18, 0.96);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+}
+.copilot-header {
+  background: rgba(0, 240, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  color: #00f0ff;
+}
+.copilot-close-btn {
+  color: #00f0ff;
+}
+.copilot-msg--user {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00f0ff;
+  border: 1px solid rgba(0, 240, 255, 0.45);
+}
+.copilot-msg--bot {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.copilot-thinking-msg {
+  background: rgba(255, 255, 255, 0.05);
+  color: #00f0ff;
+  border: 1px dashed rgba(0, 240, 255, 0.4);
+}
+.copilot-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.copilot-mic-btn {
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.1);
+  color: #00f0ff;
+}
+.copilot-input-field {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.copilot-send-btn {
+  background: #00f0ff;
+  color: #05050a;
+}
+
+/* AI Co-Pilot & Live Chat in Light Mode */
+[data-theme-mood="light"] .copilot-trigger-btn {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid #0284c7 !important;
+  color: #0284c7 !important;
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.15) !important;
+}
+[data-theme-mood="light"] .copilot-window {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14) !important;
+}
+[data-theme-mood="light"] .copilot-header {
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+[data-theme-mood="light"] .copilot-close-btn {
+  color: #64748b !important;
+}
+[data-theme-mood="light"] .copilot-close-btn:hover {
+  color: #0f172a !important;
+}
+[data-theme-mood="light"] .copilot-msg--user {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+[data-theme-mood="light"] .copilot-msg--bot {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+}
+[data-theme-mood="light"] .copilot-thinking-msg {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border: 1px dashed #86efac !important;
+}
+[data-theme-mood="light"] .copilot-footer {
+  border-top: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+[data-theme-mood="light"] .copilot-mic-btn {
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0284c7 !important;
+}
+[data-theme-mood="light"] .copilot-input-field {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+[data-theme-mood="light"] .copilot-send-btn {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+[data-theme-mood="light"] .cyber-fab-btn {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Universal Light Mode Card SVG Accent High Contrast */
+[data-theme-mood="light"] [data-mode="editor"] svg path,
+[data-theme-mood="light"] [data-mode="editor"] svg line,
+[data-theme-mood="light"] [data-mode="editor"] svg rect,
+[data-theme-mood="light"] [data-mode="editor"] svg polygon,
+[data-theme-mood="light"] [data-target="editor"] svg path,
+[data-theme-mood="light"] [data-target="editor"] svg line,
+[data-theme-mood="light"] [data-target="editor"] svg rect,
+[data-theme-mood="light"] [data-target="editor"] svg polygon {
+  stroke: #7c3aed !important;
+}
+[data-theme-mood="light"] [data-mode="editor"] svg polygon,
+[data-theme-mood="light"] [data-target="editor"] svg polygon {
+  fill: #7c3aed !important;
+}
+
+[data-theme-mood="light"] [data-mode="analyst"] svg path,
+[data-theme-mood="light"] [data-mode="analyst"] svg line,
+[data-theme-mood="light"] [data-mode="analyst"] svg circle,
+[data-theme-mood="light"] [data-target="analyst"] svg path,
+[data-theme-mood="light"] [data-target="analyst"] svg line,
+[data-theme-mood="light"] [data-target="analyst"] svg circle {
+  stroke: #dc2626 !important;
+}
+[data-theme-mood="light"] [data-mode="analyst"] svg circle,
+[data-theme-mood="light"] [data-target="analyst"] svg circle {
+  fill: #dc2626 !important;
+}
+
+[data-theme-mood="light"] [data-mode="developer"] svg path,
+[data-theme-mood="light"] [data-mode="developer"] svg line,
+[data-theme-mood="light"] [data-mode="developer"] svg rect,
+[data-theme-mood="light"] [data-target="developer"] svg path,
+[data-theme-mood="light"] [data-target="developer"] svg line,
+[data-theme-mood="light"] [data-target="developer"] svg rect {
+  stroke: #b45309 !important;
+}
+[data-theme-mood="light"] [data-mode="developer"] svg rect,
+[data-theme-mood="light"] [data-target="developer"] svg rect {
+  fill: #b45309 !important;
+}
+
 /* ==========================================================================
    GLASSMORPHISM LANDING UI (v7.9.0)
    High-end frosted crystal acrylic materials, specular edge lighting & slabs
@@ -2288,10 +2462,16 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   display: flex;
   flex-direction: column;
   align-items: center;
-  justifyContent: center;
-  padding: 80px 24px 40px;
+  justify-content: flex-start;
+  padding: max(88px, 12vh) 24px 40px;
   position: relative;
   overflow: hidden;
+}
+@media (min-height: 900px) {
+  .glass-selector {
+    justify-content: center;
+    padding-top: max(76px, 8vh);
+  }
 }
 
 .glass-hero-container {
@@ -2705,10 +2885,15 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: clamp(32px, 5vh, 60px) clamp(20px, 4vw, 60px) 96px;
+  padding: max(88px, 12vh) clamp(20px, 4vw, 60px) 96px;
   position: relative;
   z-index: 10;
   box-sizing: border-box;
+}
+@media (min-height: 900px) {
+  .liquid-selector {
+    padding-top: max(76px, 8vh);
+  }
 }
 
 .liquid-hero-container {
@@ -3062,10 +3247,15 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: clamp(32px, 5vh, 60px) clamp(20px, 4vw, 60px) 96px;
+  padding: max(88px, 12vh) clamp(20px, 4vw, 60px) 96px;
   position: relative;
   z-index: 10;
   box-sizing: border-box;
+}
+@media (min-height: 900px) {
+  .aero-selector {
+    padding-top: max(76px, 8vh);
+  }
 }
 
 .aero-hero-container {

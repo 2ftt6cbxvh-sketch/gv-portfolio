@@ -11,21 +11,38 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
   const [activeMood, setActiveMood] = useState("dark");
 
   const applyMood = (moodId) => {
+    // Suppress CSS transitions temporarily across DOM to prevent multi-layer GPU repaint lag
+    const css = document.createElement("style");
+    css.appendChild(
+      document.createTextNode(
+        `*, *::before, *::after { -webkit-transition: none !important; -moz-transition: none !important; -o-transition: none !important; -ms-transition: none !important; transition: none !important; }`
+      )
+    );
+    document.head.appendChild(css);
+
     setActiveMood(moodId);
     try {
       localStorage.setItem("gv_theme_mode", moodId);
     } catch (e) {}
 
     const stage = document.getElementById("stage");
-    if (!stage) return;
-
-    if (moodId === "light") {
-      stage.setAttribute("data-theme-mood", "light");
-      document.documentElement.setAttribute("data-theme-mood", "light");
-    } else {
-      stage.removeAttribute("data-theme-mood");
-      document.documentElement.removeAttribute("data-theme-mood");
+    if (stage) {
+      if (moodId === "light") {
+        stage.setAttribute("data-theme-mood", "light");
+        document.documentElement.setAttribute("data-theme-mood", "light");
+      } else {
+        stage.removeAttribute("data-theme-mood");
+        document.documentElement.removeAttribute("data-theme-mood");
+      }
     }
+
+    // Force layout flush and remove transition override style
+    window.getComputedStyle(css).opacity;
+    requestAnimationFrame(() => {
+      if (document.head.contains(css)) {
+        document.head.removeChild(css);
+      }
+    });
   };
 
   useEffect(() => {

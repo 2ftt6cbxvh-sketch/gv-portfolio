@@ -158,6 +158,7 @@ export default function AgenticCoPilot({ metadata }) {
     <>
       {/* Floating HUD Trigger Pill (Bottom Left) */}
       <button
+        className="copilot-trigger-btn"
         onClick={() => setIsOpen(!isOpen)}
         style={{
           position: "fixed",
@@ -169,27 +170,23 @@ export default function AgenticCoPilot({ metadata }) {
           gap: 8,
           padding: "10px 16px",
           borderRadius: "30px",
-          background: "rgba(10, 15, 20, 0.85)",
-          backdropFilter: "blur(16px)",
-          border: "1px solid #00f0ff",
-          color: "#00f0ff",
           fontFamily: "var(--font-mono, monospace)",
           fontSize: "0.78rem",
           fontWeight: 700,
           cursor: "pointer",
-          boxShadow: "0 0 20px rgba(0, 240, 255, 0.25)",
           transition: "transform 0.15s ease, box-shadow 0.15s ease",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
       >
-        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: isSpeaking ? "#ff3366" : "#00f0ff", boxShadow: "0 0 8px currentColor" }} />
+        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: isSpeaking ? "#ff3366" : "var(--color-accent, #00f0ff)", boxShadow: "0 0 8px currentColor" }} />
         <span>AI CO-PILOT</span>
       </button>
 
       {/* Interactive Terminal Window */}
       {isOpen && (
         <div
+          className="copilot-window"
           style={{
             position: "fixed",
             bottom: 80,
@@ -197,11 +194,8 @@ export default function AgenticCoPilot({ metadata }) {
             width: "min(390px, calc(100vw - 32px))",
             height: "min(490px, calc(100vh - 110px))",
             zIndex: 9991,
-            background: "rgba(10, 14, 18, 0.96)",
             backdropFilter: "blur(24px)",
-            border: "1px solid rgba(0, 240, 255, 0.35)",
             borderRadius: "16px",
-            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.8)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
@@ -210,15 +204,13 @@ export default function AgenticCoPilot({ metadata }) {
         >
           {/* Header */}
           <div
+            className="copilot-header"
             style={{
               padding: "11px 14px",
-              background: "rgba(0, 240, 255, 0.08)",
-              borderBottom: "1px solid rgba(0, 240, 255, 0.2)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               fontSize: "0.75rem",
-              color: "#00f0ff",
               userSelect: "none",
               flexShrink: 0,
             }}
@@ -226,10 +218,10 @@ export default function AgenticCoPilot({ metadata }) {
             <span style={{ fontWeight: 700, letterSpacing: "0.04em" }}>🤖 GANESH AI TWIN // AGENTIC CONTROLLER</span>
             <button
               onClick={() => setIsOpen(false)}
+              className="copilot-close-btn"
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#00f0ff",
                 cursor: "pointer",
                 fontWeight: "bold",
                 fontSize: "0.9rem",
@@ -257,11 +249,12 @@ export default function AgenticCoPilot({ metadata }) {
               WebkitOverflowScrolling: "touch",
               touchAction: "pan-y",
             }}
-            className="copilot-chat-scroll"
+            className="copilot-chat-scroll copilot-chat-body"
           >
             {logs.map((msg, i) => (
               <div
                 key={i}
+                className={`copilot-msg ${msg.sender === "user" ? "copilot-msg--user" : "copilot-msg--bot"}`}
                 style={{
                   alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
                   maxWidth: "86%",
@@ -269,9 +262,6 @@ export default function AgenticCoPilot({ metadata }) {
                   borderRadius: "10px",
                   fontSize: "0.78rem",
                   lineHeight: 1.55,
-                  background: msg.sender === "user" ? "rgba(0, 240, 255, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                  color: msg.sender === "user" ? "#00f0ff" : "rgba(255, 255, 255, 0.92)",
-                  border: msg.sender === "user" ? "1px solid rgba(0, 240, 255, 0.45)" : "1px solid rgba(255, 255, 255, 0.08)",
                   wordBreak: "break-word",
                   userSelect: "text",
                 }}
@@ -281,6 +271,7 @@ export default function AgenticCoPilot({ metadata }) {
             ))}
             {isThinking && (
               <div
+                className="copilot-thinking-msg"
                 style={{
                   alignSelf: "flex-start",
                   maxWidth: "86%",
@@ -288,15 +279,12 @@ export default function AgenticCoPilot({ metadata }) {
                   borderRadius: "10px",
                   fontSize: "0.78rem",
                   lineHeight: 1.55,
-                  background: "rgba(255, 255, 255, 0.05)",
-                  color: "#00f0ff",
-                  border: "1px dashed rgba(0, 240, 255, 0.4)",
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
                 }}
               >
-                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#00f0ff", animation: "pulse 1s infinite" }}></span>
+                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "currentColor", animation: "pulse 1s infinite" }}></span>
                 <span>Thinking & querying Ganesh digital twin...</span>
               </div>
             )}
@@ -304,16 +292,14 @@ export default function AgenticCoPilot({ metadata }) {
           </div>
 
           {/* Voice & Input Row */}
-          <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", gap: 8 }}>
+          <div className="copilot-footer" style={{ padding: "10px 14px", display: "flex", gap: 8 }}>
             <button
               onClick={toggleMic}
+              className="copilot-mic-btn"
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: "8px",
-                border: isListening ? "1px solid #ff3366" : "1px solid rgba(0, 240, 255, 0.4)",
-                background: isListening ? "rgba(255, 51, 102, 0.2)" : "rgba(0, 240, 255, 0.1)",
-                color: isListening ? "#ff3366" : "#00f0ff",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -327,17 +313,15 @@ export default function AgenticCoPilot({ metadata }) {
 
             <input
               type="text"
+              className="copilot-input-field"
               placeholder={isListening ? "Listening..." : "Type command or query..."}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleExecuteCommand()}
               style={{
                 flex: 1,
-                background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
                 borderRadius: "8px",
                 padding: "0 10px",
-                color: "#ffffff",
                 fontSize: "0.78rem",
                 outline: "none",
               }}
@@ -345,12 +329,11 @@ export default function AgenticCoPilot({ metadata }) {
 
             <button
               onClick={() => handleExecuteCommand()}
+              className="copilot-send-btn"
               style={{
                 padding: "0 12px",
                 borderRadius: "8px",
-                background: "#00f0ff",
                 border: "none",
-                color: "#05050a",
                 fontWeight: 700,
                 cursor: "pointer",
                 fontSize: "0.78rem",

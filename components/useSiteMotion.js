@@ -90,6 +90,12 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       });
       document.body.appendChild(overlay);
 
+      const isLight = document.documentElement.getAttribute("data-theme-mood") === "light";
+      const overlayBg = isLight ? "rgba(248, 250, 252, 0.96)" : "#06050a";
+      const cardBg = isLight ? "rgba(255, 255, 255, 0.98)" : "rgba(12, 14, 20, 0.96)";
+      const textColor = isLight ? "#0f172a" : "#ffffff";
+      const borderColor = isLight ? "#cbd5e1" : accent;
+
       const tl = gsap.timeline({
         onComplete: () => {
           stageRef.current?.setAttribute("data-mode", targetTheme);
@@ -121,7 +127,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
           // Fade out custom overlay smoothly and trigger buttery text up animation
           gsap.to(overlay, {
             opacity: 0,
-            duration: 0.35,
+            duration: 0.2,
             ease: "power2.out",
             onComplete: () => {
               overlay.remove();
@@ -139,9 +145,9 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       // 🎬 Feature 1: Editor Mode — Anamorphic Film Letterbox Shutter Wipe
       if (targetTheme === "editor") {
         overlay.innerHTML = `
-          <div class="trans-editor-bar trans-editor-bar--top" style="position:absolute;top:0;left:0;right:0;height:50vh;background:#06050a;border-bottom:1px solid ${accent};transform:translateY(-100%);"></div>
-          <div class="trans-editor-bar trans-editor-bar--bottom" style="position:absolute;bottom:0;left:0;right:0;height:50vh;background:#06050a;border-top:1px solid ${accent};transform:translateY(100%);"></div>
-          <div class="trans-editor-meta" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:13px;color:${accent};letter-spacing:0.18em;opacity:0;background:rgba(6,5,10,0.92);padding:8px 20px;border-radius:6px;border:1px solid ${accent}66;box-shadow:0 0 25px ${accent}33;">
+          <div class="trans-editor-bar trans-editor-bar--top" style="position:absolute;top:0;left:0;right:0;height:50vh;background:${overlayBg};border-bottom:1px solid ${accent};transform:translateY(-100%);"></div>
+          <div class="trans-editor-bar trans-editor-bar--bottom" style="position:absolute;bottom:0;left:0;right:0;height:50vh;background:${overlayBg};border-top:1px solid ${accent};transform:translateY(100%);"></div>
+          <div class="trans-editor-meta" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:13px;color:${accent};letter-spacing:0.18em;opacity:0;background:${cardBg};padding:8px 20px;border-radius:6px;border:1px solid ${borderColor};box-shadow:0 4px 20px rgba(0,0,0,0.15);">
             REC ● CAM A // 24FPS // CUT 01
           </div>
         `;
@@ -149,45 +155,45 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
         const btmBar = overlay.querySelector(".trans-editor-bar--bottom");
         const metaText = overlay.querySelector(".trans-editor-meta");
 
-        tl.to([topBar, btmBar], { translateY: "0%", duration: 0.4, ease: "power3.inOut" }, 0.05)
-          .to(metaText, { opacity: 1, duration: 0.25 }, 0.25)
-          .to({}, { duration: 0.35 });
+        tl.to([topBar, btmBar], { translateY: "0%", duration: 0.22, ease: "power3.inOut" }, 0.02)
+          .to(metaText, { opacity: 1, duration: 0.12 }, 0.1)
+          .to({}, { duration: 0.08 });
       }
 
       // 📊 Feature 2: Analyst Mode — Cyber Data Scanline & Binary Matrix Sweep
       else if (targetTheme === "analyst") {
         overlay.innerHTML = `
-          <div class="trans-analyst-bg" style="position:absolute;inset:0;background:#06050a;opacity:0;"></div>
+          <div class="trans-analyst-bg" style="position:absolute;inset:0;background:${overlayBg};opacity:0;"></div>
           <div class="trans-analyst-scanline" style="position:absolute;top:0;bottom:0;left:0;width:4px;background:${accent};box-shadow:0 0 25px ${accent};transform:translateX(-10vw);"></div>
-          <div class="trans-analyst-data" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:13px;color:${accent};letter-spacing:0.12em;opacity:0;text-align:center;background:rgba(6,5,10,0.92);padding:14px 24px;border-radius:8px;border:1px solid ${accent}66;box-shadow:0 0 30px ${accent}33;">
+          <div class="trans-analyst-data" style="position:relative;z-index:2;font-family:var(--font-mono);font-size:13px;color:${accent};letter-spacing:0.12em;opacity:0;text-align:center;background:${cardBg};padding:12px 20px;border-radius:8px;border:1px solid ${borderColor};box-shadow:0 4px 20px rgba(0,0,0,0.15);">
             <div style="font-weight:700;">[0100 1001 0100 1110 0100 1001]</div>
-            <div style="font-size:11.5px;opacity:0.95;margin-top:6px;color:#ffffff;letter-spacing:0.08em;">INITIALIZING METRICS &amp; DATA PIPELINES...</div>
+            <div style="font-size:11.5px;opacity:0.95;margin-top:4px;color:${textColor};letter-spacing:0.08em;">INITIALIZING METRICS &amp; DATA PIPELINES...</div>
           </div>
         `;
         const bg = overlay.querySelector(".trans-analyst-bg");
         const scanline = overlay.querySelector(".trans-analyst-scanline");
         const dataText = overlay.querySelector(".trans-analyst-data");
 
-        tl.to(bg, { opacity: 1, duration: 0.3 }, 0.05)
-          .to(scanline, { translateX: "110vw", duration: 0.7, ease: "power2.inOut" }, 0.05)
-          .to(dataText, { opacity: 1, duration: 0.25 }, 0.15)
-          .to({}, { duration: 0.35 });
+        tl.to(bg, { opacity: 1, duration: 0.18 }, 0.02)
+          .to(scanline, { translateX: "110vw", duration: 0.28, ease: "power2.inOut" }, 0.02)
+          .to(dataText, { opacity: 1, duration: 0.12 }, 0.08)
+          .to({}, { duration: 0.08 });
       }
 
       // 💻 Feature 3: Developer Mode — CLI Command Execution Modal
       else if (targetTheme === "developer") {
         overlay.innerHTML = `
-          <div class="trans-dev-bg" style="position:absolute;inset:0;background:#06050a;opacity:0;"></div>
-          <div class="trans-dev-terminal" style="position:relative;z-index:2;width:90%;max-width:480px;padding:18px;background:rgba(12,14,20,0.96);border:1px solid ${accent};border-radius:10px;box-shadow:0 0 40px ${accent}44;font-family:var(--font-mono);font-size:12.5px;color:${accent};transform:translateY(16px);opacity:0;">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;opacity:0.75;font-size:11px;">
+          <div class="trans-dev-bg" style="position:absolute;inset:0;background:${overlayBg};opacity:0;"></div>
+          <div class="trans-dev-terminal" style="position:relative;z-index:2;width:90%;max-width:440px;padding:16px;background:${cardBg};border:1px solid ${borderColor};border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,0.18);font-family:var(--font-mono);font-size:12.5px;color:${accent};transform:translateY(12px);opacity:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;opacity:0.75;font-size:11px;">
               <span style="width:9px;height:9px;border-radius:50%;background:#ff5f56;"></span>
               <span style="width:9px;height:9px;border-radius:50%;background:#ffbd2e;"></span>
               <span style="width:9px;height:9px;border-radius:50%;background:#27c93f;"></span>
-              <span style="margin-left:8px;color:#aaa;">bash - gv@portfolio:~</span>
+              <span style="margin-left:8px;color:${isLight ? '#64748b' : '#aaa'};">bash - gv@portfolio:~</span>
             </div>
             <div class="dev-line-1" style="opacity:0;">$ gv --init-mode developer</div>
-            <div class="dev-line-2" style="color:#ffffff;margin-top:6px;opacity:0;">&gt; loading modules: React / Next.js / Python / AI...</div>
-            <div class="dev-line-3" style="color:${accent};margin-top:6px;opacity:0;">&gt; launching environment [100%]</div>
+            <div class="dev-line-2" style="color:${textColor};margin-top:4px;opacity:0;">&gt; loading modules: React / Next.js / Python / AI...</div>
+            <div class="dev-line-3" style="color:${accent};margin-top:4px;opacity:0;">&gt; launching environment [100%]</div>
           </div>
         `;
         const bg = overlay.querySelector(".trans-dev-bg");
@@ -196,15 +202,12 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
         const line2 = overlay.querySelector(".dev-line-2");
         const line3 = overlay.querySelector(".dev-line-3");
 
-        tl.to(bg, { opacity: 1, duration: 0.3 }, 0.05)
-          .to(terminal, { opacity: 1, translateY: "0px", duration: 0.35, ease: "back.out(1.2)" }, 0.1)
-          .to(line1, { opacity: 1, duration: 0.15 }, 0.2)
-          .to(line2, { opacity: 1, duration: 0.15 }, 0.35)
-          .to(line3, { opacity: 1, duration: 0.15 }, 0.5)
-          .to({}, { duration: 0.35 });
+        tl.to(bg, { opacity: 1, duration: 0.18 }, 0.02)
+          .to(terminal, { opacity: 1, translateY: "0px", duration: 0.22, ease: "power2.out" }, 0.05)
+          .to([line1, line2, line3], { opacity: 1, stagger: 0.04, duration: 0.1 }, 0.1)
+          .to({}, { duration: 0.08 });
       } else {
-        overlay.style.background = "#06050a";
-        tl.to(overlay, { opacity: 1, duration: 0.3 });
+        overlay.style.background = overlayBg;
       }
     }
 

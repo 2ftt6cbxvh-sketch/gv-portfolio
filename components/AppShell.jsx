@@ -129,7 +129,7 @@ export default function AppShell({ data }) {
           if (d.landingAesthetic) {
             const clean = String(d.landingAesthetic).trim().toLowerCase().replace(/^"|"$/g, '');
             if (["liquid", "glass", "aero", "classic"].includes(clean)) {
-              setAestheticMode(clean);
+              setAestheticMode((prev) => (prev !== clean ? clean : prev));
             }
           }
         })
@@ -141,7 +141,7 @@ export default function AppShell({ data }) {
     let interval = null;
     const startPolling = () => {
       if (!interval) {
-        interval = setInterval(checkKillswitch, 2000);
+        interval = setInterval(checkKillswitch, 1200);
       }
     };
     const stopPolling = () => {

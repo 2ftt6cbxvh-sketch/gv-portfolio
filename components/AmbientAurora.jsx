@@ -180,9 +180,10 @@ export default function AmbientAurora({ accentColor = "#00f0ff", metadata }) {
 
       ctx.clearRect(0, 0, width, height);
 
-      // Check if user is inside a mode (editor/analyst/developer)
+      // Check if user is inside a mode (editor/analyst/developer) and if light mode is active
       const stageMode = document.getElementById("stage")?.getAttribute("data-mode");
       const isModeActive = !!(stageMode && stageMode.trim() !== "");
+      const isLight = document.documentElement.getAttribute("data-theme-mood") === "light";
 
       // If in a sub-mode, reduce aurora intensity to let the mode's own canvas shine
       const opacityMultiplier = isModeActive ? 0.35 : 1.0;
@@ -193,8 +194,8 @@ export default function AmbientAurora({ accentColor = "#00f0ff", metadata }) {
       const orb1Y = height * 0.28 + Math.cos(time * 0.5) * 60 + (mouse.y - height / 2) * 0.06;
       const orb1R = Math.max(width, height) * 0.45;
       const grad1 = ctx.createRadialGradient(orb1X, orb1Y, 0, orb1X, orb1Y, orb1R);
-      grad1.addColorStop(0, `rgba(110, 58, 255, ${0.18 * opacityMultiplier})`);
-      grad1.addColorStop(0.5, `rgba(75, 30, 200, ${0.08 * opacityMultiplier})`);
+      grad1.addColorStop(0, isLight ? "rgba(168, 85, 247, 0.12)" : `rgba(110, 58, 255, ${0.18 * opacityMultiplier})`);
+      grad1.addColorStop(0.5, isLight ? "rgba(147, 51, 234, 0.04)" : `rgba(75, 30, 200, ${0.08 * opacityMultiplier})`);
       grad1.addColorStop(1, "rgba(75, 30, 200, 0)");
       ctx.fillStyle = grad1;
       ctx.beginPath();
@@ -206,8 +207,8 @@ export default function AmbientAurora({ accentColor = "#00f0ff", metadata }) {
       const orb2Y = height * 0.32 + Math.sin(time * 0.8) * 70 + (mouse.y - height / 2) * 0.08;
       const orb2R = Math.max(width, height) * 0.42;
       const grad2 = ctx.createRadialGradient(orb2X, orb2Y, 0, orb2X, orb2Y, orb2R);
-      grad2.addColorStop(0, `rgba(0, 220, 255, ${0.14 * opacityMultiplier})`);
-      grad2.addColorStop(0.5, `rgba(0, 180, 230, ${0.06 * opacityMultiplier})`);
+      grad2.addColorStop(0, isLight ? "rgba(14, 165, 233, 0.12)" : `rgba(0, 220, 255, ${0.14 * opacityMultiplier})`);
+      grad2.addColorStop(0.5, isLight ? "rgba(2, 132, 199, 0.04)" : `rgba(0, 180, 230, ${0.06 * opacityMultiplier})`);
       grad2.addColorStop(1, "rgba(0, 180, 230, 0)");
       ctx.fillStyle = grad2;
       ctx.beginPath();
@@ -219,8 +220,8 @@ export default function AmbientAurora({ accentColor = "#00f0ff", metadata }) {
       const orb3Y = height * 0.72 + Math.cos(time * 0.6 + 1.0) * 80 + (mouse.y - height / 2) * 0.05;
       const orb3R = Math.max(width, height) * 0.48;
       const grad3 = ctx.createRadialGradient(orb3X, orb3Y, 0, orb3X, orb3Y, orb3R);
-      grad3.addColorStop(0, `rgba(57, 255, 136, ${0.09 * opacityMultiplier})`);
-      grad3.addColorStop(0.5, `rgba(20, 180, 120, ${0.04 * opacityMultiplier})`);
+      grad3.addColorStop(0, isLight ? "rgba(16, 185, 129, 0.08)" : `rgba(57, 255, 136, ${0.09 * opacityMultiplier})`);
+      grad3.addColorStop(0.5, isLight ? "rgba(5, 150, 105, 0.03)" : `rgba(20, 180, 120, ${0.04 * opacityMultiplier})`);
       grad3.addColorStop(1, "rgba(20, 180, 120, 0)");
       ctx.fillStyle = grad3;
       ctx.beginPath();
@@ -242,9 +243,9 @@ export default function AmbientAurora({ accentColor = "#00f0ff", metadata }) {
         const currentAlpha = p.alpha * (0.6 + 0.4 * Math.sin(p.twinklePhase)) * opacityMultiplier;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.isAccent
-          ? `rgba(0, 240, 255, ${currentAlpha * 0.9})`
-          : `rgba(240, 240, 255, ${currentAlpha})`;
+        ctx.fillStyle = isLight
+          ? (p.isAccent ? `rgba(2, 132, 199, ${currentAlpha * 0.85})` : `rgba(100, 116, 139, ${currentAlpha * 0.65})`)
+          : (p.isAccent ? `rgba(0, 240, 255, ${currentAlpha * 0.9})` : `rgba(240, 240, 255, ${currentAlpha})`);
         ctx.fill();
       }
 
