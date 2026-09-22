@@ -83,7 +83,6 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
-        background: "#080f0d",
         border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
         borderRadius: 12,
         padding: "20px",
@@ -99,9 +98,10 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
           <span className="label-mono" style={{ color: accent, fontSize: "0.74rem" }}>
             3D DATA MATRIX // HOLOGRAM CUBE
           </span>
-          <h4 style={{ margin: "4px 0 0 0", fontSize: "1.1rem" }}>Interactive Data Hologram</h4>
+          <h4 className="hologram-cube-title" style={{ margin: "4px 0 0 0", fontSize: "1.1rem" }}>Interactive Data Hologram</h4>
         </div>
         <span
+          className="hologram-cube-badge"
           style={{
             fontSize: "0.72rem",
             background: `color-mix(in oklab, ${accent} 15%, transparent)`,
@@ -138,11 +138,11 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
           {faces.map((face) => (
             <div
               key={face.id}
+              className="hologram-cube-face"
               style={{
                 position: "absolute",
                 width: 180,
                 height: 180,
-                background: `color-mix(in oklab, ${accent} 12%, rgba(8,15,13,0.92))`,
                 border: `1.5px solid ${accent}`,
                 borderRadius: 10,
                 display: "flex",
@@ -156,10 +156,10 @@ export default function AnalystHologramCube({ metadata, accent = "#33c7b0" }) {
               }}
             >
               <span style={{ fontSize: 28, marginBottom: 6 }}>{face.icon}</span>
-              <div style={{ fontWeight: 700, fontSize: "0.88rem", color: accent, textAlign: "center" }}>
+              <div className="hologram-cube-face-title" style={{ fontWeight: 700, fontSize: "0.88rem", color: accent, textAlign: "center" }}>
                 {face.title}
               </div>
-              <div style={{ fontSize: "0.72rem", opacity: 0.7, marginTop: 4, textAlign: "center" }}>
+              <div className="hologram-cube-face-sub" style={{ fontSize: "0.72rem", marginTop: 4, textAlign: "center" }}>
                 {face.sub}
               </div>
             </div>

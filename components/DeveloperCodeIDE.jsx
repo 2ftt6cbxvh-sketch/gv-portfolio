@@ -175,53 +175,47 @@ export default function DeveloperCodeIDE() {
       className="cli-terminal-window"
       onClick={() => inputRef.current?.focus()}
       style={{
-        background: "#080d0a",
-        border: "1px solid rgba(57, 255, 136, 0.25)",
         borderRadius: 12,
-        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(57, 255, 136, 0.08)",
         overflow: "hidden",
         fontFamily: "'Fira Code', 'Courier New', monospace",
-        color: "#39ff88",
         margin: "24px 0",
       }}
     >
       {/* Terminal Titlebar */}
       <div
+        className="cli-terminal-titlebar"
         style={{
-          background: "#0e1611",
           padding: "10px 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid rgba(57, 255, 136, 0.15)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f56", display: "inline-block" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e", display: "inline-block" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#27c93f", display: "inline-block" }} />
-          <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.6)", marginLeft: 8 }}>
+          <span className="cli-terminal-title" style={{ fontSize: "0.78rem", marginLeft: 8 }}>
             guest@ganeshvarma.in ~ zsh (interactive CLI)
           </span>
         </div>
-        <div style={{ fontSize: "0.72rem", color: "rgba(57,255,136,0.6)" }}>
+        <div className="cli-terminal-version" style={{ fontSize: "0.72rem" }}>
           CLI v5.0.9
         </div>
       </div>
 
       {/* Quick Command Suggestion Chips */}
       <div
+        className="cli-terminal-chips-bar"
         style={{
-          background: "rgba(0,0,0,0.3)",
           padding: "8px 16px",
           display: "flex",
           alignItems: "center",
           gap: 8,
           flexWrap: "wrap",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
         }}
       >
-        <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.4)" }}>Quick Run:</span>
+        <span className="cli-terminal-quick-label" style={{ fontSize: "0.72rem" }}>Quick Run:</span>
         {QUICK_COMMANDS.map((cmd) => (
           <button
             key={cmd}
@@ -229,10 +223,8 @@ export default function DeveloperCodeIDE() {
               e.stopPropagation();
               handleCommand(cmd);
             }}
+            className="cli-terminal-chip"
             style={{
-              background: "rgba(57, 255, 136, 0.08)",
-              border: "1px solid rgba(57, 255, 136, 0.25)",
-              color: "#39ff88",
               borderRadius: 4,
               padding: "2px 8px",
               fontSize: "0.75rem",
@@ -240,8 +232,6 @@ export default function DeveloperCodeIDE() {
               fontFamily: "inherit",
               transition: "all 0.15s ease",
             }}
-            onMouseEnter={(e) => (e.target.style.background = "rgba(57, 255, 136, 0.2)")}
-            onMouseLeave={(e) => (e.target.style.background = "rgba(57, 255, 136, 0.08)")}
           >
             {cmd}
           </button>
@@ -251,6 +241,7 @@ export default function DeveloperCodeIDE() {
       {/* Terminal Output Area */}
       <div
         ref={terminalBodyRef}
+        className="cli-terminal-body"
         style={{
           padding: 16,
           maxHeight: 360,
@@ -260,23 +251,23 @@ export default function DeveloperCodeIDE() {
         }}
       >
         {logs.map((log, idx) => (
-          <div key={idx} style={{ marginBottom: 8, whitespace: "pre-wrap" }}>
-            {log.type === "user" && <span style={{ color: "#ffffff", fontWeight: "bold" }}>{log.text}</span>}
-            {log.type === "system" && <span style={{ color: "#39ff88", opacity: 0.85 }}>{log.text}</span>}
-            {log.type === "info" && <span style={{ color: "rgba(255,255,255,0.7)" }}>{log.text}</span>}
-            {log.type === "output" && <span style={{ color: "#39ff88" }}>{log.text}</span>}
+          <div key={idx} style={{ marginBottom: 8, whiteSpace: "pre-wrap" }}>
+            {log.type === "user" && <span className="cli-log-user">{log.text}</span>}
+            {log.type === "system" && <span className="cli-log-system">{log.text}</span>}
+            {log.type === "info" && <span className="cli-log-info">{log.text}</span>}
+            {log.type === "output" && <span className="cli-log-output">{log.text}</span>}
             {log.type === "matrix" && (
-              <span style={{ color: "#00ff66", fontWeight: "bold", textShadow: "0 0 8px #00ff66" }}>
+              <span className="cli-log-matrix">
                 {log.text}
               </span>
             )}
-            {log.type === "error" && <span style={{ color: "#ff5555" }}>{log.text}</span>}
+            {log.type === "error" && <span className="cli-log-error">{log.text}</span>}
           </div>
         ))}
 
         {/* Input Prompt Row */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
-          <span style={{ color: "#39ff88", fontWeight: "bold" }}>guest@gv:~$</span>
+          <span className="cli-prompt">guest@gv:~$</span>
           <input
             ref={inputRef}
             type="text"
@@ -284,15 +275,14 @@ export default function DeveloperCodeIDE() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type command ('help', 'skills', 'projects')..."
+            className="cli-input"
             style={{
               flex: 1,
               background: "transparent",
               border: "none",
               outline: "none",
-              color: "#ffffff",
               fontFamily: "inherit",
-              fontSize: "0.85rem",
-              caretColor: "#39ff88",
+              fontSize: "0.84rem",
             }}
           />
         </div>

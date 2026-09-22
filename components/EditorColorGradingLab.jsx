@@ -198,56 +198,55 @@ export default function EditorColorGradingLab({ metadata }) {
   };
 
   return (
-    <div
-      className="editor-color-grading-lab"
-      style={{
-        margin: "40px auto",
-        maxWidth: "960px",
-        width: "100%",
-        background: "rgba(16, 12, 24, 0.8)",
-        backdropFilter: "blur(20px)",
-        border: "1px solid rgba(165, 108, 232, 0.2)",
-        borderRadius: "16px",
-        padding: "24px",
-        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6)",
-      }}
-    >
+    <section className="section wrap editor-color-grading-lab-section">
+      <div
+        className="editor-color-grading-lab"
+        style={{
+          margin: "0 auto",
+          maxWidth: "100%",
+          width: "100%",
+          border: "1px solid rgba(165, 108, 232, 0.2)",
+          borderRadius: "16px",
+          padding: "24px",
+        }}
+      >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono, monospace)", color: "#a56ce8", textTransform: "uppercase", letterSpacing: "1.5px" }}>
               🎛️ Real-Time Neural Color Grading Lab
             </span>
-            <span style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: "10px", background: "rgba(165, 108, 232, 0.15)", color: "#a56ce8" }}>
+            <span className="grading-lab-badge" style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: "10px", background: "rgba(165, 108, 232, 0.15)", color: "#a56ce8" }}>
               60 FPS GPU Shader Canvas
             </span>
           </div>
-          <h3 style={{ margin: "4px 0 0 0", fontSize: "1.25rem", color: "#fff", fontWeight: 700 }}>
+          <h3 className="grading-lab-title" style={{ margin: "4px 0 0 0", fontSize: "1.25rem", fontWeight: 700 }}>
             DaVinci Resolve Photochemical LUT & Halation Engine
           </h3>
         </div>
 
         {/* Preset Selectors */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {PRESETS.map((p) => (
-            <button
-              key={p.name}
-              onClick={() => applyPreset(p)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "8px",
-                fontSize: "0.78rem",
-                fontWeight: activePreset.name === p.name ? 700 : 500,
-                cursor: "pointer",
-                background: activePreset.name === p.name ? `${p.color}22` : "rgba(255, 255, 255, 0.04)",
-                color: activePreset.name === p.name ? p.color : "var(--color-fg-muted)",
-                border: activePreset.name === p.name ? `1px solid ${p.color}` : "1px solid rgba(255, 255, 255, 0.08)",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {p.name}
-            </button>
-          ))}
+          {PRESETS.map((p) => {
+            const isActive = activePreset.name === p.name;
+            return (
+              <button
+                key={p.name}
+                onClick={() => applyPreset(p)}
+                className={`grading-preset-btn ${isActive ? "is-active" : ""}`}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "8px",
+                  fontSize: "0.78rem",
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {p.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -260,6 +259,7 @@ export default function EditorColorGradingLab({ metadata }) {
         onTouchStart={() => setIsDraggingSplit(true)}
         onTouchEnd={() => setIsDraggingSplit(false)}
         onTouchMove={handlePointerMove}
+        className="grading-canvas-container"
         style={{
           position: "relative",
           width: "100%",
@@ -277,20 +277,20 @@ export default function EditorColorGradingLab({ metadata }) {
 
       {/* Interactive Parameter Sliders */}
       <div
+        className="grading-sliders-card"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           gap: 16,
           marginTop: 20,
           padding: "16px",
-          background: "rgba(255, 255, 255, 0.02)",
           borderRadius: "10px",
         }}
       >
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--color-fg-muted)", marginBottom: 6 }}>
-            <span>Contrast</span>
-            <span style={{ color: "#fff", fontFamily: "var(--font-mono, monospace)" }}>{contrast.toFixed(2)}x</span>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: 6 }}>
+            <span className="grading-slider-label">Contrast</span>
+            <span className="grading-slider-val" style={{ fontFamily: "var(--font-mono, monospace)" }}>{contrast.toFixed(2)}x</span>
           </div>
           <input
             type="range"
@@ -304,9 +304,9 @@ export default function EditorColorGradingLab({ metadata }) {
         </div>
 
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--color-fg-muted)", marginBottom: 6 }}>
-            <span>Saturation</span>
-            <span style={{ color: "#fff", fontFamily: "var(--font-mono, monospace)" }}>{saturation.toFixed(2)}x</span>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: 6 }}>
+            <span className="grading-slider-label">Saturation</span>
+            <span className="grading-slider-val" style={{ fontFamily: "var(--font-mono, monospace)" }}>{saturation.toFixed(2)}x</span>
           </div>
           <input
             type="range"
@@ -320,9 +320,9 @@ export default function EditorColorGradingLab({ metadata }) {
         </div>
 
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--color-fg-muted)", marginBottom: 6 }}>
-            <span>16mm Film Grain</span>
-            <span style={{ color: "#fff", fontFamily: "var(--font-mono, monospace)" }}>{(grain * 100).toFixed(0)}%</span>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: 6 }}>
+            <span className="grading-slider-label">16mm Film Grain</span>
+            <span className="grading-slider-val" style={{ fontFamily: "var(--font-mono, monospace)" }}>{(grain * 100).toFixed(0)}%</span>
           </div>
           <input
             type="range"
@@ -336,9 +336,9 @@ export default function EditorColorGradingLab({ metadata }) {
         </div>
 
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--color-fg-muted)", marginBottom: 6 }}>
-            <span>Highlight Halation Bloom</span>
-            <span style={{ color: "#fff", fontFamily: "var(--font-mono, monospace)" }}>{(halation * 100).toFixed(0)}%</span>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: 6 }}>
+            <span className="grading-slider-label">Highlight Halation Bloom</span>
+            <span className="grading-slider-val" style={{ fontFamily: "var(--font-mono, monospace)" }}>{(halation * 100).toFixed(0)}%</span>
           </div>
           <input
             type="range"
@@ -352,5 +352,6 @@ export default function EditorColorGradingLab({ metadata }) {
         </div>
       </div>
     </div>
-  );
+  </section>
+);
 }

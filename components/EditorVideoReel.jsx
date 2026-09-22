@@ -80,7 +80,6 @@ export default function EditorVideoReel({ metadata = {}, accent = "#a56ce8" }) {
       <div
         className="video-reel-card"
         style={{
-          background: "#0a0612",
           border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
           borderRadius: 14,
           padding: 16,
@@ -94,12 +93,13 @@ export default function EditorVideoReel({ metadata = {}, accent = "#a56ce8" }) {
               <span className="label-mono" style={{ color: accent, fontSize: "0.72rem" }}>
                 PLAYBACK MONITOR // LIVE 4K LUT MATRIX
               </span>
-              <h4 style={{ margin: "2px 0 0 0", fontSize: "1.05rem", color: "#fff", fontWeight: 600 }}>
+              <h4 className="video-reel-title-main" style={{ margin: "2px 0 0 0", fontSize: "1.05rem", fontWeight: 600 }}>
                 {config.title}
               </h4>
             </div>
 
             <span
+              className="video-reel-status-badge"
               style={{
                 fontSize: "0.72rem",
                 background: `color-mix(in oklab, ${accent} 15%, transparent)`,
@@ -121,12 +121,10 @@ export default function EditorVideoReel({ metadata = {}, accent = "#a56ce8" }) {
                 <button
                   key={lut.id}
                   onClick={() => setActiveLUT(lut.id)}
+                  className={`video-reel-lut-btn ${isActive ? "is-active" : ""}`}
                   style={{
                     padding: "6px 12px",
-                    background: isActive ? `color-mix(in oklab, ${accent} 25%, transparent)` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isActive ? accent : "rgba(255,255,255,0.1)"}`,
                     borderRadius: 16,
-                    color: isActive ? accent : "rgba(255,255,255,0.75)",
                     cursor: "pointer",
                     fontFamily: "var(--font-mono)",
                     fontSize: "0.74rem",

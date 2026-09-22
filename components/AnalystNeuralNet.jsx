@@ -63,7 +63,6 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
     <div
       className="neural-net-card"
       style={{
-        background: "#080f0d",
         border: `1px solid color-mix(in oklab, ${accent} 25%, transparent)`,
         borderRadius: 12,
         padding: "20px",
@@ -76,9 +75,10 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
           <span className="label-mono" style={{ color: accent, fontSize: "0.74rem" }}>
             INTERACTIVE AI MODEL // FORWARD PASS SIMULATOR
           </span>
-          <h4 style={{ margin: "4px 0 0 0", fontSize: "1.1rem" }}>Deep Neural Network Graph</h4>
+          <h4 className="neural-net-title" style={{ margin: "4px 0 0 0", fontSize: "1.1rem" }}>Deep Neural Network Graph</h4>
         </div>
         <span
+          className="neural-net-badge"
           style={{
             fontSize: "0.72rem",
             background: `color-mix(in oklab, ${accent} 15%, transparent)`,
@@ -95,34 +95,31 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
       <div className="neural-net-grid">
         {/* Input Layer */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>INPUT LAYER</span>
+          <span className="neural-net-layer-label" style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>INPUT LAYER</span>
           {inputs.map((inp, idx) => (
             <button
               key={inp.id || idx}
               onClick={() => triggerForwardPass(idx)}
+              className={`neural-net-input-btn ${activeInput === idx ? "is-active" : ""}`}
               style={{
                 textAlign: "left",
                 padding: "12px 14px",
-                background: activeInput === idx ? `color-mix(in oklab, ${accent} 22%, transparent)` : "rgba(255,255,255,0.03)",
-                border: `1.5px solid ${activeInput === idx ? accent : "rgba(255,255,255,0.1)"}`,
                 borderRadius: 8,
-                color: "#fff",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
-                boxShadow: activeInput === idx ? `0 0 16px color-mix(in oklab, ${accent} 40%, transparent)` : "none",
               }}
             >
-              <div style={{ fontWeight: 600, fontSize: "0.85rem", color: activeInput === idx ? accent : "#fff" }}>
+              <div className="neural-net-input-title" style={{ fontWeight: 600, fontSize: "0.85rem", color: activeInput === idx ? accent : undefined }}>
                 ⚡ {inp.label}
               </div>
-              {inp.desc && <div style={{ fontSize: "0.72rem", opacity: 0.6, marginTop: 2 }}>{inp.desc}</div>}
+              {inp.desc && <div className="neural-net-input-desc" style={{ fontSize: "0.72rem", opacity: 0.7, marginTop: 2 }}>{inp.desc}</div>}
             </button>
           ))}
         </div>
 
         {/* Hidden Layer (Selective Node Activations) */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>HIDDEN WEIGHT LAYERS</span>
+          <span className="neural-net-layer-label" style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>HIDDEN WEIGHT LAYERS</span>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
             {hidden.map((h) => {
               const isActiveNode = activeHiddenLayers.includes(h.id);
@@ -131,24 +128,15 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
               return (
                 <div
                   key={h.id}
+                  className={`neural-net-hidden-node ${nodeFiring ? "is-firing" : isActiveNode ? "is-active" : ""}`}
                   style={{
                     padding: "12px 8px",
-                    background: nodeFiring
-                      ? `color-mix(in oklab, ${accent} 35%, rgba(0,0,0,0.6))`
-                      : isActiveNode
-                      ? `color-mix(in oklab, ${accent} 10%, rgba(0,0,0,0.4))`
-                      : "rgba(0,0,0,0.3)",
-                    border: `1.5px ${nodeFiring ? "solid" : "dashed"} ${
-                      nodeFiring ? accent : isActiveNode ? `color-mix(in oklab, ${accent} 50%, transparent)` : "rgba(255,255,255,0.08)"
-                    }`,
                     borderRadius: 6,
                     textAlign: "center",
                     fontSize: "0.78rem",
                     fontFamily: "var(--font-mono)",
-                    color: nodeFiring ? accent : isActiveNode ? "#ffffff" : "rgba(255,255,255,0.35)",
-                    boxShadow: nodeFiring ? `0 0 24px ${accent}` : "none",
                     transform: nodeFiring ? "scale(1.08)" : "scale(1)",
-                    opacity: isActiveNode ? 1 : 0.4,
+                    opacity: isActiveNode ? 1 : 0.45,
                     transition: "all 0.25s ease",
                   }}
                 >
@@ -161,7 +149,7 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
 
         {/* Output Layer */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", opacity: 0.6 }}>LIVE PREDICTION OUTPUT</span>
+          <span className="neural-net-layer-label" style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>LIVE PREDICTION OUTPUT</span>
           {outputs.map((out, idx) => {
             let computedVal = out.defaultVal;
             if (idx === 0) computedVal = selectedInput.accuracy || out.defaultVal;
@@ -171,16 +159,14 @@ export default function AnalystNeuralNet({ metadata, accent = "#33c7b0" }) {
             return (
               <div
                 key={out.id || idx}
+                className={`neural-net-output-box ${isFiring ? "is-firing" : ""}`}
                 style={{
                   padding: "12px 14px",
-                  background: isFiring ? `color-mix(in oklab, ${accent} 15%, rgba(0,0,0,0.6))` : "rgba(0,0,0,0.5)",
-                  border: `1.5px solid ${isFiring ? accent : `color-mix(in oklab, ${accent} 35%, transparent)`}`,
                   borderRadius: 8,
                   transition: "all 0.3s ease",
-                  boxShadow: isFiring ? `0 0 15px color-mix(in oklab, ${accent} 30%, transparent)` : "none",
                 }}
               >
-                <div style={{ fontSize: "0.75rem", opacity: 0.7 }}>{out.label}</div>
+                <div className="neural-net-output-label" style={{ fontSize: "0.75rem" }}>{out.label}</div>
                 <div style={{ fontWeight: 700, fontSize: "0.95rem", color: accent, marginTop: 3, fontFamily: "var(--font-mono)" }}>
                   {computedVal}
                 </div>

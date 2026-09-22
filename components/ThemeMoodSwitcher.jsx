@@ -36,6 +36,10 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
       }
     }
 
+    try {
+      window.dispatchEvent(new CustomEvent("themeMoodChanged", { detail: { mood: moodId } }));
+    } catch (e) {}
+
     // Force layout flush and remove transition override style
     window.getComputedStyle(css).opacity;
     requestAnimationFrame(() => {

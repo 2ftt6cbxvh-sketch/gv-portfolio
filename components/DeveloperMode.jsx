@@ -72,35 +72,7 @@ export default function DeveloperMode({ data, features }) {
         ) : (
           <button
             onClick={() => setLoadGame(true)}
-            style={{
-              padding: "12px 24px",
-              background: "rgba(57, 255, 136, 0.08)",
-              border: "1.5px solid var(--color-accent, #39ff88)",
-              borderRadius: 8,
-              color: "var(--color-accent, #39ff88)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.92rem",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(57, 255, 136, 0.2)",
-              transition: "all 0.2s ease-in-out",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--color-accent, #39ff88)";
-              e.currentTarget.style.color = "#000000";
-              e.currentTarget.style.boxShadow = "0 0 30px rgba(57, 255, 136, 0.6)";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(57, 255, 136, 0.08)";
-              e.currentTarget.style.color = "var(--color-accent, #39ff88)";
-              e.currentTarget.style.boxShadow = "0 0 20px rgba(57, 255, 136, 0.2)";
-              e.currentTarget.style.transform = "translateY(0px)";
-            }}
+            className="dev-sim-launch-btn"
           >
             <span>▶</span> LAUNCH 3D UNITY SIMULATION
           </button>

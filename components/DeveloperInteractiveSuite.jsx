@@ -77,13 +77,9 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
     <div
       className="developer-interactive-suite"
       style={{
-        background: "rgba(8, 15, 12, 0.75)",
-        backdropFilter: "blur(16px)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
         borderRadius: 14,
         padding: "24px",
         margin: "24px 0",
-        boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
       }}
     >
       {/* Header & Tab Selector */}
@@ -92,17 +88,16 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
           <span className="label-mono" style={{ color: accent, fontSize: "0.72rem" }}>
             ENGINEERING SANDBOX // INTERACTIVE SUITE
           </span>
-          <h4 style={{ margin: "3px 0 0 0", fontSize: "1.15rem", color: "#fff", fontWeight: 600 }}>
+          <h4 className="dev-suite-title" style={{ margin: "3px 0 0 0", fontSize: "1.15rem", fontWeight: 600 }}>
             Interactive AI &amp; Systems Dashboard
           </h4>
         </div>
 
         {/* Executive Tab Switcher Pill */}
         <div
+          className="dev-suite-tabs-pill"
           style={{
             display: "inline-flex",
-            background: "rgba(0,0,0,0.4)",
-            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 20,
             padding: 3,
             gap: 4,
@@ -114,10 +109,8 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                className={`dev-suite-tab ${isActive ? "is-active" : ""}`}
                 style={{
-                  background: isActive ? `color-mix(in oklab, ${accent} 22%, transparent)` : "transparent",
-                  border: isActive ? `1px solid ${accent}` : "1px solid transparent",
-                  color: isActive ? accent : "rgba(255,255,255,0.6)",
                   borderRadius: 16,
                   padding: "5px 14px",
                   cursor: "pointer",
@@ -142,12 +135,10 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
               <button
                 key={p.question}
                 onClick={() => setAiIdx(idx)}
+                className={`dev-suite-prompt-btn ${aiIdx === idx ? "is-active" : ""}`}
                 style={{
                   padding: "7px 14px",
-                  background: aiIdx === idx ? `color-mix(in oklab, ${accent} 18%, transparent)` : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${aiIdx === idx ? accent : "rgba(255,255,255,0.1)"}`,
                   borderRadius: 18,
-                  color: aiIdx === idx ? accent : "rgba(255,255,255,0.75)",
                   cursor: "pointer",
                   fontFamily: "var(--font-mono)",
                   fontSize: "0.76rem",
@@ -159,19 +150,19 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
             ))}
           </div>
 
-          <div style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 18 }}>
+          <div className="dev-suite-content-card" style={{ borderRadius: 10, padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 16 }}>🤖</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: accent, fontWeight: 600 }}>
                 GV_AI_BOT :: {prompt.question}
               </span>
             </div>
-            <p style={{ margin: "0 0 14px 0", fontSize: "0.88rem", lineHeight: 1.6, color: "rgba(255,255,255,0.85)", whiteSpace: "pre-line" }}>
+            <p className="dev-suite-answer" style={{ margin: "0 0 14px 0", fontSize: "0.88rem", lineHeight: 1.6, whiteSpace: "pre-line" }}>
               {prompt.answer}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {prompt.stats.map((st, i) => (
-                <span key={i} style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", background: `color-mix(in oklab, ${accent} 12%, transparent)`, color: accent, border: `1px solid color-mix(in oklab, ${accent} 30%, transparent)`, padding: "3px 10px", borderRadius: 10 }}>
+                <span key={i} className="dev-suite-stat-tag" style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", padding: "3px 10px", borderRadius: 10 }}>
                   {st}
                 </span>
               ))}
@@ -190,35 +181,33 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
                 <button
                   key={st.id}
                   onClick={() => setArchIdx(idx)}
+                  className={`dev-suite-stage-btn ${isActive ? "is-active" : ""}`}
                   style={{
                     textAlign: "left",
                     padding: "10px 12px",
-                    background: isActive ? `color-mix(in oklab, ${accent} 18%, transparent)` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isActive ? accent : "rgba(255,255,255,0.08)"}`,
                     borderRadius: 8,
-                    color: "#fff",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                   }}
                 >
                   <div style={{ fontSize: "0.68rem", fontFamily: "var(--font-mono)", color: accent }}>STAGE 0{idx + 1}</div>
-                  <div style={{ fontWeight: 600, fontSize: "0.82rem", margin: "3px 0", color: isActive ? accent : "#fff" }}>{st.node}</div>
+                  <div className="dev-suite-stage-name" style={{ fontWeight: 600, fontSize: "0.82rem", margin: "3px 0" }}>{st.node}</div>
                 </button>
               );
             })}
           </div>
 
-          <div style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 18 }}>
+          <div className="dev-suite-content-card" style={{ borderRadius: 10, padding: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", color: accent, fontWeight: 600 }}>
                 ⚡ {stage.node} ({stage.tech})
               </span>
               <span style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", opacity: 0.5 }}>STATUS: ACTIVE</span>
             </div>
-            <p style={{ margin: "0 0 10px 0", fontSize: "0.88rem", lineHeight: 1.5, color: "rgba(255,255,255,0.85)" }}>
+            <p className="dev-suite-answer" style={{ margin: "0 0 10px 0", fontSize: "0.88rem", lineHeight: 1.5 }}>
               {stage.simple}
             </p>
-            <div style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", opacity: 0.6, background: "rgba(255,255,255,0.03)", padding: "6px 10px", borderRadius: 6 }}>
+            <div className="dev-suite-stat-tag" style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", padding: "6px 10px", borderRadius: 6 }}>
               🛠️ SYSTEM SPEC: {stage.techDetail}
             </div>
           </div>
@@ -231,12 +220,10 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
             <button
               onClick={() => setIsNeonGlow(!isNeonGlow)}
+              className={`dev-suite-toggle-btn ${isNeonGlow ? "is-active" : ""}`}
               style={{
                 padding: "7px 14px",
-                background: isNeonGlow ? `color-mix(in oklab, ${accent} 20%, transparent)` : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isNeonGlow ? accent : "rgba(255,255,255,0.1)"}`,
                 borderRadius: 18,
-                color: isNeonGlow ? accent : "rgba(255,255,255,0.6)",
                 cursor: "pointer",
                 fontFamily: "var(--font-mono)",
                 fontSize: "0.76rem",
@@ -247,12 +234,10 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
 
             <button
               onClick={() => setIsGlass(!isGlass)}
+              className={`dev-suite-toggle-btn ${isGlass ? "is-active" : ""}`}
               style={{
                 padding: "7px 14px",
-                background: isGlass ? `color-mix(in oklab, ${accent} 20%, transparent)` : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isGlass ? accent : "rgba(255,255,255,0.1)"}`,
                 borderRadius: 18,
-                color: isGlass ? accent : "rgba(255,255,255,0.6)",
                 cursor: "pointer",
                 fontFamily: "var(--font-mono)",
                 fontSize: "0.76rem",
@@ -263,12 +248,10 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
 
             <button
               onClick={handleRunSpeedTest}
+              className="dev-suite-test-btn"
               style={{
                 padding: "7px 14px",
-                background: isSpeedTest ? accent : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isSpeedTest ? accent : "rgba(255,255,255,0.1)"}`,
                 borderRadius: 18,
-                color: isSpeedTest ? "#050d08" : "rgba(255,255,255,0.85)",
                 cursor: "pointer",
                 fontFamily: "var(--font-mono)",
                 fontSize: "0.76rem",
@@ -280,13 +263,10 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
           </div>
 
           <div
+            className="dev-suite-preview-card"
             style={{
-              background: isGlass ? "rgba(10, 25, 18, 0.6)" : "rgba(0,0,0,0.6)",
-              backdropFilter: isGlass ? "blur(12px)" : "none",
-              border: `1px solid ${isNeonGlow ? accent : "rgba(255,255,255,0.08)"}`,
               borderRadius: 10,
               padding: 18,
-              boxShadow: isNeonGlow ? `0 0 20px color-mix(in oklab, ${accent} 30%, transparent)` : "none",
               transition: "all 0.3s ease",
             }}
           >
@@ -296,7 +276,7 @@ export default function DeveloperInteractiveSuite({ accent = "#39ff88" }) {
                 {isSpeedTest ? "⚡ 0.04ms LATENCY" : "STATUS: RESPONSIVE"}
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.8)", lineHeight: 1.5 }}>
+            <p className="dev-suite-answer" style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.5 }}>
               This miniature app card dynamically updates layout styles and performance tokens in real-time as you switch controls.
             </p>
           </div>
