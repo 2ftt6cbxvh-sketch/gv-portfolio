@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { unblockIp } from "@/lib/rateLimit";
 import { getDetailedTelemetry } from "@/lib/telemetry";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -86,8 +88,92 @@ export async function POST(req) {
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
     // ──────────────────────────────────────────────────────────────────────────
+    // 🔐 PRIORITY 0: Long-Press Admin Gateway — OTP Challenge Verification
+    // Detects 8-digit numeric messages and matches against pending AdminChallenge
+    // ──────────────────────────────────────────────────────────────────────────
+    const is8DigitCode = /^\d{8}$/.test(rawText);
+    if (is8DigitCode && isAuthorized) {
+      const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
+      const sendMsg = async (text) => {
+        if (!token) return;
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+        });
+      };
+
+      // Find latest unexpired, unverified challenge
+      const challenge = await prisma.adminChallenge.findFirst({
+        where: {
+          verified: false,
+          expiresAt: { gt: new Date() },
+          attempts: { lt: 3 },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!challenge) {
+        await sendMsg("❌ <b>No active challenge found.</b>\n\nLong-press the AI CO-PILOT button on the site to start a new challenge.");
+        return NextResponse.json({ ok: true });
+      }
+
+      // Check expiry again (race condition guard)
+      if (new Date() > challenge.expiresAt) {
+        await prisma.adminChallenge.delete({ where: { id: challenge.id } }).catch(() => {});
+        await sendMsg("⏰ <b>Challenge expired.</b>\n\nLong-press the AI CO-PILOT button again to get a new code.");
+        return NextResponse.json({ ok: true });
+      }
+
+      // bcrypt compare — constant time, no timing attacks
+      const isMatch = await bcrypt.compare(rawText, challenge.codeHash);
+
+      if (isMatch) {
+        // Generate cryptographically secure session token (256 bits)
+        const sessionToken = crypto.randomBytes(32).toString("hex");
+
+        // Mark verified and store token
+        await prisma.adminChallenge.update({
+          where: { id: challenge.id },
+          data: { verified: true, sessionToken },
+        });
+
+        await sendMsg(
+          `✅ <b>Admin Gateway Authenticated</b>\n\n` +
+          `🔓 Identity verified at ${timestamp}\n` +
+          `You now have 30 seconds to access the admin panel.\n\n` +
+          `<i>Challenge auto-destroys after use.</i>`
+        );
+        return NextResponse.json({ ok: true });
+      } else {
+        // Wrong code — increment attempts
+        const updated = await prisma.adminChallenge.update({
+          where: { id: challenge.id },
+          data: { attempts: { increment: 1 } },
+        });
+
+        const remaining = 3 - updated.attempts;
+        if (remaining <= 0) {
+          await prisma.adminChallenge.delete({ where: { id: challenge.id } }).catch(() => {});
+          await sendMsg(
+            `🚫 <b>Challenge Invalidated</b>\n\n` +
+            `3 wrong attempts. The challenge has been destroyed.\n` +
+            `Long-press the AI CO-PILOT button to start a new challenge.`
+          );
+        } else {
+          await sendMsg(
+            `❌ <b>Wrong code.</b> ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.\n` +
+            `Check the screen carefully and try again.`
+          );
+        }
+        return NextResponse.json({ ok: true });
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // 💬 FEATURE 1: 2-Way Live Chat Reply Handler (/r, /c, or Direct Swipe-Reply)
     // ──────────────────────────────────────────────────────────────────────────
+
     const isExplicitReplyCommand = upperText.startsWith("/R ") || upperText.startsWith("/C ") || upperText.startsWith("/REPLY ");
     const isSwipeReply = Boolean(replyToMsg && !rawText.startsWith("/"));
 

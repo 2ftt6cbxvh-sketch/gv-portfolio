@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export default function AgenticCoPilot({ metadata }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,6 +18,99 @@ export default function AgenticCoPilot({ metadata }) {
   const chatLogsRef = useRef(null);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // ── Admin Long-Press Gateway state ──────────────────────────────────────────
+  const [gwState, setGwState] = useState("idle"); // idle|loading|active|verified|expired|failed
+  const [gwCode, setGwCode] = useState(null);
+  const [gwChallengeId, setGwChallengeId] = useState(null);
+  const [gwSecondsLeft, setGwSecondsLeft] = useState(30);
+  const longPressTimer = useRef(null);
+  const gwPollTimer = useRef(null);
+  const gwCountdownTimer = useRef(null);
+
+  const clearGateway = useCallback(() => {
+    clearTimeout(longPressTimer.current);
+    clearInterval(gwPollTimer.current);
+    clearInterval(gwCountdownTimer.current);
+    setGwState("idle");
+    setGwCode(null);
+    setGwChallengeId(null);
+    setGwSecondsLeft(30);
+  }, []);
+
+  const startGatewayChallenge = useCallback(async () => {
+    setGwState("loading");
+    try {
+      const res = await fetch("/api/admin/challenge/initiate", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setGwState(data.retryIn ? "failed" : "failed");
+        setTimeout(clearGateway, 3000);
+        return;
+      }
+      setGwCode(data.code);
+      setGwChallengeId(data.challengeId);
+      setGwState("active");
+      setGwSecondsLeft(30);
+
+      // Countdown timer
+      gwCountdownTimer.current = setInterval(() => {
+        setGwSecondsLeft((s) => {
+          if (s <= 1) { clearInterval(gwCountdownTimer.current); return 0; }
+          return s - 1;
+        });
+      }, 1000);
+
+      // Poll for Telegram verification every 2s
+      gwPollTimer.current = setInterval(async () => {
+        try {
+          const r = await fetch(`/api/admin/challenge/status?id=${data.challengeId}`);
+          const d = await r.json();
+          if (d.status === "verified") {
+            clearInterval(gwPollTimer.current);
+            clearInterval(gwCountdownTimer.current);
+            setGwState("verified");
+            // Open admin in current tab after short delay
+            setTimeout(() => { window.location.href = "/admin"; }, 1200);
+          } else if (d.status === "expired" || d.status === "failed" || d.status === "not_found") {
+            clearInterval(gwPollTimer.current);
+            clearInterval(gwCountdownTimer.current);
+            setGwState(d.status === "failed" ? "failed" : "expired");
+            setTimeout(clearGateway, 3000);
+          }
+        } catch (_) {}
+      }, 2000);
+
+      // Auto-expire overlay after 33s (grace period)
+      setTimeout(() => {
+        clearInterval(gwPollTimer.current);
+        clearInterval(gwCountdownTimer.current);
+        setGwState((s) => s === "active" ? "expired" : s);
+        setTimeout(clearGateway, 2500);
+      }, 33000);
+    } catch (e) {
+      setGwState("failed");
+      setTimeout(clearGateway, 2500);
+    }
+  }, [clearGateway]);
+
+  const handleLongPressStart = useCallback((e) => {
+    e.preventDefault();
+    longPressTimer.current = setTimeout(startGatewayChallenge, 800);
+  }, [startGatewayChallenge]);
+
+  const handleLongPressEnd = useCallback(() => {
+    clearTimeout(longPressTimer.current);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => () => clearGateway(), [clearGateway]);
+
+  // SVG countdown ring helpers
+  const RING_R = 54;
+  const RING_C = 2 * Math.PI * RING_R;
+  const ringProgress = RING_C - (gwSecondsLeft / 30) * RING_C;
+
 
   // Auto-scroll chat log directly inside container
   useEffect(() => {
@@ -159,7 +252,12 @@ export default function AgenticCoPilot({ metadata }) {
       {/* Floating HUD Trigger Pill (Bottom Left) */}
       <button
         className="copilot-trigger-btn"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { if (gwState === "idle") setIsOpen(!isOpen); }}
+        onPointerDown={handleLongPressStart}
+        onPointerUp={handleLongPressEnd}
+        onPointerLeave={handleLongPressEnd}
+        onContextMenu={(e) => e.preventDefault()}
+        title="Click to open · Long-press (0.8s) for admin gateway"
         style={{
           position: "fixed",
           bottom: 24,
@@ -175,6 +273,8 @@ export default function AgenticCoPilot({ metadata }) {
           fontWeight: 700,
           cursor: "pointer",
           transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          userSelect: "none",
+          WebkitUserSelect: "none",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
@@ -182,6 +282,128 @@ export default function AgenticCoPilot({ metadata }) {
         <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: isSpeaking ? "#ff3366" : "var(--color-accent, #00f0ff)", boxShadow: "0 0 8px currentColor" }} />
         <span>AI CO-PILOT</span>
       </button>
+
+      {/* ── Admin Gateway Glassmorphism Overlay ── */}
+      {gwState !== "idle" && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(16px) saturate(160%)",
+          WebkitBackdropFilter: "blur(16px) saturate(160%)",
+          background: "rgba(4,6,14,0.55)",
+          animation: "gwFadeIn 0.2s ease",
+        }}>
+          <style>{`
+            @keyframes gwFadeIn { from { opacity:0; } to { opacity:1; } }
+            @keyframes gwPulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+            .gw-code-char { display:inline-block; font-family:var(--font-mono,monospace); font-size:2.6rem; font-weight:800; letter-spacing:0.35em; color:#ffffff; text-shadow:0 0 30px rgba(0,240,255,0.6),0 2px 8px rgba(0,0,0,0.8); }
+          `}</style>
+          <div style={{
+            position: "relative", width: "min(400px, calc(100vw - 40px))",
+            borderRadius: 24,
+            background: "rgba(255,255,255,0.07)",
+            backdropFilter: "blur(48px) saturate(240%)",
+            WebkitBackdropFilter: "blur(48px) saturate(240%)",
+            border: "1px solid rgba(255,255,255,0.16)",
+            borderTop: "2px solid rgba(255,255,255,0.42)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6), inset 0 1.5px 0 rgba(255,255,255,0.35)",
+            padding: "32px 28px 28px",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
+            textAlign: "center",
+          }}>
+            {/* Specular line */}
+            <div style={{ position:"absolute", top:0, left:"10%", right:"10%", height:2, background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.85) 50%,transparent)", borderRadius:9999 }} />
+
+            {/* Header */}
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:"1.2rem" }}>🔐</span>
+              <span style={{ fontFamily:"var(--font-mono,monospace)", fontSize:"0.78rem", fontWeight:700, letterSpacing:"0.12em", color:"rgba(255,255,255,0.75)", textTransform:"uppercase" }}>Admin Gateway</span>
+            </div>
+
+            {gwState === "loading" && (
+              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:"0.88rem", margin:0 }}>
+                Generating secure challenge…
+              </p>
+            )}
+
+            {gwState === "active" && gwCode && (<>
+              {/* SVG countdown ring + code in centre */}
+              <div style={{ position:"relative", width:132, height:132 }}>
+                <svg width="132" height="132" style={{ position:"absolute", top:0, left:0, transform:"rotate(-90deg)" }}>
+                  <circle cx="66" cy="66" r={RING_R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6"/>
+                  <circle cx="66" cy="66" r={RING_R} fill="none"
+                    stroke={gwSecondsLeft > 10 ? "#00f0ff" : "#ff4466"}
+                    strokeWidth="6" strokeLinecap="round"
+                    strokeDasharray={RING_C}
+                    strokeDashoffset={ringProgress}
+                    style={{ transition:"stroke-dashoffset 1s linear, stroke 0.3s ease" }}
+                  />
+                </svg>
+                <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+                  <span style={{ fontFamily:"var(--font-mono,monospace)", fontSize:"2rem", fontWeight:800, letterSpacing:"0.05em", color: gwSecondsLeft > 10 ? "#00f0ff" : "#ff4466", textShadow:"0 0 20px currentColor" }}>
+                    {String(gwSecondsLeft).padStart(2,"0")}
+                  </span>
+                  <span style={{ fontSize:"0.62rem", color:"rgba(255,255,255,0.4)", letterSpacing:"0.08em", marginTop:2 }}>SEC</span>
+                </div>
+              </div>
+
+              {/* 8-digit code display */}
+              <div style={{ background:"rgba(0,0,0,0.35)", borderRadius:14, padding:"16px 24px", border:"1px solid rgba(255,255,255,0.12)", backdropFilter:"blur(8px)" }}>
+                <div className="gw-code-char">{gwCode}</div>
+              </div>
+
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                <p style={{ color:"rgba(255,255,255,0.82)", fontSize:"0.87rem", margin:0, lineHeight:1.5 }}>
+                  Reply this code in <strong>Telegram</strong> to authenticate
+                </p>
+                <p style={{ color:"rgba(255,255,255,0.42)", fontSize:"0.76rem", margin:0, fontFamily:"var(--font-mono,monospace)" }}>
+                  Awaiting Telegram verification…
+                </p>
+              </div>
+            </>)}
+
+            {gwState === "verified" && (
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
+                <span style={{ fontSize:"3rem" }}>✅</span>
+                <p style={{ color:"#39ff14", fontWeight:700, fontSize:"1rem", margin:0, textShadow:"0 0 16px #39ff14" }}>Access Granted</p>
+                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"0.82rem", margin:0 }}>Opening admin panel…</p>
+              </div>
+            )}
+
+            {(gwState === "expired") && (
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
+                <span style={{ fontSize:"2.5rem" }}>⏰</span>
+                <p style={{ color:"#ff9944", fontWeight:700, fontSize:"0.95rem", margin:0 }}>Challenge Expired</p>
+                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"0.82rem", margin:0 }}>Long-press the AI CO-PILOT button again</p>
+              </div>
+            )}
+
+            {gwState === "failed" && (
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
+                <span style={{ fontSize:"2.5rem" }}>🚫</span>
+                <p style={{ color:"#ff4466", fontWeight:700, fontSize:"0.95rem", margin:0 }}>Challenge Invalidated</p>
+                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"0.82rem", margin:0 }}>Too many wrong attempts</p>
+              </div>
+            )}
+
+            {/* Cancel button (only while active) */}
+            {(gwState === "active" || gwState === "loading") && (
+              <button onClick={clearGateway} style={{
+                background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.14)",
+                color:"rgba(255,255,255,0.55)", fontFamily:"var(--font-mono,monospace)",
+                fontSize:"0.74rem", padding:"7px 20px", borderRadius:9999, cursor:"pointer",
+                transition:"background 0.15s",
+              }}
+                onMouseEnter={(e)=>e.currentTarget.style.background="rgba(255,255,255,0.12)"}
+                onMouseLeave={(e)=>e.currentTarget.style.background="rgba(255,255,255,0.06)"}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* Interactive Terminal Window */}
       {isOpen && (

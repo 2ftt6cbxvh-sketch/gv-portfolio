@@ -249,3 +249,17 @@ model ChatMessage {
   createdAt      DateTime    @default(now())
 }
 
+
+// ---------- Admin Long-Press Gateway Challenge ----------
+
+model AdminChallenge {
+  id           String   @id @default(cuid())
+  codeHash     String   // bcrypt hash of 8-digit OTP (12 rounds) — never store plaintext
+  expiresAt    DateTime // now + 30 seconds
+  verified     Boolean  @default(false)
+  sessionToken String?  // set only after successful bcrypt verify
+  attempts     Int      @default(0)  // max 3 — auto-destroy on exceed
+  ipAddress    String?  // challenge binding — extra layer
+  userAgent    String?
+  createdAt    DateTime @default(now())
+}
