@@ -5504,3 +5504,191 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
 .glass-selector { background: none !important; }
 .liquid-selector { background: none !important; }
 .aero-selector { background: none !important; }
+
+/* ==========================================================================
+   LIGHT MODE TEXT FIX — All 4 landing UIs: fix invisible text/badges/kbds
+   ========================================================================== */
+
+/* --- Liquid Glass (lq-*) light mode text fixes --- */
+[data-theme-mood="light"] .lq-blob-idx {
+  color: var(--portal-accent) !important;
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .lq-blob-badge {
+  background: rgba(14,165,233,0.08) !important;
+  border-color: rgba(14,165,233,0.3) !important;
+  color: #0369a1 !important;
+}
+[data-theme-mood="light"] .lq-card-kbd {
+  background: rgba(15,23,42,0.06) !important;
+  border-color: rgba(15,23,42,0.2) !important;
+  border-bottom-color: rgba(15,23,42,0.35) !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.12) !important;
+}
+[data-theme-mood="light"] .lq-blob-card:hover .lq-card-kbd {
+  background: color-mix(in oklab, var(--portal-accent) 12%, rgba(255,255,255,0.9)) !important;
+  border-color: color-mix(in oklab, var(--portal-accent) 40%, rgba(15,23,42,0.2)) !important;
+  color: #0f172a !important;
+}
+[data-theme-mood="light"] .lq-hotkey-bar {
+  background: rgba(255,255,255,0.8) !important;
+  border-color: rgba(14,165,233,0.25) !important;
+  color: #334155 !important;
+}
+[data-theme-mood="light"] .lq-kbd {
+  background: rgba(14,165,233,0.08) !important;
+  border-color: rgba(14,165,233,0.35) !important;
+  border-bottom-color: rgba(14,165,233,0.5) !important;
+  color: #0369a1 !important;
+  box-shadow: 0 1px 2px rgba(14,165,233,0.15) !important;
+}
+[data-theme-mood="light"] .lq-kbd-label {
+  color: #334155 !important;
+}
+[data-theme-mood="light"] .lq-kbd-sep {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .lq-blob-cta {
+  color: #475569 !important;
+}
+[data-theme-mood="light"] .lq-blob-card:hover .lq-blob-cta {
+  color: var(--portal-accent) !important;
+}
+[data-theme-mood="light"] .lq-blob-arrow {
+  color: inherit !important;
+}
+[data-theme-mood="light"] .lq-blob-footer {
+  border-top-color: rgba(14,165,233,0.15) !important;
+}
+[data-theme-mood="light"] .lq-status-wrapper .landing-status-pill {
+  color: #1e293b !important;
+}
+
+/* --- Spatial Glass (sg-*) light mode text fixes --- */
+[data-theme-mood="light"] .sg-card-idx {
+  color: var(--portal-accent) !important;
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .sg-card-tag {
+  background: rgba(79,70,229,0.07) !important;
+  border-color: rgba(79,70,229,0.25) !important;
+  color: #3730a3 !important;
+}
+[data-theme-mood="light"] .sg-card-kbd {
+  background: rgba(15,23,42,0.06) !important;
+  border-color: rgba(15,23,42,0.2) !important;
+  border-bottom-color: rgba(15,23,42,0.35) !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.12) !important;
+}
+[data-theme-mood="light"] .sg-card:hover .sg-card-kbd {
+  background: color-mix(in oklab, var(--portal-accent) 12%, rgba(255,255,255,0.9)) !important;
+  border-color: color-mix(in oklab, var(--portal-accent) 40%, rgba(15,23,42,0.2)) !important;
+  color: #0f172a !important;
+}
+[data-theme-mood="light"] .sg-hotkeys {
+  background: rgba(255,255,255,0.8) !important;
+  border-color: rgba(79,70,229,0.25) !important;
+  color: #334155 !important;
+}
+[data-theme-mood="light"] .sg-kbd {
+  background: rgba(124,58,237,0.08) !important;
+  border-color: rgba(124,58,237,0.35) !important;
+  border-bottom-color: rgba(124,58,237,0.5) !important;
+  color: #6d28d9 !important;
+  box-shadow: 0 1px 2px rgba(124,58,237,0.15) !important;
+}
+[data-theme-mood="light"] .sg-kbd-label {
+  color: #334155 !important;
+}
+[data-theme-mood="light"] .sg-kbd-dot {
+  opacity: 0.4 !important;
+}
+[data-theme-mood="light"] .sg-identity-divider {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .sg-card-cue {
+  opacity: 1 !important;
+}
+
+/* --- Fluent Aero (flu-*) light mode text fixes --- */
+[data-theme-mood="light"] .flu-panel-idx {
+  color: var(--portal-accent) !important;
+}
+[data-theme-mood="light"] .flu-panel-tag {
+  background: rgba(2,132,199,0.07) !important;
+  border-color: rgba(2,132,199,0.25) !important;
+  color: #0369a1 !important;
+}
+[data-theme-mood="light"] .flu-card-kbd {
+  background: rgba(15,23,42,0.06) !important;
+  border-color: rgba(15,23,42,0.2) !important;
+  border-bottom-color: rgba(15,23,42,0.35) !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.12) !important;
+}
+[data-theme-mood="light"] .flu-panel:hover .flu-card-kbd {
+  background: color-mix(in oklab, var(--portal-accent) 12%, rgba(255,255,255,0.9)) !important;
+  border-color: color-mix(in oklab, var(--portal-accent) 40%, rgba(15,23,42,0.2)) !important;
+  color: #0f172a !important;
+}
+[data-theme-mood="light"] .flu-hotkeys {
+  background: rgba(255,255,255,0.8) !important;
+  border-color: rgba(2,132,199,0.25) !important;
+  color: #334155 !important;
+}
+[data-theme-mood="light"] .flu-kbd {
+  background: rgba(2,132,199,0.08) !important;
+  border-color: rgba(2,132,199,0.3) !important;
+  color: #0369a1 !important;
+}
+[data-theme-mood="light"] .flu-kbd-label {
+  color: #334155 !important;
+}
+[data-theme-mood="light"] .flu-kbd-sep {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .flu-titlebar {
+  background: rgba(2,132,199,0.04) !important;
+  border-bottom-color: rgba(2,132,199,0.12) !important;
+}
+[data-theme-mood="light"] .flu-titlebar-label {
+  color: #64748b !important;
+}
+[data-theme-mood="light"] .flu-panel-cue {
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .flu-mica-overlay {
+  opacity: 0.08 !important;
+}
+
+/* --- Classic (portal) light mode text fixes --- */
+[data-theme-mood="light"] .portal__index,
+[data-theme-mood="light"] .portal__mode-tag {
+  color: var(--portal-accent) !important;
+  opacity: 1 !important;
+}
+[data-theme-mood="light"] .portal__desc {
+  color: #475569 !important;
+}
+[data-theme-mood="light"] .portal__enter {
+  color: #475569 !important;
+}
+[data-theme-mood="light"] .portal:hover .portal__enter {
+  color: var(--portal-accent) !important;
+}
+[data-theme-mood="light"] .portal__enter-bar {
+  background: var(--portal-accent) !important;
+  opacity: 0.5 !important;
+}
+
+/* Fix hotkey hints row in classic light mode */
+[data-theme-mood="light"] .hotkey-hint-row kbd {
+  background: rgba(15,23,42,0.07) !important;
+  color: #334155 !important;
+  border-radius: 4px !important;
+}
