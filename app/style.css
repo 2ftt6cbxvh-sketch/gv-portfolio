@@ -5692,3 +5692,356 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   color: #334155 !important;
   border-radius: 4px !important;
 }
+
+/* ==========================================================================
+   GLASSMORPHISM OVERHAUL — Real frosted glass for UI 1 (sg), UI 2 (lq),
+   and Recruiter Lens modal. Key principle: backdrop-filter needs colorful
+   semi-transparent backgrounds, NOT opaque dark ones.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   SPATIAL GLASS (sg-*) — True glassmorphism fix
+   Make orbs much brighter, cards truly transparent to show blur through
+   -------------------------------------------------------------------------- */
+
+/* Bright vivid background so backdrop-filter has color to blur */
+.sg-selector {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(147,51,234,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 80% 90%, rgba(6,182,212,0.4) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 60% 40%, rgba(99,102,241,0.3) 0%, transparent 55%),
+    #0a0616 !important;
+}
+
+/* Orbs: bigger, far brighter, no blurring at element level — let backdrop-filter do the work */
+.sg-orb--primary {
+  width: 55vw; height: 55vw; top: -10%; left: -5%;
+  background: radial-gradient(circle, rgba(147,51,234,0.9) 0%, rgba(126,34,206,0.6) 30%, transparent 70%) !important;
+  filter: blur(60px) !important;
+  animation: sgOrb1 22s ease-in-out infinite alternate;
+}
+.sg-orb--secondary {
+  width: 45vw; height: 45vw; top: 30%; right: -5%;
+  background: radial-gradient(circle, rgba(6,182,212,0.8) 0%, rgba(8,145,178,0.5) 30%, transparent 70%) !important;
+  filter: blur(55px) !important;
+  animation: sgOrb2 28s ease-in-out infinite alternate;
+}
+.sg-orb--tertiary {
+  width: 40vw; height: 40vw; bottom: 5%; left: 25%;
+  background: radial-gradient(circle, rgba(99,102,241,0.7) 0%, rgba(79,70,229,0.4) 30%, transparent 70%) !important;
+  filter: blur(50px) !important;
+  animation: sgOrb3 18s ease-in-out infinite alternate;
+}
+
+/* sg-card: TRUE glass — nearly transparent, rely on backdrop-filter for the frosted color */
+.sg-card {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(32px) saturate(220%) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(220%) brightness(1.1) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  border-top: 1.5px solid rgba(255,255,255,0.45) !important;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.35),
+    0 2px 8px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.1) !important;
+}
+.sg-card:hover {
+  background: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.28) !important;
+  border-top-color: rgba(255,255,255,0.55) !important;
+  box-shadow:
+    0 16px 48px rgba(0,0,0,0.45),
+    0 0 32px -4px color-mix(in oklab, var(--portal-accent) 50%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.45),
+    inset 0 -1px 0 rgba(0,0,0,0.12) !important;
+  transform: translateY(-5px) !important;
+}
+
+/* Top edge specular: make it brighter and wider */
+.sg-card-specular {
+  top: 0; left: 6%; right: 6%; height: 2px !important;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.7) 25%,
+    rgba(255,255,255,1) 50%,
+    rgba(255,255,255,0.7) 75%,
+    transparent 100%) !important;
+  border-radius: 9999px;
+  filter: blur(0.5px);
+}
+
+/* Rim: prismatic color */
+.sg-card-rim {
+  background: linear-gradient(135deg,
+    rgba(192,132,252,0.25) 0%,
+    rgba(99,102,241,0.12) 30%,
+    transparent 50%,
+    rgba(6,182,212,0.12) 70%,
+    transparent 100%) !important;
+  opacity: 1 !important;
+}
+
+/* Card text must stay legible on transparent glass */
+.sg-card-name { color: #ffffff !important; text-shadow: 0 1px 8px rgba(0,0,0,0.6) !important; }
+.sg-card-desc { color: rgba(255,255,255,0.8) !important; text-shadow: 0 1px 4px rgba(0,0,0,0.4) !important; }
+.sg-card-idx { text-shadow: 0 0 10px var(--portal-accent); }
+.sg-card-tag { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.22) !important; color: rgba(255,255,255,0.9) !important; backdrop-filter: blur(4px); }
+.sg-card-cta { color: rgba(255,255,255,0.75) !important; }
+.sg-card-footer { border-top-color: rgba(255,255,255,0.12) !important; }
+
+/* sg identity and hotkey pills — true glass pills */
+.sg-identity-row {
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.sg-hotkeys {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+
+/* sg-footer: glass pill */
+.sg-footer {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+/* --------------------------------------------------------------------------
+   LIQUID GLASS (lq-*) — True glassmorphism fix
+   Same principle: bright colorful bg + ultra-transparent cards
+   -------------------------------------------------------------------------- */
+
+.lq-selector {
+  background:
+    radial-gradient(ellipse 75% 55% at 15% 15%, rgba(0,180,255,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 55% at 85% 85%, rgba(176,114,255,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 65% at 55% 45%, rgba(57,255,136,0.25) 0%, transparent 55%),
+    #060a14 !important;
+}
+
+.lq-orb--a {
+  width: 60vw; height: 60vw; top: -15%; left: -15%;
+  background: radial-gradient(circle, rgba(0,180,255,0.95) 0%, rgba(14,165,233,0.6) 35%, transparent 70%) !important;
+  filter: blur(55px) !important;
+}
+.lq-orb--b {
+  width: 50vw; height: 50vw; top: 35%; right: -10%;
+  background: radial-gradient(circle, rgba(176,114,255,0.9) 0%, rgba(139,92,246,0.55) 35%, transparent 70%) !important;
+  filter: blur(55px) !important;
+}
+.lq-orb--c {
+  width: 42vw; height: 42vw; bottom: 0; left: 20%;
+  background: radial-gradient(circle, rgba(52,211,153,0.85) 0%, rgba(16,185,129,0.5) 35%, transparent 70%) !important;
+  filter: blur(50px) !important;
+}
+
+/* lq-blob-card: TRUE glass */
+.lq-blob-card {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(28px) saturate(200%) brightness(1.08) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.08) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  border-top: 1.5px solid rgba(255,255,255,0.42) !important;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.32),
+    inset 0 -1px 0 rgba(0,0,0,0.08) !important;
+}
+.lq-blob-card:hover {
+  background: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.26) !important;
+  border-top-color: rgba(255,255,255,0.52) !important;
+  box-shadow:
+    0 16px 48px rgba(0,0,0,0.4),
+    0 0 32px -4px color-mix(in oklab, var(--portal-accent) 55%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.42),
+    inset 0 -1px 0 rgba(0,0,0,0.1) !important;
+}
+
+/* lq specular line — brighter */
+.lq-blob-specular {
+  height: 2px !important;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.65) 25%,
+    rgba(255,255,255,0.95) 50%,
+    rgba(255,255,255,0.65) 75%,
+    transparent 100%) !important;
+}
+
+/* Text legibility on transparent glass */
+.lq-blob-name { color: #ffffff !important; text-shadow: 0 1px 8px rgba(0,0,0,0.55) !important; }
+.lq-blob-desc { color: rgba(255,255,255,0.82) !important; text-shadow: 0 1px 4px rgba(0,0,0,0.35) !important; }
+.lq-blob-badge { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.2) !important; color: rgba(255,255,255,0.9) !important; backdrop-filter: blur(4px); }
+.lq-blob-cta { color: rgba(255,255,255,0.78) !important; }
+.lq-blob-footer { border-top-color: rgba(255,255,255,0.11) !important; }
+
+/* lq footer glass */
+.lq-footer {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(255,255,255,0.13) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.lq-hotkey-bar {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-color: rgba(255,255,255,0.13) !important;
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT MODE glass — both sg and lq need bright frosted look
+   -------------------------------------------------------------------------- */
+[data-theme-mood="light"] .sg-selector {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(167,139,250,0.6) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 55% at 80% 85%, rgba(125,211,252,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 55% 45%, rgba(196,181,253,0.4) 0%, transparent 55%),
+    #f0eeff !important;
+}
+[data-theme-mood="light"] .sg-card {
+  background: rgba(255,255,255,0.45) !important;
+  border-color: rgba(255,255,255,0.75) !important;
+  border-top-color: rgba(255,255,255,0.95) !important;
+  box-shadow: 0 8px 32px rgba(79,70,229,0.15), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+}
+[data-theme-mood="light"] .sg-card:hover {
+  background: rgba(255,255,255,0.6) !important;
+  box-shadow: 0 16px 48px rgba(79,70,229,0.22), 0 0 24px -4px color-mix(in oklab, var(--portal-accent) 35%, transparent), inset 0 1px 0 rgba(255,255,255,1) !important;
+}
+[data-theme-mood="light"] .sg-card-name { color: #1e1b4b !important; text-shadow: none !important; }
+[data-theme-mood="light"] .sg-card-desc { color: #374151 !important; text-shadow: none !important; }
+[data-theme-mood="light"] .sg-orb--primary { background: radial-gradient(circle, rgba(167,139,250,0.9) 0%, rgba(139,92,246,0.55) 35%, transparent 70%) !important; filter: blur(60px) !important; }
+[data-theme-mood="light"] .sg-orb--secondary { background: radial-gradient(circle, rgba(125,211,252,0.9) 0%, rgba(14,165,233,0.55) 35%, transparent 70%) !important; filter: blur(55px) !important; }
+[data-theme-mood="light"] .sg-orb--tertiary { background: radial-gradient(circle, rgba(110,231,183,0.8) 0%, rgba(16,185,129,0.45) 35%, transparent 70%) !important; filter: blur(50px) !important; }
+[data-theme-mood="light"] .sg-identity-row { background: rgba(255,255,255,0.55) !important; border-color: rgba(255,255,255,0.8) !important; box-shadow: 0 2px 12px rgba(79,70,229,0.1), inset 0 1px 0 rgba(255,255,255,0.9) !important; }
+[data-theme-mood="light"] .sg-footer { background: rgba(255,255,255,0.55) !important; border-color: rgba(255,255,255,0.8) !important; }
+[data-theme-mood="light"] .sg-card-tag { background: rgba(79,70,229,0.08) !important; border-color: rgba(79,70,229,0.2) !important; color: #4338ca !important; }
+[data-theme-mood="light"] .sg-card-cta { color: #374151 !important; }
+
+[data-theme-mood="light"] .lq-selector {
+  background:
+    radial-gradient(ellipse 75% 55% at 15% 15%, rgba(125,211,252,0.65) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 55% at 85% 85%, rgba(196,181,253,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 65% at 55% 45%, rgba(110,231,183,0.4) 0%, transparent 55%),
+    #e8f4fe !important;
+}
+[data-theme-mood="light"] .lq-blob-card {
+  background: rgba(255,255,255,0.42) !important;
+  border-color: rgba(255,255,255,0.72) !important;
+  border-top-color: rgba(255,255,255,0.92) !important;
+  box-shadow: 0 8px 32px rgba(14,165,233,0.14), inset 0 1px 0 rgba(255,255,255,0.88) !important;
+}
+[data-theme-mood="light"] .lq-blob-card:hover {
+  background: rgba(255,255,255,0.58) !important;
+  box-shadow: 0 16px 48px rgba(14,165,233,0.22), 0 0 24px -4px color-mix(in oklab, var(--portal-accent) 35%, transparent), inset 0 1px 0 rgba(255,255,255,1) !important;
+}
+[data-theme-mood="light"] .lq-blob-name { color: #0f172a !important; text-shadow: none !important; }
+[data-theme-mood="light"] .lq-blob-desc { color: #374151 !important; text-shadow: none !important; }
+[data-theme-mood="light"] .lq-blob-badge { background: rgba(14,165,233,0.08) !important; border-color: rgba(14,165,233,0.25) !important; color: #0369a1 !important; backdrop-filter: none !important; }
+[data-theme-mood="light"] .lq-blob-cta { color: #374151 !important; }
+[data-theme-mood="light"] .lq-orb--a { background: radial-gradient(circle, rgba(125,211,252,0.9) 0%, rgba(56,189,248,0.55) 35%, transparent 70%) !important; }
+[data-theme-mood="light"] .lq-orb--b { background: radial-gradient(circle, rgba(196,181,253,0.85) 0%, rgba(139,92,246,0.5) 35%, transparent 70%) !important; }
+[data-theme-mood="light"] .lq-orb--c { background: radial-gradient(circle, rgba(110,231,183,0.8) 0%, rgba(16,185,129,0.45) 35%, transparent 70%) !important; }
+[data-theme-mood="light"] .lq-footer { background: rgba(255,255,255,0.55) !important; border-color: rgba(255,255,255,0.78) !important; }
+
+/* --------------------------------------------------------------------------
+   RECRUITER LENS — True Glassmorphism
+   The overlay blurs the landing page behind it, modal gets glass look
+   -------------------------------------------------------------------------- */
+
+/* Overlay: less opaque black, keep backdrop blur for context */
+.recruiter-lens-overlay {
+  background: rgba(4,6,12,0.45) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+}
+
+/* Modal: true glassmorphism card */
+.recruiter-lens-modal {
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(48px) saturate(260%) brightness(1.12) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(260%) brightness(1.12) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  border-top: 2px solid rgba(255,255,255,0.45) !important;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.5),
+    0 0 48px -8px color-mix(in oklab, var(--persona-accent, #00f0ff) 30%, transparent),
+    inset 0 1.5px 0 rgba(255,255,255,0.4),
+    inset 0 -1px 0 rgba(0,0,0,0.12) !important;
+}
+
+/* Inner specular line at top of modal */
+.recruiter-lens-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 8%; right: 8%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9) 50%, transparent);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+/* Header tag: glass pill */
+.recruiter-lens-header__tag {
+  color: rgba(255,255,255,0.95) !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4) !important;
+}
+
+/* Tabs: glass pill style */
+.recruiter-lens-tab {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: rgba(255,255,255,0.82) !important;
+  transition: background 0.2s ease, border-color 0.2s ease !important;
+}
+.recruiter-lens-tab:hover {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(255,255,255,0.25) !important;
+  color: #ffffff !important;
+}
+.recruiter-lens-tab--active,
+.recruiter-lens-tab[data-active="true"] {
+  background: color-mix(in oklab, var(--persona-accent, #00f0ff) 15%, rgba(255,255,255,0.08)) !important;
+  border-color: color-mix(in oklab, var(--persona-accent, #00f0ff) 45%, rgba(255,255,255,0.15)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px -2px color-mix(in oklab, var(--persona-accent, #00f0ff) 35%, transparent) !important;
+}
+
+/* Metric cards: glass tiles */
+.recruiter-lens-metric-card {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
+  border-top: 1px solid rgba(255,255,255,0.28) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+
+/* Light mode recruiter lens */
+[data-theme-mood="light"] .recruiter-lens-overlay {
+  background: rgba(240,248,255,0.55) !important;
+  backdrop-filter: blur(12px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+}
+[data-theme-mood="light"] .recruiter-lens-modal {
+  background: rgba(255,255,255,0.62) !important;
+  border-color: rgba(255,255,255,0.85) !important;
+  border-top-color: rgba(255,255,255,1) !important;
+  box-shadow: 0 24px 64px rgba(79,70,229,0.18), inset 0 1.5px 0 rgba(255,255,255,1) !important;
+}
+[data-theme-mood="light"] .recruiter-lens-header__tag { color: #1e1b4b !important; text-shadow: none !important; }
+[data-theme-mood="light"] .recruiter-lens-tab { background: rgba(255,255,255,0.5) !important; border-color: rgba(79,70,229,0.15) !important; color: #374151 !important; }
+[data-theme-mood="light"] .recruiter-lens-tab:hover { background: rgba(255,255,255,0.75) !important; }
+[data-theme-mood="light"] .recruiter-lens-metric-card { background: rgba(255,255,255,0.55) !important; border-color: rgba(79,70,229,0.12) !important; border-top-color: rgba(255,255,255,0.9) !important; }
