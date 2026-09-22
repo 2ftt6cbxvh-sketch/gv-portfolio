@@ -113,70 +113,21 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
     } catch (e) {}
   }
 
+  // Mouse tracking only for caustic lens — no 3D tilt (removed: flicker)
   useEffect(() => {
     const portals = portalsRef.current?.querySelectorAll(".portal");
     if (!portals) return;
-    let animId = null;
-    const state = new Map();
-
+    const handlers = [];
     portals.forEach((portal) => {
-      state.set(portal, { targetRotX: 0, targetRotY: 0, currentRotX: 0, currentRotY: 0, active: false });
-      const s = state.get(portal);
       const move = (e) => {
         const rect = portal.getBoundingClientRect();
-        const posX = e.clientX - rect.left;
-        const posY = e.clientY - rect.top;
-        s.active = true;
-        portal.dataset.isHovered = "true";
-        s.targetRotX = (-(posY - rect.height / 2) / (rect.height / 2)) * 7;
-        s.targetRotY = ((posX - rect.width / 2) / (rect.width / 2)) * 7;
-        portal.style.setProperty("--mouse-x", `${(posX / rect.width) * 100}%`);
-        portal.style.setProperty("--mouse-y", `${(posY / rect.height) * 100}%`);
-      };
-      const leave = () => {
-        s.active = false;
-        portal.dataset.isHovered = "false";
-        s.targetRotX = 0; s.targetRotY = 0;
-        portal.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0px)";
-      };
-      const touchMove = (e) => {
-        if (!e.touches?.length) return;
-        const touch = e.touches[0];
-        const rect = portal.getBoundingClientRect();
-        const posX = touch.clientX - rect.left;
-        const posY = touch.clientY - rect.top;
-        s.active = true;
-        portal.dataset.isHovered = "true";
-        s.targetRotX = (-(posY - rect.height / 2) / (rect.height / 2)) * 10;
-        s.targetRotY = ((posX - rect.width / 2) / (rect.width / 2)) * 10;
-        portal.style.setProperty("--mouse-x", `${(posX / rect.width) * 100}%`);
-        portal.style.setProperty("--mouse-y", `${(posY / rect.height) * 100}%`);
-      };
-      const touchEnd = () => {
-        s.active = false;
-        portal.dataset.isHovered = "false";
-        s.targetRotX = 0; s.targetRotY = 0;
-        portal.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0px)";
+        portal.style.setProperty("--mouse-x", `${((e.clientX - rect.left) / rect.width) * 100}%`);
+        portal.style.setProperty("--mouse-y", `${((e.clientY - rect.top) / rect.height) * 100}%`);
       };
       portal.addEventListener("mousemove", move);
-      portal.addEventListener("mouseleave", leave);
-      portal.addEventListener("touchmove", touchMove, { passive: true });
-      portal.addEventListener("touchend", touchEnd, { passive: true });
+      handlers.push({ portal, move });
     });
-
-    const loop = () => {
-      portals.forEach((portal) => {
-        const s = state.get(portal);
-        if (s.active) {
-          s.currentRotX += (s.targetRotX - s.currentRotX) * 0.12;
-          s.currentRotY += (s.targetRotY - s.currentRotY) * 0.12;
-          portal.style.transform = `perspective(1200px) rotateX(${s.currentRotX.toFixed(2)}deg) rotateY(${s.currentRotY.toFixed(2)}deg) translateZ(10px)`;
-        }
-      });
-      animId = requestAnimationFrame(loop);
-    };
-    animId = requestAnimationFrame(loop);
-    return () => { if (animId) cancelAnimationFrame(animId); };
+    return () => handlers.forEach(({ portal, move }) => portal.removeEventListener("mousemove", move));
   }, []);
 
   useEffect(() => {

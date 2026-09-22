@@ -5433,3 +5433,74 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
 .aero-panel {
   transition: border-color 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1), background 0.25s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1) !important;
 }
+
+/* ==========================================================================
+   HOTFIX v2 — fix blob card circular appearance, remove transform flicker,
+   fix fixed-position orbs causing blank page, clean up hover states
+   ========================================================================== */
+
+/* FIX 1: Remove 3D tilt transform from cards — no more flicker */
+.sg-card { transform-style: flat !important; }
+.lq-blob-card { transform-style: flat !important; }
+.sg-card:hover, .sg-card:focus { transform: none !important; }
+.lq-blob-card:hover, .lq-blob-card:focus { transform: none !important; }
+
+/* FIX 2: Reset the blob morph — remove the circular blob shape on hover.
+   Replace with a very subtle organic variation that looks intentional, not broken. */
+.lq-blob-card {
+  border-radius: 20px !important;
+  transition:
+    border-radius 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.35s ease !important;
+}
+.lq-blob-card:hover {
+  /* Very subtle organic border-radius — clearly intentional, not broken */
+  border-radius: 24px 12px 24px 12px / 12px 24px 12px 24px !important;
+  transform: none !important;
+}
+
+/* FIX 3: Fix sg-card scale on hover (subtle lift only — no rotation) */
+.sg-card {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1) !important;
+}
+.sg-card:hover {
+  transform: translateY(-4px) !important;
+}
+
+/* FIX 4: Fix orbs/depth-field — was position:fixed, caused blank page on some UIs */
+.lq-bg-orbs {
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+}
+.sg-depth-field {
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+}
+
+/* FIX 5: Ensure lq-selector has proper overflow:hidden so absolute orbs don't escape */
+.lq-selector {
+  overflow: hidden !important;
+}
+.sg-selector {
+  overflow: hidden !important;
+}
+
+/* FIX 6: Remove contain:layout from blob card — it was preventing proper border-radius morph */
+.lq-blob-card {
+  contain: style paint !important;  /* layout causes issues with border-radius transition */
+}
+
+/* FIX 7: flu-panel — keep translateY lift but remove any residual transform-style */
+.flu-panel { transform-style: flat !important; }
+
+/* FIX 8: Remove old glass-selector / liquid-selector / aero-selector backgrounds
+   that conflict with new sg-/lq-/flu- selectors */
+.glass-selector { background: none !important; }
+.liquid-selector { background: none !important; }
+.aero-selector { background: none !important; }
