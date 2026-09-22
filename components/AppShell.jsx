@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import GVLogo from "./GVLogo";
-import ModeSelector from "./ModeSelector";
+import ModeSelectorClassic from "./ModeSelectorClassic";
+import ModeSelectorGlass from "./ModeSelectorGlass";
 import DeveloperMode from "./DeveloperMode";
 import EditorMode from "./EditorMode";
 import AnalystMode from "./AnalystMode";
@@ -24,6 +25,7 @@ export default function AppShell({ data }) {
   const navBackRef = useRef(null);
   const introLogoEngineRef = useRef(null);
   const navLogoEngineRef = useRef(null);
+  const [landingUiMode, setLandingUiMode] = useState("glass");
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
   const [showSignatureIntro, setShowSignatureIntro] = useState(true);
   const [showAdminGateway, setShowAdminGateway] = useState(false);
@@ -31,6 +33,24 @@ export default function AppShell({ data }) {
   const [lockdownSec, setLockdownSec] = useState(30);
   const [isKillswitchActive, setIsKillswitchActive] = useState(!!data?.initialKillswitch);
   const [maintenanceState, setMaintenanceState] = useState(data?.initialMaintenance || { active: false, metadata: null });
+
+  // Load user's preferred landing UI style (Glassmorphism vs Classic)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("gv_landing_ui_mode");
+      if (saved === "classic" || saved === "glass") {
+        setLandingUiMode(saved);
+      }
+    } catch (e) {}
+  }, []);
+
+  const toggleLandingUiMode = () => {
+    const next = landingUiMode === "glass" ? "classic" : "glass";
+    setLandingUiMode(next);
+    try {
+      localStorage.setItem("gv_landing_ui_mode", next);
+    } catch (e) {}
+  };
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
@@ -192,7 +212,30 @@ export default function AppShell({ data }) {
         />
       )}
 
-      <ModeSelector selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
+      {/* 1-Click Instant UI Switcher Pill (100% Reversibility Guarantee) */}
+      <button
+        onClick={toggleLandingUiMode}
+        className="ui-version-switcher"
+        title="Toggle between Glassmorphism UI and Classic UI"
+        aria-label="Toggle Landing UI Style"
+      >
+        <span
+          className="ui-version-indicator"
+          style={{
+            background: landingUiMode === "glass" ? "#00f0ff" : "#ffd700",
+            boxShadow: landingUiMode === "glass" ? "0 0 8px #00f0ff" : "0 0 8px #ffd700",
+          }}
+        />
+        <span>{landingUiMode === "glass" ? "UI: Glassmorphism" : "UI: Classic"}</span>
+        <span style={{ opacity: 0.5, fontSize: "0.75rem" }}>⇄</span>
+      </button>
+
+      {/* Landing Selector: Glassmorphism (Default) vs Classic */}
+      {landingUiMode === "glass" ? (
+        <ModeSelectorGlass selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
+      ) : (
+        <ModeSelectorClassic selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
+      )}
 
       {modeById.editor && <EditorMode data={modeById.editor} features={features} />}
       {modeById.analyst && <AnalystMode data={modeById.analyst} features={features} />}
