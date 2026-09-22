@@ -14,6 +14,21 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://api.fontshare.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                var msg = (e && e.message) || '';
+                if (msg.indexOf('Loading chunk') !== -1 || msg.indexOf('ChunkLoadError') !== -1) {
+                  if (!window.__chunkReloaded) {
+                    window.__chunkReloaded = true;
+                    window.location.reload();
+                  }
+                }
+              });
+            `,
+          }}
+        />
       </head>
       <body>
         <a href="#stage" className="skip-link">Skip to content</a>

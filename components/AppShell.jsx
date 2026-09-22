@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import GVLogo from "./GVLogo";
-import ModeSelectorClassic from "./ModeSelectorClassic";
+import ModeSelectorLiquid from "./ModeSelectorLiquid";
 import ModeSelectorGlass from "./ModeSelectorGlass";
+import ModeSelectorAero from "./ModeSelectorAero";
+import ModeSelectorClassic from "./ModeSelectorClassic";
 import DeveloperMode from "./DeveloperMode";
 import EditorMode from "./EditorMode";
 import AnalystMode from "./AnalystMode";
@@ -25,7 +27,7 @@ export default function AppShell({ data }) {
   const navBackRef = useRef(null);
   const introLogoEngineRef = useRef(null);
   const navLogoEngineRef = useRef(null);
-  const [landingUiMode, setLandingUiMode] = useState("glass");
+  const [aestheticMode, setAestheticMode] = useState("liquid");
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
   const [showSignatureIntro, setShowSignatureIntro] = useState(true);
   const [showAdminGateway, setShowAdminGateway] = useState(false);
@@ -34,21 +36,20 @@ export default function AppShell({ data }) {
   const [isKillswitchActive, setIsKillswitchActive] = useState(!!data?.initialKillswitch);
   const [maintenanceState, setMaintenanceState] = useState(data?.initialMaintenance || { active: false, metadata: null });
 
-  // Load user's preferred landing UI style (Glassmorphism vs Classic)
+  // Load user's preferred depth aesthetic (Liquid Glass, Glassmorphism, Frosted Aero, Classic)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("gv_landing_ui_mode");
-      if (saved === "classic" || saved === "glass") {
-        setLandingUiMode(saved);
+      const saved = localStorage.getItem("gv_depth_aesthetic");
+      if (saved && ["liquid", "glass", "aero", "classic"].includes(saved)) {
+        setAestheticMode(saved);
       }
     } catch (e) {}
   }, []);
 
-  const toggleLandingUiMode = () => {
-    const next = landingUiMode === "glass" ? "classic" : "glass";
-    setLandingUiMode(next);
+  const changeAestheticMode = (mode) => {
+    setAestheticMode(mode);
     try {
-      localStorage.setItem("gv_landing_ui_mode", next);
+      localStorage.setItem("gv_depth_aesthetic", mode);
     } catch (e) {}
   };
 
@@ -212,28 +213,59 @@ export default function AppShell({ data }) {
         />
       )}
 
-      {/* 1-Click Instant UI Switcher Pill (100% Reversibility Guarantee) */}
-      <button
-        onClick={toggleLandingUiMode}
-        className="ui-version-switcher"
-        title="Toggle between Glassmorphism UI and Classic UI"
-        aria-label="Toggle Landing UI Style"
-      >
-        <span
-          className="ui-version-indicator"
-          style={{
-            background: landingUiMode === "glass" ? "#00f0ff" : "#ffd700",
-            boxShadow: landingUiMode === "glass" ? "0 0 8px #00f0ff" : "0 0 8px #ffd700",
-          }}
-        />
-        <span>{landingUiMode === "glass" ? "UI: Glassmorphism" : "UI: Classic"}</span>
-        <span style={{ opacity: 0.5, fontSize: "0.75rem" }}>⇄</span>
-      </button>
+      {/* Floating Depth Aesthetic Control Dock (Setproduct Guide: Liquid vs Glass vs Aero vs Classic) */}
+      <nav className="depth-aesthetic-dock" aria-label="Landing Depth Aesthetic Switcher">
+        <div className="depth-dock-pill-track">
+          <button
+            type="button"
+            onClick={() => changeAestheticMode("liquid")}
+            className={`depth-dock-btn ${aestheticMode === "liquid" ? "is-active" : ""}`}
+            title="Liquid Glass (Apple 2026 Refraction & Caustics)"
+          >
+            <span className="depth-dock-icon">💧</span>
+            <span className="depth-dock-name">Liquid Glass</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => changeAestheticMode("glass")}
+            className={`depth-dock-btn ${aestheticMode === "glass" ? "is-active" : ""}`}
+            title="Glassmorphism (Frosted Translucency)"
+          >
+            <span className="depth-dock-icon">🪟</span>
+            <span className="depth-dock-name">Glassmorphism</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => changeAestheticMode("aero")}
+            className={`depth-dock-btn ${aestheticMode === "aero" ? "is-active" : ""}`}
+            title="Frosted Aero (Structural Acrylic Chrome)"
+          >
+            <span className="depth-dock-icon">❄️</span>
+            <span className="depth-dock-name">Frosted Aero</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => changeAestheticMode("classic")}
+            className={`depth-dock-btn ${aestheticMode === "classic" ? "is-active" : ""}`}
+            title="Classic (Dark Cyber Matrix Landing)"
+          >
+            <span className="depth-dock-icon">🏛️</span>
+            <span className="depth-dock-name">Classic</span>
+          </button>
+        </div>
+      </nav>
 
-      {/* Landing Selector: Glassmorphism (Default) vs Classic */}
-      {landingUiMode === "glass" ? (
+      {/* Render Active Landing Aesthetic */}
+      {aestheticMode === "liquid" && (
+        <ModeSelectorLiquid selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
+      )}
+      {aestheticMode === "glass" && (
         <ModeSelectorGlass selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
-      ) : (
+      )}
+      {aestheticMode === "aero" && (
+        <ModeSelectorAero selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
+      )}
+      {aestheticMode === "classic" && (
         <ModeSelectorClassic selectorRef={selectorRef} person={data.person} modes={data.modes} features={features} />
       )}
 
