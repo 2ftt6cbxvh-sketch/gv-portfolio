@@ -233,7 +233,7 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
   }, [hotkeyFlag]);
 
   return (
-    <main className="selector glass-selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
+    <main className="selector glass-selector is-visible" id="selector" ref={selectorRef} style={{ position: "relative" }}>
       {/* VPN Security Policy Warning Modal */}
       <VpnBlockModal isOpen={vpnState.isOpen} ipAddress={vpnState.ip} />
 

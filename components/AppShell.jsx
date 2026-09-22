@@ -52,16 +52,22 @@ export default function AppShell({ data }) {
       }
     } catch (e) {}
 
-    if (data?.initialAesthetic && ["liquid", "glass", "aero", "classic"].includes(data.initialAesthetic)) {
-      setAestheticMode(data.initialAesthetic);
+    if (data?.initialAesthetic) {
+      const clean = String(data.initialAesthetic).trim().toLowerCase().replace(/^"|"$/g, '');
+      if (["liquid", "glass", "aero", "classic"].includes(clean)) {
+        setAestheticMode(clean);
+      }
     }
   }, [data?.initialAesthetic]);
 
   // Sync with real-time feature flag updates from admin/telegram
   useEffect(() => {
     const flagMode = features?.flags?.landing_aesthetic?.metadata;
-    if (flagMode && ["liquid", "glass", "aero", "classic"].includes(flagMode)) {
-      setAestheticMode(flagMode);
+    if (flagMode) {
+      const clean = String(flagMode).trim().toLowerCase().replace(/^"|"$/g, '');
+      if (["liquid", "glass", "aero", "classic"].includes(clean)) {
+        setAestheticMode(clean);
+      }
     }
   }, [features]);
 
@@ -119,6 +125,12 @@ export default function AppShell({ data }) {
           setIsKillswitchActive(!!d.active);
           if (d.maintenance) {
             setMaintenanceState(d.maintenance);
+          }
+          if (d.landingAesthetic) {
+            const clean = String(d.landingAesthetic).trim().toLowerCase().replace(/^"|"$/g, '');
+            if (["liquid", "glass", "aero", "classic"].includes(clean)) {
+              setAestheticMode(clean);
+            }
           }
         })
         .catch(() => {});

@@ -259,7 +259,7 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
   }, [hotkeyFlag]);
 
   return (
-    <main className="selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
+    <main className="selector is-visible" id="selector" ref={selectorRef} style={{ position: "relative" }}>
       {/* Full-Screen Flashy VPN Security Policy Warning Modal */}
       <VpnBlockModal isOpen={vpnState.isOpen} ipAddress={vpnState.ip} />
 

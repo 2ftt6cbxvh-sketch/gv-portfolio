@@ -67,12 +67,25 @@ export async function GET() {
       } catch (e) {}
     }
 
+    // 3. Check Current Landing Aesthetic Mode
+    const aestheticFlag = await prisma.featureFlag.findUnique({
+      where: { key: "landing_aesthetic" },
+    });
+    let landingAesthetic = "glass";
+    if (aestheticFlag?.metadata) {
+      let raw = typeof aestheticFlag.metadata === "string" ? aestheticFlag.metadata.trim().replace(/^"|"$/g, '') : aestheticFlag.metadata;
+      if (["liquid", "glass", "aero", "classic"].includes(raw)) {
+        landingAesthetic = raw;
+      }
+    }
+
     cachedStatus = {
       active: killActive,
       maintenance: {
         active: maintActive,
         metadata: maintMeta,
       },
+      landingAesthetic,
     };
     cacheExpiry = now + 1500; // 1.5s cache window
 
@@ -83,6 +96,6 @@ export async function GET() {
     response.headers.set("X-Cache", "MISS");
     return response;
   } catch (err) {
-    return NextResponse.json({ active: false, maintenance: { active: false, metadata: null } });
+    return NextResponse.json({ active: false, maintenance: { active: false, metadata: null }, landingAesthetic: "glass" });
   }
 }

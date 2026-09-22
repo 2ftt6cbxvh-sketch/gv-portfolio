@@ -116,7 +116,7 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
   }, [hotkeyFlag]);
 
   return (
-    <main className="selector aero-selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
+    <main className="selector aero-selector is-visible" id="selector" ref={selectorRef} style={{ position: "relative" }}>
       <VpnBlockModal isOpen={vpnState.isOpen} ipAddress={vpnState.ip} />
 
       {constellationFlag?.enabled !== false && (

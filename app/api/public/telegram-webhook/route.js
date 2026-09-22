@@ -24,7 +24,10 @@ export async function POST(req) {
       where: { key: "admin_secret_gateway" },
     });
 
-    let config = { telegramChatId: "", telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "" };
+    let config = {
+      telegramChatId: process.env.TELEGRAM_CHAT_ID ? String(process.env.TELEGRAM_CHAT_ID).trim() : "",
+      telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ? String(process.env.TELEGRAM_BOT_TOKEN).trim() : "",
+    };
     let parsedMeta = {};
 
     if (gatewayFlag?.metadata) {
@@ -42,7 +45,7 @@ export async function POST(req) {
       return NextResponse.json({ ok: false, error: "Invalid webhook secret token" }, { status: 403 });
     }
 
-    // Only allow auto-capturing chat ID once during initial setup if completely empty
+    // Auto-capture chat ID if not configured anywhere
     if (!config.telegramChatId && chatId) {
       config.telegramChatId = chatId;
       parsedMeta.telegramChatId = chatId;
@@ -57,8 +60,25 @@ export async function POST(req) {
       });
     }
 
-    // Strict Authorization: Reject any message from non-admin Telegram chat IDs
-    if (config.telegramChatId && chatId !== config.telegramChatId) {
+    // Authorization check
+    const envChatId = process.env.TELEGRAM_CHAT_ID ? String(process.env.TELEGRAM_CHAT_ID).trim() : "";
+    const isAuthorized = !config.telegramChatId || chatId === config.telegramChatId || (envChatId && chatId === envChatId);
+
+    if (!isAuthorized) {
+      const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
+      if (token) {
+        try {
+          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: `⚠️ *Unauthorized Telegram Chat ID*\n\nYour Chat ID: \`${chatId}\`\nRegistered Admin Chat ID: \`${config.telegramChatId || "None"}\`\n\nTo authorize this chat ID, update it in Admin Panel (\`/admin/features\`) or set \`TELEGRAM_CHAT_ID=${chatId}\` in your environment.`,
+              parse_mode: "Markdown",
+            }),
+          });
+        } catch (e) {}
+      }
       return NextResponse.json({ ok: true, ignored: "unauthorized_chat_id" });
     }
 
@@ -263,8 +283,11 @@ export async function POST(req) {
     }
     // 2. UI AESTHETIC SWITCHER COMMAND (/ui, /ui 1, /ui 2, /ui 3, /ui 4)
     else if (upperText.startsWith("/UI")) {
-      const parts = rawText.split(" ");
-      const arg = (parts[1] || "").toLowerCase().trim();
+      // Robust command parsing: handles /ui 1, /ui1, /ui_1, /ui-1, /ui@bot 1, etc.
+      let cleanCommand = rawText.replace(/^\/ui(@[a-zA-Z0-9_]+)?/i, "").trim();
+      cleanCommand = cleanCommand.replace(/^[_-\s]+/, "").trim();
+      const parts = rawText.trim().split(/\s+/);
+      const arg = (cleanCommand || parts[1] || "").toLowerCase().trim();
 
       const AESTHETIC_MODES = {
         "1": { key: "liquid", name: "💧 Liquid Glass (Apple WWDC 2026 Refraction & Caustics)" },
@@ -505,6 +528,21 @@ export async function POST(req) {
     }
 
     if (replyText) {
+      const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
+      if (token) {
+        try {
+          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: replyText,
+              parse_mode: "Markdown",
+            }),
+          });
+        } catch (e) {}
+      }
+
       return NextResponse.json({
         method: "sendMessage",
         chat_id: chatId,

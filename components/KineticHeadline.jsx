@@ -83,28 +83,8 @@ export default function KineticHeadline({ roles }) {
   };
 
   return (
-    <div
-      className="kinetic-headline"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 32,
-        margin: "8px 0",
-      }}
-    >
-      <span
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "clamp(0.88rem, 2.5vw, 1.08rem)",
-          fontWeight: 600,
-          color: isScrambling ? "#00f0ff" : "rgba(255, 255, 255, 0.95)",
-          letterSpacing: "0.04em",
-          textShadow: isScrambling ? "0 0 16px #00f0ff, 0 0 30px rgba(0, 240, 255, 0.5)" : "0 0 16px rgba(0, 240, 255, 0.2)",
-          transition: "color 0.2s ease, text-shadow 0.2s ease",
-          display: "inline-block",
-        }}
-      >
+    <div className={`kinetic-headline ${isScrambling ? "is-scrambling" : ""}`}>
+      <span className="kinetic-headline__text">
         {displayText}
       </span>
     </div>

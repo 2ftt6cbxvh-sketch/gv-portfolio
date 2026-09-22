@@ -241,7 +241,7 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
   }, [hotkeyFlag]);
 
   return (
-    <main className="selector liquid-selector" id="selector" ref={selectorRef} style={{ position: "relative" }}>
+    <main className="selector liquid-selector is-visible" id="selector" ref={selectorRef} style={{ position: "relative" }}>
       <VpnBlockModal isOpen={vpnState.isOpen} ipAddress={vpnState.ip} />
 
       {constellationFlag?.enabled !== false && (
