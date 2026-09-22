@@ -24,25 +24,43 @@ export async function POST(req) {
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
-    const userAgent = req.headers.get("user-agent") || "";
+    const rawUserAgent = req.headers.get("user-agent") || "";
 
-    // 1. Check if previous challenge from this IP expired unverified -> count as failure
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (_) {}
+
+    const deviceFingerprint =
+      req.headers.get("x-device-fingerprint") ||
+      body.deviceFingerprint ||
+      "";
+
+    const deviceKey = deviceFingerprint || ip;
+
+    // 1. Check if previous challenge from this device/IP expired unverified -> count as failure
     const lastUnverified = await prisma.adminChallenge.findFirst({
-      where: { ipAddress: ip, verified: false },
+      where: {
+        OR: [
+          { ipAddress: ip, verified: false },
+          ...(deviceFingerprint ? [{ userAgent: { contains: deviceFingerprint }, verified: false }] : []),
+        ],
+      },
       orderBy: { createdAt: "desc" },
     });
 
     if (lastUnverified && new Date() > lastUnverified.expiresAt) {
-      await recordChallengeFailed(ip);
+      await recordChallengeFailed(deviceKey, ip);
       await prisma.adminChallenge.delete({ where: { id: lastUnverified.id } }).catch(() => {});
     }
 
-    // 2. Max 3 consecutive failures check
-    const check = await canGenerateChallenge(ip);
+    // 2. Max 3 consecutive failures check (Device-bounded: immune to VPN & Incognito!)
+    const check = await canGenerateChallenge(deviceKey, ip);
     if (!check.allowed) {
       return NextResponse.json(
         {
-          error: "Maximum 3 consecutive OTP challenge failures exceeded. Gateway locked.",
+          error: "Maximum 3 consecutive OTP challenge failures exceeded. Gateway locked for 6 hours.",
+          remainingHours: check.remainingHours,
           remainingMinutes: check.remainingMinutes,
           locked: true,
         },
@@ -60,10 +78,11 @@ export async function POST(req) {
     // --- Hash with bcrypt (12 rounds) — never store plaintext ---
     const codeHash = await bcrypt.hash(code, 12);
 
-    // --- Store challenge in DB ---
+    // --- Store challenge in DB with device fingerprint binding ---
     const expiresAt = new Date(Date.now() + CHALLENGE_TTL_MS);
+    const combinedUserAgent = `${deviceFingerprint}@@${rawUserAgent}`;
     const challenge = await prisma.adminChallenge.create({
-      data: { codeHash, expiresAt, ipAddress: ip, userAgent },
+      data: { codeHash, expiresAt, ipAddress: ip, userAgent: combinedUserAgent },
     });
 
     // --- Fire Telegram DM to admin ---

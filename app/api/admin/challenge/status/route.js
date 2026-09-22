@@ -21,17 +21,19 @@ export async function GET(req) {
       return NextResponse.json({ status: "not_found" });
     }
 
+    const deviceKey = challenge.userAgent?.split("@@")?.[0] || challenge.ipAddress || "default";
+
     // Expired?
     if (new Date() > challenge.expiresAt && !challenge.verified) {
-      // Record failure and destroy expired challenge
-      await recordChallengeFailed(challenge.ipAddress || "default");
+      // Record failure for device and destroy expired challenge
+      await recordChallengeFailed(deviceKey, challenge.ipAddress || "default");
       await prisma.adminChallenge.delete({ where: { id } }).catch(() => {});
       return NextResponse.json({ status: "expired" });
     }
 
     // Too many attempts?
     if (challenge.attempts >= 3 && !challenge.verified) {
-      await recordChallengeFailed(challenge.ipAddress || "default");
+      await recordChallengeFailed(deviceKey, challenge.ipAddress || "default");
       await prisma.adminChallenge.delete({ where: { id } }).catch(() => {});
       return NextResponse.json({ status: "failed" });
     }

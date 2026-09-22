@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { getDeviceFingerprint } from "@/lib/deviceFingerprint";
 
 export default function AgenticCoPilot({ metadata }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,11 +45,22 @@ export default function AgenticCoPilot({ metadata }) {
     setGwState("loading");
     setGwLockMessage("");
     try {
-      const res = await fetch("/api/admin/challenge/initiate", { method: "POST" });
+      const deviceFingerprint = await getDeviceFingerprint();
+      const res = await fetch("/api/admin/challenge/initiate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-device-fingerprint": deviceFingerprint,
+        },
+        body: JSON.stringify({ deviceFingerprint }),
+      });
       const data = await res.json();
       if (!res.ok || data.error) {
         if (data.locked) {
-          setGwLockMessage(`LOCKED (${data.remainingMinutes}M)`);
+          const lockTimeStr = data.remainingHours && parseFloat(data.remainingHours) >= 1
+            ? `${data.remainingHours}H`
+            : `${data.remainingMinutes || 360}M`;
+          setGwLockMessage(`LOCKED (${lockTimeStr})`);
         } else {
           setGwLockMessage("DENIED");
         }

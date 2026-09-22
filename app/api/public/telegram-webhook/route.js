@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { unblockIp } from "@/lib/rateLimit";
 import { getDetailedTelemetry } from "@/lib/telemetry";
-import { recordChallengeSuccess, recordChallengeFailed } from "@/lib/challengeRateLimit";
+import { recordChallengeSuccess, recordChallengeFailed, unlockAllChallenges } from "@/lib/challengeRateLimit";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
@@ -139,8 +139,11 @@ export async function POST(req) {
           data: { verified: true, sessionToken },
         });
 
-        // SUCCESS: Reset consecutive failure count to 0!
-        await recordChallengeSuccess(challenge.ipAddress || "default");
+        // Extract deviceKey from challenge.userAgent
+        const deviceKey = challenge.userAgent?.split("@@")?.[0] || challenge.ipAddress || "default";
+
+        // SUCCESS: Reset consecutive failure count to 0 for both device and IP!
+        await recordChallengeSuccess(deviceKey, challenge.ipAddress || "default");
 
         await sendMsg(
           `✅ <b>Admin Gateway Authenticated</b>\n\n` +
@@ -159,8 +162,9 @@ export async function POST(req) {
         const remaining = 3 - updated.attempts;
         if (remaining <= 0) {
           await prisma.adminChallenge.delete({ where: { id: challenge.id } }).catch(() => {});
-          // Record challenge failure (increments failedCount, locks if >= 3)
-          await recordChallengeFailed(challenge.ipAddress || "default");
+          const deviceKey = challenge.userAgent?.split("@@")?.[0] || challenge.ipAddress || "default";
+          // Record challenge failure for device (triggers 6-hour lock if 3 in a row)
+          await recordChallengeFailed(deviceKey, challenge.ipAddress || "default");
 
           await sendMsg(
             `🚫 <b>Challenge Invalidated</b>\n\n` +
@@ -510,7 +514,11 @@ export async function POST(req) {
         replyText = `🚫 *IP MANUALLY BLACKLISTED!*\n\n*Target IP*: \`${targetIp}\`\n*Status*: 🔴 Blocked in PostgreSQL database for 24 hours.`;
       }
     }
-    // 5. UNBLOCK / WHITELIST COMMAND (/unblock <IP>, /whitelist <IP>)
+    // 5. UNBLOCK / WHITELIST COMMAND (/unblock <IP>, /whitelist <IP>, or /unlock)
+    else if (upperText.startsWith("/UNLOCK") || upperText.startsWith("/RESET_GATEWAY")) {
+      await unlockAllChallenges();
+      replyText = `🔓 *ADMIN GATEWAY UNLOCKED!*\n\n*Status*: 🟢 All 6-Hour device & challenge lockouts have been reset.\nYou can now generate a new 8-digit OTP from your device.`;
+    }
     else if (upperText.startsWith("/UNBLOCK") || upperText.startsWith("/WHITELIST")) {
       const parts = rawText.split(" ");
       const targetIp = (parts[1] || "").trim();
@@ -519,9 +527,10 @@ export async function POST(req) {
         replyText = `⚠️ *Usage*: \`/unblock <IP_ADDRESS>\`\nExample: \`/unblock 49.47.250.50\``;
       } else {
         const success = await unblockIp(targetIp);
+        await unlockAllChallenges();
         replyText = success
-          ? `✅ *IP UNBLOCKED & WHITELISTED!*\n\n*IP Address*: \`${targetIp}\`\n*Status*: 🟢 24-Hour Block Removed from Database.`
-          : `⚠️ *IP Not Found*: \`${targetIp}\` was not active on the 24-hour block list.`;
+          ? `✅ *IP UNBLOCKED & WHITELISTED!*\n\n*IP Address*: \`${targetIp}\`\n*Status*: 🟢 24-Hour Block and Challenge Lockouts Removed from Database.`
+          : `⚠️ *IP Not Found on IP Block List*, but *Gateway Challenge Lockouts Reset*.`;
       }
     }
     // 6. TIMED LOCKDOWN COMMAND (/lockdown 5m, /lockdown 1h)
