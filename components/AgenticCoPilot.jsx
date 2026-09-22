@@ -257,7 +257,6 @@ export default function AgenticCoPilot({ metadata }) {
         onPointerUp={handleLongPressEnd}
         onPointerLeave={handleLongPressEnd}
         onContextMenu={(e) => e.preventDefault()}
-        title="Click to open · Long-press (0.8s) for admin gateway"
         style={{
           position: "fixed",
           bottom: 24,
@@ -314,17 +313,13 @@ export default function AgenticCoPilot({ metadata }) {
             {/* Specular line */}
             <div style={{ position:"absolute", top:0, left:"10%", right:"10%", height:2, background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.85) 50%,transparent)", borderRadius:9999 }} />
 
-            {/* Header */}
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:"1.2rem" }}>🔐</span>
-              <span style={{ fontFamily:"var(--font-mono,monospace)", fontSize:"0.78rem", fontWeight:700, letterSpacing:"0.12em", color:"rgba(255,255,255,0.75)", textTransform:"uppercase" }}>Admin Gateway</span>
-            </div>
 
             {gwState === "loading" && (
-              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:"0.88rem", margin:0 }}>
-                Generating secure challenge…
+              <p style={{ color:"rgba(255,255,255,0.3)", fontSize:"0.78rem", margin:0, fontFamily:"var(--font-mono,monospace)", letterSpacing:"0.08em" }}>
+                ···
               </p>
             )}
+
 
             {gwState === "active" && gwCode && (<>
               {/* SVG countdown ring + code in centre */}
@@ -352,39 +347,30 @@ export default function AgenticCoPilot({ metadata }) {
                 <div className="gw-code-char">{gwCode}</div>
               </div>
 
-              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                <p style={{ color:"rgba(255,255,255,0.82)", fontSize:"0.87rem", margin:0, lineHeight:1.5 }}>
-                  Reply this code in <strong>Telegram</strong> to authenticate
-                </p>
-                <p style={{ color:"rgba(255,255,255,0.42)", fontSize:"0.76rem", margin:0, fontFamily:"var(--font-mono,monospace)" }}>
-                  Awaiting Telegram verification…
-                </p>
-              </div>
+
             </>)}
 
             {gwState === "verified" && (
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
                 <span style={{ fontSize:"3rem" }}>✅</span>
-                <p style={{ color:"#39ff14", fontWeight:700, fontSize:"1rem", margin:0, textShadow:"0 0 16px #39ff14" }}>Access Granted</p>
-                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"0.82rem", margin:0 }}>Opening admin panel…</p>
+                <p style={{ color:"#39ff14", fontWeight:800, fontSize:"0.9rem", margin:0, textShadow:"0 0 16px #39ff14", fontFamily:"var(--font-mono,monospace)", letterSpacing:"0.1em" }}>GRANTED</p>
               </div>
             )}
 
             {(gwState === "expired") && (
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
                 <span style={{ fontSize:"2.5rem" }}>⏰</span>
-                <p style={{ color:"#ff9944", fontWeight:700, fontSize:"0.95rem", margin:0 }}>Challenge Expired</p>
-                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"0.82rem", margin:0 }}>Long-press the AI CO-PILOT button again</p>
+                <p style={{ color:"#ff9944", fontWeight:700, fontSize:"0.95rem", margin:0, fontFamily:"var(--font-mono,monospace)", letterSpacing:"0.06em" }}>EXPIRED</p>
               </div>
             )}
 
             {gwState === "failed" && (
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
                 <span style={{ fontSize:"2.5rem" }}>🚫</span>
-                <p style={{ color:"#ff4466", fontWeight:700, fontSize:"0.95rem", margin:0 }}>Challenge Invalidated</p>
-                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"0.82rem", margin:0 }}>Too many wrong attempts</p>
+                <p style={{ color:"#ff4466", fontWeight:700, fontSize:"0.95rem", margin:0, fontFamily:"var(--font-mono,monospace)", letterSpacing:"0.06em" }}>DENIED</p>
               </div>
             )}
+
 
             {/* Cancel button (only while active) */}
             {(gwState === "active" || gwState === "loading") && (
