@@ -3,65 +3,50 @@
 import { useState, useEffect } from "react";
 
 const MOODS = [
-  { id: "auto", label: "✨ AUTO" },
-  { id: "oled", label: "🌙 OLED" },
-  { id: "cyberpunk", label: "⚡ CYBERPUNK" },
-  { id: "cinema", label: "🎬 CINEMA" },
+  { id: "dark", label: "🌙 Dark" },
+  { id: "light", label: "☀️ Light" },
 ];
 
 export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
-  const [activeMood, setActiveMood] = useState("auto");
-
-  let oledAccent = "#00f0ff";
-  let cyberpunkAccent = "#39ff88";
-  let cinemaAccent = "#a56ce8";
-
-  if (metadata) {
-    try {
-      const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-      if (parsed.oledAccent) oledAccent = parsed.oledAccent;
-      if (parsed.cyberpunkAccent) cyberpunkAccent = parsed.cyberpunkAccent;
-      if (parsed.cinemaAccent) cinemaAccent = parsed.cinemaAccent;
-    } catch (e) {}
-  }
+  const [activeMood, setActiveMood] = useState("dark");
 
   const applyMood = (moodId) => {
     setActiveMood(moodId);
+    try {
+      localStorage.setItem("gv_theme_mode", moodId);
+    } catch (e) {}
+
     const stage = document.getElementById("stage");
     if (!stage) return;
 
-    if (moodId === "auto") {
-      // Restore native per-mode colors (Editor=Purple, Analyst=Teal, Developer=Green, Landing=Cyan)
-      stage.style.removeProperty("--color-accent");
-      stage.style.removeProperty("--landing-logo-color");
-      stage.style.removeProperty("--landing-spark-color");
+    if (moodId === "light") {
+      stage.setAttribute("data-theme-mood", "light");
+      document.documentElement.setAttribute("data-theme-mood", "light");
+    } else {
       stage.removeAttribute("data-theme-mood");
-      return;
+      document.documentElement.removeAttribute("data-theme-mood");
     }
-
-    let accent = oledAccent;
-    if (moodId === "cyberpunk") accent = cyberpunkAccent;
-    if (moodId === "cinema") accent = cinemaAccent;
-
-    stage.style.setProperty("--color-accent", accent);
-    stage.style.setProperty("--landing-logo-color", accent);
-    stage.style.setProperty("--landing-spark-color", accent);
-    stage.setAttribute("data-theme-mood", moodId);
   };
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("gv_theme_mode");
+      if (saved && ["dark", "light"].includes(saved)) {
+        applyMood(saved);
+        return;
+      }
+    } catch (e) {}
+
     if (metadata) {
       try {
         const parsed = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-        if (parsed.defaultMood) {
-          applyMood(parsed.defaultMood);
-        } else {
-          applyMood("auto");
+        if (parsed.defaultMood === "light") {
+          applyMood("light");
+          return;
         }
-      } catch (e) {
-        applyMood("auto");
-      }
+      } catch (e) {}
     }
+    applyMood("dark");
   }, [metadata]);
 
   if (enabled === false) return null;
@@ -69,41 +54,52 @@ export default function ThemeMoodSwitcher({ metadata, enabled = true }) {
   return (
     <div
       className="theme-mood-switcher"
+      role="radiogroup"
+      aria-label="Theme mode switcher"
       style={{
         display: "inline-flex",
         alignItems: "center",
-        background: "rgba(255, 255, 255, 0.04)",
+        background: "rgba(255, 255, 255, 0.05)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         border: "1px solid rgba(255, 255, 255, 0.12)",
-        borderRadius: 20,
+        borderRadius: 24,
         padding: "3px 4px",
-        gap: 4,
-        fontFamily: "var(--font-mono)",
+        gap: 3,
+        fontFamily: "var(--font-mono, monospace)",
         fontSize: "0.72rem",
         zIndex: 100,
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
       }}
     >
       {MOODS.map((mood) => {
-        let accent = "#00f0ff";
-        if (mood.id === "cyberpunk") accent = cyberpunkAccent;
-        if (mood.id === "cinema") accent = cinemaAccent;
-
         const isActive = activeMood === mood.id;
 
         return (
           <button
             key={mood.id}
+            type="button"
+            role="radio"
+            aria-checked={isActive}
             onClick={() => applyMood(mood.id)}
             style={{
-              background: isActive ? (mood.id === "auto" ? "rgba(255,255,255,0.15)" : `color-mix(in oklab, ${accent} 22%, transparent)`) : "transparent",
-              border: isActive ? (mood.id === "auto" ? "1px solid rgba(255,255,255,0.4)" : `1px solid ${accent}`) : "1px solid transparent",
-              color: isActive ? (mood.id === "auto" ? "#ffffff" : accent) : "rgba(255, 255, 255, 0.6)",
-              borderRadius: 16,
-              padding: "3px 9px",
+              background: isActive
+                ? (mood.id === "light" ? "rgba(255, 255, 255, 0.9)" : "rgba(255, 255, 255, 0.16)")
+                : "transparent",
+              border: isActive
+                ? (mood.id === "light" ? "1px solid #ffffff" : "1px solid rgba(255, 255, 255, 0.28)")
+                : "1px solid transparent",
+              color: isActive
+                ? (mood.id === "light" ? "#0f172a" : "#ffffff")
+                : "rgba(255, 255, 255, 0.65)",
+              borderRadius: 20,
+              padding: "4px 10px",
               cursor: "pointer",
               fontFamily: "inherit",
-              fontSize: "inherit",
+              fontSize: "0.72rem",
               fontWeight: isActive ? 600 : 400,
-              transition: "all 0.18s ease-in-out",
+              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+              boxShadow: isActive ? "0 2px 8px rgba(0, 0, 0, 0.2)" : "none",
             }}
           >
             {mood.label}

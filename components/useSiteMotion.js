@@ -291,9 +291,13 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
       });
     }
 
-    document.querySelectorAll(".portal").forEach((portal) => {
-      portal.addEventListener("click", (e) => enterMode(portal.dataset.target, e));
-    });
+    const handlePortalClick = (e) => {
+      const portal = e.target.closest(".portal");
+      if (portal && portal.dataset.target) {
+        enterMode(portal.dataset.target, e);
+      }
+    };
+    document.addEventListener("click", handlePortalClick);
 
     const handleRemoteEnterMode = (e) => {
       const mode = e.detail?.mode;
@@ -313,6 +317,7 @@ export function useSiteMotion({ stageRef, introRef, selectorRef, navRef, navMode
 
     return () => {
       lenisRef.current?.destroy();
+      document.removeEventListener("click", handlePortalClick);
       navLogoEl?.removeEventListener("click", onNavLogoClick);
       window.removeEventListener("enterUniverseMode", handleRemoteEnterMode);
     };

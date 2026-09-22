@@ -81,6 +81,64 @@
   --font-display: 'Space Grotesk', sans-serif;
 }
 
+/* ============ LIGHT MODE THEME OVERRIDES ============ */
+[data-theme-mood="light"],
+html[data-theme-mood="light"] #stage {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-text-faint: #94a3b8;
+  --color-accent: #0284c7;
+  --color-accent-hover: #0369a1;
+}
+
+[data-theme-mood="light"] body {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+[data-theme-mood="light"] .glass-slab,
+[data-theme-mood="light"] .liquid-slab,
+[data-theme-mood="light"] .aero-panel {
+  background: rgba(255, 255, 255, 0.75) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme-mood="light"] .glass-slab-name,
+[data-theme-mood="light"] .liquid-slab-title,
+[data-theme-mood="light"] .aero-panel-name,
+[data-theme-mood="light"] .glass-title-main,
+[data-theme-mood="light"] .liquid-title-top,
+[data-theme-mood="light"] .aero-title-primary,
+[data-theme-mood="light"] .selector__title {
+  color: #0f172a !important;
+}
+
+[data-theme-mood="light"] .glass-slab-desc,
+[data-theme-mood="light"] .liquid-slab-desc,
+[data-theme-mood="light"] .aero-panel-desc,
+[data-theme-mood="light"] .glass-subtitle,
+[data-theme-mood="light"] .liquid-subtitle,
+[data-theme-mood="light"] .aero-subtitle {
+  color: #475569 !important;
+}
+
+[data-theme-mood="light"] .glass-identity-badge,
+[data-theme-mood="light"] .liquid-identity-capsule,
+[data-theme-mood="light"] .aero-identity-bar {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+[data-theme-mood="light"] .theme-mood-switcher {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
 /* ============ LAYOUT PRIMITIVES ============ */
 .wrap { width: 100%; max-width: var(--content-wide); margin-inline: auto; padding-inline: clamp(var(--space-5), 4vw, var(--space-16)); }
 .wrap--default { max-width: var(--content-default); }
@@ -333,7 +391,7 @@
 /* ======= PORTALS ======= */
 .portals {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-  width: 100%; max-width: 1060px; border: 1px solid var(--color-border);
+  width: 100%; max-width: 1060px; border: none !important;
   position: relative; z-index: 2;
 }
 
@@ -343,7 +401,7 @@
   padding: clamp(20px, 2.8vw, 32px);
   min-height: 310px;
   background: var(--color-bg);
-  border-right: 1px solid var(--color-border);
+  border-right: none !important;
   text-align: left;
   overflow: hidden;
   isolation: isolate;
@@ -353,7 +411,7 @@
   will-change: transform;
   transition: background 300ms var(--ease-out);
 }
-.portal:last-child { border-right: none; }
+.portal:last-child { border-right: none !important; }
 
 /* Ambient radial tint at top */
 .portal__tint {
@@ -903,28 +961,29 @@
 }
 
 .cursor-dot {
-  width: 6px; height: 6px;
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: var(--cursor-accent, var(--color-accent));
-  box-shadow: 0 0 8px var(--cursor-accent, var(--color-accent));
+  box-shadow: 0 0 6px var(--cursor-accent, var(--color-accent));
   transition: background 250ms var(--ease-out), box-shadow 250ms var(--ease-out);
 }
 
 .cursor-ring {
-  width: 32px; height: 32px;
+  width: 22px; height: 22px;
   border-radius: 50%;
-  border: 1.5px solid color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 55%, transparent);
-  background: color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 4%, transparent);
-  transition: width 280ms var(--ease-out),
-              height 280ms var(--ease-out),
-              border-color 280ms var(--ease-out),
-              background 280ms var(--ease-out);
+  border: 1px solid color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 45%, transparent);
+  background: transparent !important;
+  opacity: 0.5;
+  transition: width 240ms var(--ease-out),
+              height 240ms var(--ease-out),
+              border-color 240ms var(--ease-out);
 }
 
 .cursor-ring.is-hovering {
-  width: 52px; height: 52px;
+  width: 32px; height: 32px;
   border-color: var(--cursor-accent, var(--color-accent));
-  background: color-mix(in oklab, var(--cursor-accent, var(--color-accent)) 9%, transparent);
+  background: transparent !important;
+  opacity: 0.75;
 }
 
 /* ============================================================
@@ -1848,42 +1907,6 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   cursor: pointer !important;
 }
 
-.cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  background: var(--cursor-accent, var(--color-accent, #00f0ff));
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999999;
-  box-shadow: 0 0 10px var(--cursor-accent, var(--color-accent, #00f0ff));
-  will-change: transform;
-}
-
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 36px;
-  height: 36px;
-  border: 1.5px solid var(--cursor-accent, var(--color-accent, #00f0ff));
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999998;
-  opacity: 0.75;
-  box-shadow: 0 0 15px color-mix(in oklab, var(--cursor-accent, var(--color-accent, #00f0ff)) 30%, transparent);
-  will-change: transform;
-}
-
-.cursor-ring.is-hovered {
-  width: 52px;
-  height: 52px;
-  border-color: #ffd700;
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-}
-
 /* AI Co-Pilot Chat Scrollbar */
 .copilot-chat-scroll {
   scrollbar-width: thin;
@@ -2066,13 +2089,12 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   -webkit-backdrop-filter: blur(30px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-top: 1.5px solid rgba(255, 255, 255, 0.28);
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.75), inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
   padding: 24px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  justifyContent: space-between;
+  justify-content: space-between;
   min-height: 290px;
   overflow: hidden;
   transform-style: preserve-3d;
@@ -2217,20 +2239,6 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   transform: translateX(3px);
 }
 
-.glass-slab-accent-bar {
-  width: 24px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--portal-accent);
-  opacity: 0.4;
-  transition: width 0.2s ease, opacity 0.2s ease;
-}
-
-.glass-slab:hover .glass-slab-accent-bar {
-  width: 44px;
-  opacity: 1;
-}
-
 .glass-footer {
   display: flex;
   align-items: center;
@@ -2257,27 +2265,8 @@ body:has(.admin-layout) button, body:has(.admin-card) button, .admin-btn, .admin
   opacity: 0.4;
 }
 
-/* ==========================================================================
-   FLOATING DEPTH AESTHETIC CONTROL DOCK (Setproduct Guide)
-   Options: Liquid Glass, Glassmorphism, Frosted Aero, Classic
-   ========================================================================== */
+/* Depth controls managed via Admin Panel & Telegram (/ui) */
 .depth-aesthetic-dock {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9995;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* Hide aesthetic dock when inside Editor, Analyst, or Developer modes */
-#stage[data-mode="editor"] .depth-aesthetic-dock,
-#stage[data-mode="analyst"] .depth-aesthetic-dock,
-#stage[data-mode="developer"] .depth-aesthetic-dock {
   display: none !important;
 }
 

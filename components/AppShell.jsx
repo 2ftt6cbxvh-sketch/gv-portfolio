@@ -27,7 +27,7 @@ export default function AppShell({ data }) {
   const navBackRef = useRef(null);
   const introLogoEngineRef = useRef(null);
   const navLogoEngineRef = useRef(null);
-  const [aestheticMode, setAestheticMode] = useState("liquid");
+  const [aestheticMode, setAestheticMode] = useState(data?.initialAesthetic || "glass");
   const [features, setFeatures] = useState({ flags: {}, milestones: [] });
   const [showSignatureIntro, setShowSignatureIntro] = useState(true);
   const [showAdminGateway, setShowAdminGateway] = useState(false);
@@ -36,22 +36,33 @@ export default function AppShell({ data }) {
   const [isKillswitchActive, setIsKillswitchActive] = useState(!!data?.initialKillswitch);
   const [maintenanceState, setMaintenanceState] = useState(data?.initialMaintenance || { active: false, metadata: null });
 
-  // Load user's preferred depth aesthetic (Liquid Glass, Glassmorphism, Frosted Aero, Classic)
+  // Load active aesthetic from DB, Telegram/Admin feature flags, or URL query param (?ui=1,2,3,4)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("gv_depth_aesthetic");
-      if (saved && ["liquid", "glass", "aero", "classic"].includes(saved)) {
-        setAestheticMode(saved);
+      const urlParams = new URLSearchParams(window.location.search);
+      const uiParam = urlParams.get("ui");
+      if (uiParam) {
+        const map = { "1": "liquid", "2": "glass", "3": "aero", "4": "classic" };
+        const resolved = map[uiParam] || uiParam.toLowerCase();
+        if (["liquid", "glass", "aero", "classic"].includes(resolved)) {
+          setAestheticMode(resolved);
+          return;
+        }
       }
     } catch (e) {}
-  }, []);
 
-  const changeAestheticMode = (mode) => {
-    setAestheticMode(mode);
-    try {
-      localStorage.setItem("gv_depth_aesthetic", mode);
-    } catch (e) {}
-  };
+    if (data?.initialAesthetic && ["liquid", "glass", "aero", "classic"].includes(data.initialAesthetic)) {
+      setAestheticMode(data.initialAesthetic);
+    }
+  }, [data?.initialAesthetic]);
+
+  // Sync with real-time feature flag updates from admin/telegram
+  useEffect(() => {
+    const flagMode = features?.flags?.landing_aesthetic?.metadata;
+    if (flagMode && ["liquid", "glass", "aero", "classic"].includes(flagMode)) {
+      setAestheticMode(flagMode);
+    }
+  }, [features]);
 
   const handleIntroComplete = useCallback(() => {
     setShowSignatureIntro(false);
@@ -213,47 +224,6 @@ export default function AppShell({ data }) {
         />
       )}
 
-      {/* Floating Depth Aesthetic Control Dock (Setproduct Guide: Liquid vs Glass vs Aero vs Classic) */}
-      <nav className="depth-aesthetic-dock" aria-label="Landing Depth Aesthetic Switcher">
-        <div className="depth-dock-pill-track">
-          <button
-            type="button"
-            onClick={() => changeAestheticMode("liquid")}
-            className={`depth-dock-btn ${aestheticMode === "liquid" ? "is-active" : ""}`}
-            title="Liquid Glass (Apple 2026 Refraction & Caustics)"
-          >
-            <span className="depth-dock-icon">💧</span>
-            <span className="depth-dock-name">Liquid Glass</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => changeAestheticMode("glass")}
-            className={`depth-dock-btn ${aestheticMode === "glass" ? "is-active" : ""}`}
-            title="Glassmorphism (Frosted Translucency)"
-          >
-            <span className="depth-dock-icon">🪟</span>
-            <span className="depth-dock-name">Glassmorphism</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => changeAestheticMode("aero")}
-            className={`depth-dock-btn ${aestheticMode === "aero" ? "is-active" : ""}`}
-            title="Frosted Aero (Structural Acrylic Chrome)"
-          >
-            <span className="depth-dock-icon">❄️</span>
-            <span className="depth-dock-name">Frosted Aero</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => changeAestheticMode("classic")}
-            className={`depth-dock-btn ${aestheticMode === "classic" ? "is-active" : ""}`}
-            title="Classic (Dark Cyber Matrix Landing)"
-          >
-            <span className="depth-dock-icon">🏛️</span>
-            <span className="depth-dock-name">Classic</span>
-          </button>
-        </div>
-      </nav>
 
       {/* Render Active Landing Aesthetic */}
       {aestheticMode === "liquid" && (

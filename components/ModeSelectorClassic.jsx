@@ -270,7 +270,7 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
         <LandingConstellation accentColor={constellationAccent} metadata={features?.flags?.admin_secret_gateway?.metadata} />
       )}
 
-      <div className="selector__intro reveal" style={{ opacity: 0, position: "relative", zIndex: 2, maxWidth: 660, textAlign: "center" }}>
+      <div className="selector__intro reveal" style={{ position: "relative", zIndex: 2, maxWidth: 660, textAlign: "center" }}>
         {/* Status Pill (Controlled by Admin toggle & customizable text) */}
         {statusPillFlag?.enabled !== false && (
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
@@ -318,7 +318,7 @@ export default function ModeSelectorClassic({ selectorRef, person, modes, featur
             data-mode={mode.id}
             role="listitem"
             tabIndex={0}
-            style={{ opacity: 0, "--portal-accent": mode.accent, "--portal-delay": `${idx * 0.12}s` }}
+            style={{ "--portal-accent": mode.accent, "--portal-delay": `${idx * 0.12}s` }}
             key={mode.id}
             onMouseEnter={() => {
               if (selectorRef.current) {

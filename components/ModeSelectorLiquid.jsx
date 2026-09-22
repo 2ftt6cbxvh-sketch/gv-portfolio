@@ -251,7 +251,7 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
       )}
 
       {/* Hero Header with Liquid Glass Capsule Styling */}
-      <div className="selector__intro liquid-hero-container reveal" style={{ opacity: 0, position: "relative", zIndex: 2 }}>
+      <div className="selector__intro liquid-hero-container reveal" style={{ position: "relative", zIndex: 2 }}>
         {statusPillFlag?.enabled !== false && (
           <div className="liquid-status-wrapper">
             <LandingStatusPill status={statusPillData.status} location={statusPillData.location} />
@@ -296,7 +296,7 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
       </div>
 
       {/* 3 Refractive Liquid Glass Slabs */}
-      <div className="portals liquid-portals-deck" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2 }}>
+      <div className="portals liquid-portals-deck" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2, border: "none" }}>
         {modes.map((mode, idx) => (
           <article
             className="portal liquid-slab"
@@ -306,7 +306,6 @@ export default function ModeSelectorLiquid({ selectorRef, person, modes, feature
             role="listitem"
             tabIndex={0}
             style={{
-              opacity: 0,
               "--portal-accent": mode.accent,
               "--portal-delay": `${idx * 0.12}s`,
             }}

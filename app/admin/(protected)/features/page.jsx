@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 
 const REQUIRED_FLAGS = [
+  { key: "landing_aesthetic", name: "Landing Page Depth Aesthetic (Liquid Glass / Glassmorphism / Frosted Aero / Classic)", defaultEnabled: true },
+  { key: "theme_moods", name: "Instant Theme Switcher Pill (Dark / Light Mode)", defaultEnabled: true },
   { key: "signature_intro", name: "Full-Screen Signature Scribble Intro", defaultEnabled: true },
-  { key: "theme_moods", name: "Instant Theme Mood Switcher Pill (OLED / Cyberpunk / Cinema)", defaultEnabled: true },
   { key: "constellation_bg", name: "Landing Particle Constellation Canvas", defaultEnabled: true },
   { key: "kinetic_headline", name: "Landing Cyber Scramble Sub-Headline", defaultEnabled: true },
   { key: "status_pill", name: "Landing Status Indicator Pill", defaultEnabled: true },
@@ -23,6 +24,7 @@ export default function FeaturesAdminPage() {
   const [savingKey, setSavingKey] = useState(null);
 
   // Feature specific configs
+  const [aestheticMode, setAestheticMode] = useState("glass");
   const [signatureConfig, setSignatureConfig] = useState({
     text: "Ganesh Varma",
     accentColor: "#00f0ff",
@@ -134,6 +136,11 @@ export default function FeaturesAdminPage() {
           setFlags(mergedFlags);
 
           // Populate sub-configs from metadata
+          const aestheticFlag = flagMap.get("landing_aesthetic");
+          if (aestheticFlag && aestheticFlag.metadata) {
+            setAestheticMode(aestheticFlag.metadata);
+          }
+
           const sigFlag = flagMap.get("signature_intro");
           if (sigFlag && sigFlag.metadata) {
             try {
@@ -303,6 +310,29 @@ export default function FeaturesAdminPage() {
       }
     } catch (e) {
       alert("Failed to update feature flag.");
+    }
+    setSavingKey(null);
+  };
+
+  const handleSaveAesthetic = async (newMode) => {
+    const targetMode = newMode || aestheticMode;
+    setAestheticMode(targetMode);
+    setSavingKey("landing_aesthetic");
+    try {
+      const res = await fetch("/api/admin/features", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "landing_aesthetic",
+          enabled: true,
+          metadata: targetMode,
+        }),
+      });
+      if (res.ok) {
+        alert(`Landing Page Depth Aesthetic updated to ${targetMode.toUpperCase()} successfully! Changes are live on frontend.`);
+      }
+    } catch (e) {
+      alert("Failed to save landing aesthetic.");
     }
     setSavingKey(null);
   };
@@ -584,6 +614,65 @@ export default function FeaturesAdminPage() {
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Landing Page Depth Aesthetic Switcher (Setproduct Guide) */}
+      <div className="admin-card" style={{ marginBottom: 24, border: "1px solid rgba(0, 240, 255, 0.35)", background: "rgba(0, 240, 255, 0.02)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 8 }}>
+          <h3 style={{ margin: 0 }}>🎨 Landing Page Depth Aesthetic (Setproduct Guide)</h3>
+          <span style={{ fontSize: 12, padding: "3px 8px", borderRadius: 12, background: "rgba(0, 240, 255, 0.12)", color: "#00f0ff", fontWeight: 600 }}>
+            Telegram: /ui 1, 2, 3, 4
+          </span>
+        </div>
+        <p style={{ fontSize: 13, color: "var(--a-muted)", marginBottom: 16 }}>
+          Choose which visual depth &amp; optical refraction aesthetic greets visitors on the portfolio homepage. You can also switch this instantly from Telegram by sending <code>/ui 1</code>, <code>/ui 2</code>, <code>/ui 3</code>, or <code>/ui 4</code>.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          {[
+            { id: "liquid", num: "1", icon: "💧", title: "Liquid Glass", desc: "Apple WWDC 2026 optical refraction, specular highlights, and cursor caustics." },
+            { id: "glass", num: "2", icon: "🪟", title: "Glassmorphism", desc: "Frosted crystal translucency, soft ambient blur, and minimal borders." },
+            { id: "aero", num: "3", icon: "❄️", title: "Frosted Aero", desc: "Windows 11 Acrylic / macOS Tahoe system chrome, dense 48px blur, high contrast." },
+            { id: "classic", num: "4", icon: "🏛️", title: "Classic Portfolio", desc: "Original dark cyber matrix landing page with grid patterns and gold starlight." },
+          ].map((item) => {
+            const isSelected = aestheticMode === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleSaveAesthetic(item.id)}
+                disabled={savingKey === "landing_aesthetic"}
+                style={{
+                  padding: 16,
+                  borderRadius: 10,
+                  textAlign: "left",
+                  background: isSelected ? "rgba(0, 240, 255, 0.12)" : "rgba(255, 255, 255, 0.03)",
+                  border: isSelected ? "1.5px solid #00f0ff" : "1px solid var(--a-border)",
+                  color: "inherit",
+                  cursor: "pointer",
+                  transition: "all 0.18s ease",
+                  boxShadow: isSelected ? "0 0 16px rgba(0, 240, 255, 0.2)" : "none",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 22 }}>{item.icon}</span>
+                  <span style={{ fontSize: 11, fontFamily: "monospace", opacity: 0.6 }}>/ui {item.num}</span>
+                </div>
+                <strong style={{ display: "block", fontSize: 14, color: isSelected ? "#00f0ff" : "#fff", marginBottom: 4 }}>
+                  {item.title}
+                </strong>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--a-muted)", lineHeight: 1.4 }}>
+                  {item.desc}
+                </p>
+                {isSelected && (
+                  <span style={{ display: "inline-block", marginTop: 10, fontSize: 11, fontWeight: 700, color: "#00f0ff" }}>
+                    ● ACTIVE ON LIVE SITE
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 0. Signature Intro Config */}

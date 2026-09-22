@@ -248,6 +248,12 @@ export async function POST(req) {
         `• \`/killswitch ON\` — Emergency defense blackout\n` +
         `• \`/killswitch OFF\` — Restore site online\n` +
         `• \`/lockdown 15m\` or \`/lockdown 2h\` or \`/lockdown 1d\`\n\n` +
+        `*Landing UI Aesthetic Controls*:\n` +
+        `• \`/ui 1\` or \`/ui liquid\` — 💧 Liquid Glass (Apple 2026)\n` +
+        `• \`/ui 2\` or \`/ui glass\` — 🪟 Glassmorphism\n` +
+        `• \`/ui 3\` or \`/ui aero\` — ❄️ Frosted Aero\n` +
+        `• \`/ui 4\` or \`/ui classic\` — 🏛️ Classic Portfolio\n` +
+        `• \`/ui\` — View current active UI\n\n` +
         `*Intelligence & Telemetry*:\n` +
         `• \`/ip <IP>\` — Precise GPS coordinates & Google Maps pin\n` +
         `• \`/blacklist <IP>\` — Block IP for 24 hours\n` +
@@ -255,7 +261,70 @@ export async function POST(req) {
         `• \`/logs\` — View last 5 security events\n` +
         `• \`/stats\` — System metrics & database health`;
     }
-    // 2. LOGS COMMAND (/logs)
+    // 2. UI AESTHETIC SWITCHER COMMAND (/ui, /ui 1, /ui 2, /ui 3, /ui 4)
+    else if (upperText.startsWith("/UI")) {
+      const parts = rawText.split(" ");
+      const arg = (parts[1] || "").toLowerCase().trim();
+
+      const AESTHETIC_MODES = {
+        "1": { key: "liquid", name: "💧 Liquid Glass (Apple WWDC 2026 Refraction & Caustics)" },
+        "liquid": { key: "liquid", name: "💧 Liquid Glass (Apple WWDC 2026 Refraction & Caustics)" },
+        "2": { key: "glass", name: "🪟 Glassmorphism (Frosted Translucency & Soft Shadows)" },
+        "glass": { key: "glass", name: "🪟 Glassmorphism (Frosted Translucency & Soft Shadows)" },
+        "3": { key: "aero", name: "❄️ Frosted Aero (Windows 11 Acrylic / macOS Tahoe Chrome)" },
+        "aero": { key: "aero", name: "❄️ Frosted Aero (Windows 11 Acrylic / macOS Tahoe Chrome)" },
+        "4": { key: "classic", name: "🏛️ Classic (Cyber Matrix Original Portfolio Landing)" },
+        "classic": { key: "classic", name: "🏛️ Classic (Cyber Matrix Original Portfolio Landing)" },
+      };
+
+      if (!arg) {
+        const currentFlag = await prisma.featureFlag.findUnique({ where: { key: "landing_aesthetic" } });
+        const currentModeKey = currentFlag?.metadata || "glass";
+        const currentModeName = AESTHETIC_MODES[currentModeKey]?.name || currentModeKey;
+
+        replyText =
+          `🎨 *PORTFOLIO LANDING UI CONTROLS*\n\n` +
+          `*Current Active UI*: ${currentModeName}\n\n` +
+          `*Available Switch Commands*:\n` +
+          `• \`/ui 1\` or \`/ui liquid\` — 💧 Liquid Glass (Apple 2026)\n` +
+          `• \`/ui 2\` or \`/ui glass\` — 🪟 Glassmorphism (Frosted)\n` +
+          `• \`/ui 3\` or \`/ui aero\` — ❄️ Frosted Aero (Structural)\n` +
+          `• \`/ui 4\` or \`/ui classic\` — 🏛️ Classic (Original Cyber Matrix)\n\n` +
+          `⚡ *Switching is instant with 0ms downtime!*`;
+      } else if (AESTHETIC_MODES[arg]) {
+        const selected = AESTHETIC_MODES[arg];
+
+        await prisma.featureFlag.upsert({
+          where: { key: "landing_aesthetic" },
+          update: {
+            enabled: true,
+            metadata: selected.key,
+          },
+          create: {
+            key: "landing_aesthetic",
+            name: "Landing Page Depth Aesthetic",
+            enabled: true,
+            metadata: selected.key,
+          },
+        });
+
+        replyText =
+          `✅ *LANDING UI MODE SWITCHED!*\n\n` +
+          `*New Active Aesthetic*: ${selected.name}\n` +
+          `*Mode Key*: \`${selected.key}\`\n` +
+          `*Updated At*: \`${timestamp}\`\n\n` +
+          `🌐 *Visitor landing screen updated in real-time!*`;
+      } else {
+        replyText =
+          `⚠️ *Invalid UI Option*: \`${arg}\`\n\n` +
+          `Please use one of the following:\n` +
+          `• \`/ui 1\` or \`/ui liquid\` (Liquid Glass)\n` +
+          `• \`/ui 2\` or \`/ui glass\` (Glassmorphism)\n` +
+          `• \`/ui 3\` or \`/ui aero\` (Frosted Aero)\n` +
+          `• \`/ui 4\` or \`/ui classic\` (Classic)`;
+      }
+    }
+    // 3. LOGS COMMAND (/logs)
     else if (upperText.startsWith("/LOGS")) {
       const logsFlag = await prisma.featureFlag.findUnique({ where: { key: "security_audit_logs" } });
       let logs = [];

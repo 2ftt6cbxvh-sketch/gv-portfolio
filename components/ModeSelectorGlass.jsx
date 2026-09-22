@@ -245,7 +245,7 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
       )}
 
       {/* Clean Glassmorphic Hero Header */}
-      <div className="selector__intro glass-hero-container reveal" style={{ opacity: 0, position: "relative", zIndex: 2 }}>
+      <div className="selector__intro glass-hero-container reveal" style={{ position: "relative", zIndex: 2 }}>
         {/* Floating Frosted Status Capsule */}
         {statusPillFlag?.enabled !== false && (
           <div className="glass-status-wrapper">
@@ -292,7 +292,7 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
       </div>
 
       {/* 3 Floating Prismatic Glass Slabs */}
-      <div className="portals glass-portals-deck" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2 }}>
+      <div className="portals glass-portals-deck" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2, border: "none" }}>
         {modes.map((mode, idx) => (
           <article
             className="portal glass-slab"
@@ -302,7 +302,6 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
             role="listitem"
             tabIndex={0}
             style={{
-              opacity: 0,
               "--portal-accent": mode.accent,
               "--portal-delay": `${idx * 0.12}s`,
             }}
@@ -344,7 +343,6 @@ export default function ModeSelectorGlass({ selectorRef, person, modes, features
                 <span className="glass-slab-arrow" aria-hidden="true">→</span>
                 <span>Enter Universe</span>
               </span>
-              <span className="glass-slab-accent-bar" aria-hidden="true" />
             </div>
           </article>
         ))}

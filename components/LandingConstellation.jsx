@@ -391,40 +391,26 @@ export default function LandingConstellation({ accentColor = "#ffd700", metadata
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Vector connection lines to nearby particles (d < 160px)
+        // Vector connection lines to nearby particles (faint ambient starlight only)
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 160) {
-            const lineAlpha = (1 - dist / 160) * 0.14;
+          if (dist < 110) {
+            const lineAlpha = (1 - dist / 110) * 0.08;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             if (p.isGold || p2.isGold) {
-              ctx.strokeStyle = `rgba(240, 220, 145, ${lineAlpha * 0.65})`;
+              ctx.strokeStyle = `rgba(240, 220, 145, ${lineAlpha * 0.5})`;
             } else {
-              ctx.strokeStyle = `rgba(0, 220, 240, ${lineAlpha * 0.7})`;
+              ctx.strokeStyle = `rgba(0, 220, 240, ${lineAlpha * 0.5})`;
             }
-            ctx.lineWidth = 0.6;
+            ctx.lineWidth = 0.5;
             ctx.stroke();
           }
-        }
-
-        // Vector connection lines to mouse cursor (mdist < 180px)
-        const mdx = p.x - mouse.x;
-        const mdy = p.y - mouse.y;
-        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (mdist < 180) {
-          const mlineAlpha = (1 - mdist / 180) * 0.28;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = p.isGold ? `rgba(240, 220, 145, ${mlineAlpha})` : `rgba(0, 220, 240, ${mlineAlpha})`;
-          ctx.lineWidth = 0.75;
-          ctx.stroke();
         }
       }
 

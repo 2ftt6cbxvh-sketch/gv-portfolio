@@ -126,7 +126,7 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
       )}
 
       {/* Structural OS Chrome Hero Container */}
-      <div className="selector__intro aero-hero-container reveal" style={{ opacity: 0, position: "relative", zIndex: 2 }}>
+      <div className="selector__intro aero-hero-container reveal" style={{ position: "relative", zIndex: 2 }}>
         {statusPillFlag?.enabled !== false && (
           <div className="aero-status-wrapper">
             <LandingStatusPill status={statusPillData.status} location={statusPillData.location} />
@@ -171,7 +171,7 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
       </div>
 
       {/* 3 Structural Frosted Aero Panels */}
-      <div className="portals aero-portals-deck" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2 }}>
+      <div className="portals aero-portals-deck" role="list" ref={portalsRef} style={{ position: "relative", zIndex: 2, border: "none" }}>
         {modes.map((mode, idx) => (
           <article
             className="portal aero-panel"
@@ -181,7 +181,6 @@ export default function ModeSelectorAero({ selectorRef, person, modes, features 
             role="listitem"
             tabIndex={0}
             style={{
-              opacity: 0,
               "--portal-accent": mode.accent,
               "--portal-delay": `${idx * 0.12}s`,
             }}
