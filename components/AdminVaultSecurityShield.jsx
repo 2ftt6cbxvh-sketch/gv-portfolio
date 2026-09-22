@@ -22,11 +22,14 @@ export default function AdminVaultSecurityShield({ children }) {
       let isPatternVerified = false;
 
       if (typeof window !== "undefined") {
+        const gwToken = sessionStorage.getItem("adminGatewayVerified");
         const rawToken = sessionStorage.getItem("starPatternVerified");
-        if (rawToken) {
+        if (gwToken === "true") {
+          isPatternVerified = true;
+        } else if (rawToken) {
           try {
             const parsed = JSON.parse(rawToken);
-            if (parsed.verified && parsed.expiresAt && Date.now() < parsed.expiresAt) {
+            if (parsed.verified && (!parsed.expiresAt || Date.now() < parsed.expiresAt)) {
               isPatternVerified = true;
             } else {
               sessionStorage.removeItem("starPatternVerified");
@@ -34,6 +37,11 @@ export default function AdminVaultSecurityShield({ children }) {
           } catch (e) {
             if (rawToken === "true") isPatternVerified = true;
           }
+        }
+
+        // Fallback: check document.cookie for starPatternVerified or adminGatewayVerified
+        if (!isPatternVerified && document.cookie.includes("adminGatewayVerified=true")) {
+          isPatternVerified = true;
         }
       }
 

@@ -70,8 +70,21 @@ export default function AgenticCoPilot({ metadata }) {
             clearInterval(gwPollTimer.current);
             clearInterval(gwCountdownTimer.current);
             setGwState("verified");
-            // Open admin in current tab after short delay
-            setTimeout(() => { window.location.href = "/admin"; }, 1200);
+            
+            // Set security credentials in sessionStorage so AdminVaultSecurityShield authorizes
+            if (typeof window !== "undefined") {
+              const expiresAt = d.expiresAt || (Date.now() + 15 * 60 * 1000);
+              sessionStorage.setItem("starPatternVerified", JSON.stringify({
+                verified: true,
+                expiresAt,
+              }));
+              sessionStorage.setItem("adminGatewayVerified", "true");
+            }
+
+            const targetKey = d.secretKey || "134214";
+            setTimeout(() => {
+              window.location.href = `/admin?key=${targetKey}`;
+            }, 1000);
           } else if (d.status === "expired" || d.status === "failed" || d.status === "not_found") {
             clearInterval(gwPollTimer.current);
             clearInterval(gwCountdownTimer.current);

@@ -33,8 +33,21 @@ export async function GET(req) {
       return NextResponse.json({ status: "failed" });
     }
 
-    // Verified — issue a short-lived admin session token
+    // Verified — issue a short-lived admin session token and vault unlock key
     if (challenge.verified && challenge.sessionToken) {
+      // Fetch the secret direct URL key
+      const flag = await prisma.featureFlag.findUnique({
+        where: { key: "admin_secret_gateway" },
+      });
+      let rawSecretKey = "134214";
+      if (flag?.metadata) {
+        try {
+          const parsed = typeof flag.metadata === "string" ? JSON.parse(flag.metadata) : flag.metadata;
+          if (parsed.adminSecretKey) rawSecretKey = parsed.adminSecretKey;
+          else if (parsed.rawSecretKey) rawSecretKey = parsed.rawSecretKey;
+        } catch (e) {}
+      }
+
       // Encrypt the session token with AES-256-GCM before sending
       const SECRET = process.env.CHALLENGE_ENCRYPT_SECRET || process.env.NEXTAUTH_SECRET || "fallback-32-char-secret-key-here";
       // Use first 32 bytes of sha256 of secret as key
@@ -49,7 +62,35 @@ export async function GET(req) {
       // Delete challenge after token is issued (one-time use)
       await prisma.adminChallenge.delete({ where: { id } }).catch(() => {});
 
-      return NextResponse.json({ status: "verified", token: payload });
+      const expiresAt = Date.now() + 15 * 60 * 1000;
+      const tokenData = JSON.stringify({ verified: true, expiresAt });
+      const tokenHash = crypto.createHash("sha256").update(tokenData).digest("hex");
+
+      const response = NextResponse.json({
+        status: "verified",
+        token: payload,
+        secretKey: rawSecretKey,
+        expiresAt,
+      });
+
+      // Set cookie so AdminVaultSecurityShield allows access
+      response.cookies.set("starPatternVerified", tokenHash, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 900,
+        path: "/",
+      });
+
+      response.cookies.set("adminGatewayVerified", "true", {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 900,
+        path: "/",
+      });
+
+      return response;
     }
 
     return NextResponse.json({

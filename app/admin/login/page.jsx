@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import AdminPinGatekeeperModal from "@/components/AdminPinGatekeeperModal";
@@ -15,6 +15,16 @@ export default function AdminLoginPage() {
   const [isPinGatekeeperOpen, setIsPinGatekeeperOpen] = useState(true);
   const [isLockdownOpen, setIsLockdownOpen] = useState(false);
   const [isDecoySession, setIsDecoySession] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const gw = sessionStorage.getItem("adminGatewayVerified");
+      const sp = sessionStorage.getItem("starPatternVerified");
+      if (gw === "true" || sp) {
+        setIsPinGatekeeperOpen(false);
+      }
+    }
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
