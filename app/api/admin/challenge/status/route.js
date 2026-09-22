@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { recordChallengeFailed } from "@/lib/challengeRateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +23,15 @@ export async function GET(req) {
 
     // Expired?
     if (new Date() > challenge.expiresAt && !challenge.verified) {
-      // Destroy expired challenge
+      // Record failure and destroy expired challenge
+      await recordChallengeFailed(challenge.ipAddress || "default");
       await prisma.adminChallenge.delete({ where: { id } }).catch(() => {});
       return NextResponse.json({ status: "expired" });
     }
 
     // Too many attempts?
     if (challenge.attempts >= 3 && !challenge.verified) {
+      await recordChallengeFailed(challenge.ipAddress || "default");
       await prisma.adminChallenge.delete({ where: { id } }).catch(() => {});
       return NextResponse.json({ status: "failed" });
     }

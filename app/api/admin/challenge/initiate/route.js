@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
+import { canGenerateChallenge, recordChallengeFailed } from "@/lib/challengeRateLimit";
+
 const ADMIN_TELEGRAM_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHALLENGE_TTL_MS = 30_000; // 30 seconds
-const RATE_LIMIT_MS = 60_000;    // 1 challenge per IP per 60s
 
 async function sendTelegramMessage(chatId, text) {
   if (!TELEGRAM_BOT_TOKEN || !chatId) return;
@@ -25,20 +26,26 @@ export async function POST(req) {
       "unknown";
     const userAgent = req.headers.get("user-agent") || "";
 
-    // --- Rate limit: 1 challenge per IP per 60s ---
-    const recentChallenge = await prisma.adminChallenge.findFirst({
-      where: {
-        ipAddress: ip,
-        createdAt: { gte: new Date(Date.now() - RATE_LIMIT_MS) },
-      },
+    // 1. Check if previous challenge from this IP expired unverified -> count as failure
+    const lastUnverified = await prisma.adminChallenge.findFirst({
+      where: { ipAddress: ip, verified: false },
       orderBy: { createdAt: "desc" },
     });
 
-    if (recentChallenge) {
-      const retryInMs =
-        RATE_LIMIT_MS - (Date.now() - recentChallenge.createdAt.getTime());
+    if (lastUnverified && new Date() > lastUnverified.expiresAt) {
+      await recordChallengeFailed(ip);
+      await prisma.adminChallenge.delete({ where: { id: lastUnverified.id } }).catch(() => {});
+    }
+
+    // 2. Max 3 consecutive failures check
+    const check = await canGenerateChallenge(ip);
+    if (!check.allowed) {
       return NextResponse.json(
-        { error: "Rate limited. Try again.", retryIn: Math.ceil(retryInMs / 1000) },
+        {
+          error: "Maximum 3 consecutive OTP challenge failures exceeded. Gateway locked.",
+          remainingMinutes: check.remainingMinutes,
+          locked: true,
+        },
         { status: 429 }
       );
     }

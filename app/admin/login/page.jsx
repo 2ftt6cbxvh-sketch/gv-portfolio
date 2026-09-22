@@ -106,16 +106,20 @@ export default function AdminLoginPage() {
       {!isDecoySession && (
         <div className="admin-login-wrap" style={{ filter: isPinGatekeeperOpen ? "blur(16px)" : "none", transition: "filter 0.3s ease" }}>
           <div className="admin-login-card">
-            <h1 className="admin-login-title">🔐 Admin Authentication</h1>
-            <p className="admin-login-subtitle">Enter your password and 2FA Authenticator code to continue.</p>
+            <h1 className="admin-login-title">
+              <span style={{ fontSize: "1.3rem" }}>🔐</span>
+              <span>Admin Vault Authentication</span>
+            </h1>
+            <p className="admin-login-sub">Enter your master password and 2FA Authenticator code to continue.</p>
 
             {error && <div className="admin-error">{error}</div>}
 
             <form onSubmit={handleSubmit} className="admin-login-form">
               <div className="admin-field">
-                <label>Email Address</label>
+                <label>Admin Email</label>
                 <input
                   type="email"
+                  className="admin-login-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@ganeshvarma.in"
@@ -124,9 +128,10 @@ export default function AdminLoginPage() {
               </div>
 
               <div className="admin-field">
-                <label>Admin Password</label>
+                <label>Master Password</label>
                 <input
                   type="password"
+                  className="admin-login-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
@@ -140,35 +145,47 @@ export default function AdminLoginPage() {
                     <span>🛡️ 6-Digit Authenticator Code (TOTP)</span>
                   </label>
                   {is2FAActive && (
-                    <span style={{ fontSize: 11, color: "var(--a-accent, #5fa8ff)", background: "rgba(95,168,255,0.1)", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
+                    <span style={{ fontSize: 10.5, color: "#00f0ff", background: "rgba(0, 240, 255, 0.12)", border: "1px solid rgba(0, 240, 255, 0.3)", padding: "2px 8px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.06em" }}>
                       2FA ENFORCED
                     </span>
                   )}
                 </div>
                 <input
                   type="text"
+                  className="admin-totp-input"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="000000"
-                  style={{
-                    fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "1.2rem",
-                    letterSpacing: "0.3em",
-                    textAlign: "center",
-                  }}
+                  placeholder="••••••"
                   required={is2FAActive}
                 />
-                <span style={{ fontSize: 12, color: "var(--a-muted, #8b8f96)", marginTop: 4, display: "block" }}>
-                  Code from Apple Passwords, Google Authenticator, or 1Password.
+                <span style={{ fontSize: 11.5, color: "rgba(255, 255, 255, 0.4)", marginTop: 6, display: "block", textAlign: "center" }}>
+                  Apple Passwords · Google Authenticator · 1Password
                 </span>
               </div>
 
-              <button type="submit" className="admin-btn-primary" disabled={loading} style={{ marginTop: 8 }}>
-                {loading ? "Authenticating..." : "Sign In & Unlock Vault"}
+              <button type="submit" className="admin-login-btn" disabled={loading}>
+                {loading ? "Authenticating Vault..." : "Sign In & Unlock Vault →"}
               </button>
+
+              <div style={{ textAlign: "center", marginTop: 18 }}>
+                <a
+                  href="/"
+                  style={{
+                    color: "rgba(255, 255, 255, 0.4)",
+                    fontSize: 12,
+                    textDecoration: "none",
+                    fontFamily: "var(--font-mono, monospace)",
+                    transition: "color 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00f0ff")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255, 255, 255, 0.4)")}
+                >
+                  ← Return to Portfolio
+                </a>
+              </div>
             </form>
           </div>
         </div>

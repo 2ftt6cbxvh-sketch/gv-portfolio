@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { unblockIp } from "@/lib/rateLimit";
 import { getDetailedTelemetry } from "@/lib/telemetry";
+import { recordChallengeSuccess, recordChallengeFailed } from "@/lib/challengeRateLimit";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
@@ -138,6 +139,9 @@ export async function POST(req) {
           data: { verified: true, sessionToken },
         });
 
+        // SUCCESS: Reset consecutive failure count to 0!
+        await recordChallengeSuccess(challenge.ipAddress || "default");
+
         await sendMsg(
           `✅ <b>Admin Gateway Authenticated</b>\n\n` +
           `🔓 Identity verified at ${timestamp}\n` +
@@ -155,6 +159,9 @@ export async function POST(req) {
         const remaining = 3 - updated.attempts;
         if (remaining <= 0) {
           await prisma.adminChallenge.delete({ where: { id: challenge.id } }).catch(() => {});
+          // Record challenge failure (increments failedCount, locks if >= 3)
+          await recordChallengeFailed(challenge.ipAddress || "default");
+
           await sendMsg(
             `🚫 <b>Challenge Invalidated</b>\n\n` +
             `3 wrong attempts. The challenge has been destroyed.\n` +

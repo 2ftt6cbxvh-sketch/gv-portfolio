@@ -24,6 +24,7 @@ export default function AgenticCoPilot({ metadata }) {
   const [gwCode, setGwCode] = useState(null);
   const [gwChallengeId, setGwChallengeId] = useState(null);
   const [gwSecondsLeft, setGwSecondsLeft] = useState(30);
+  const [gwLockMessage, setGwLockMessage] = useState("");
   const longPressTimer = useRef(null);
   const gwPollTimer = useRef(null);
   const gwCountdownTimer = useRef(null);
@@ -36,16 +37,23 @@ export default function AgenticCoPilot({ metadata }) {
     setGwCode(null);
     setGwChallengeId(null);
     setGwSecondsLeft(30);
+    setGwLockMessage("");
   }, []);
 
   const startGatewayChallenge = useCallback(async () => {
     setGwState("loading");
+    setGwLockMessage("");
     try {
       const res = await fetch("/api/admin/challenge/initiate", { method: "POST" });
       const data = await res.json();
       if (!res.ok || data.error) {
-        setGwState(data.retryIn ? "failed" : "failed");
-        setTimeout(clearGateway, 3000);
+        if (data.locked) {
+          setGwLockMessage(`LOCKED (${data.remainingMinutes}M)`);
+        } else {
+          setGwLockMessage("DENIED");
+        }
+        setGwState("failed");
+        setTimeout(clearGateway, 3500);
         return;
       }
       setGwCode(data.code);
@@ -380,7 +388,7 @@ export default function AgenticCoPilot({ metadata }) {
             {gwState === "failed" && (
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
                 <span style={{ fontSize:"2.5rem" }}>🚫</span>
-                <p style={{ color:"#ff4466", fontWeight:700, fontSize:"0.95rem", margin:0, fontFamily:"var(--font-mono,monospace)", letterSpacing:"0.06em" }}>DENIED</p>
+                <p style={{ color:"#ff4466", fontWeight:700, fontSize:"0.95rem", margin:0, fontFamily:"var(--font-mono,monospace)", letterSpacing:"0.06em" }}>{gwLockMessage || "DENIED"}</p>
               </div>
             )}
 
